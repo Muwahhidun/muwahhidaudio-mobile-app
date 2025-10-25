@@ -156,10 +156,41 @@ class LessonBase(BaseModel):
     is_active: bool = True
 
 
+class LessonCreate(BaseModel):
+    """Schema for creating a lesson."""
+    title: str = Field(..., max_length=255)
+    description: Optional[str] = None
+    lesson_number: Optional[int] = None
+    duration_seconds: Optional[int] = None
+    tags: Optional[str] = None
+    series_id: int
+    book_id: Optional[int] = None
+    teacher_id: Optional[int] = None
+    theme_id: Optional[int] = None
+    is_active: bool = True
+
+
+class LessonUpdate(BaseModel):
+    """Schema for updating a lesson."""
+    title: Optional[str] = Field(None, max_length=255)
+    description: Optional[str] = None
+    audio_path: Optional[str] = Field(None, max_length=500)
+    original_audio_path: Optional[str] = Field(None, max_length=500)
+    lesson_number: Optional[int] = None
+    duration_seconds: Optional[int] = None
+    tags: Optional[str] = None
+    series_id: Optional[int] = None
+    book_id: Optional[int] = None
+    teacher_id: Optional[int] = None
+    theme_id: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
 class LessonResponse(LessonBase):
     """Lesson response schema."""
     id: int
-    audio_path: Optional[str] = None
+    audio_path: Optional[str] = Field(None, serialization_alias='audio_file_path')
+    original_audio_path: Optional[str] = None
     series_id: int
     book_id: Optional[int] = None
     teacher_id: Optional[int] = None
@@ -169,6 +200,7 @@ class LessonResponse(LessonBase):
 
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 
 class LessonWithRelations(LessonResponse):

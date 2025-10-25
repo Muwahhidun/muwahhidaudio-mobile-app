@@ -167,6 +167,10 @@ flutter test
 - Models use json_serializable for JSON conversion
 - Authentication state is managed globally via `authProvider`
 - Conditional routing: authenticated users see HomeScreen, others see LoginScreen
+- **UI Icons Pattern**: All icons defined in `lib/core/constants/app_icons.dart`
+  - Use `AppIcons.theme`, `AppIcons.book`, `AppIcons.teacher` (mic icon), etc.
+  - Each model has associated icon + color constant
+  - Ensures UI consistency across the app
 
 **Admin Features:**
 The app includes an admin panel (`/admin` route) for managing:

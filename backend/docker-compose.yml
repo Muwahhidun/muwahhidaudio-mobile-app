@@ -50,7 +50,7 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-secret-key}
     volumes:
       - ./app:/app/app
-      - ./audio_files:/app/audio_files
+      - ./audio_files:/app/audio_files  # Contains: original/ and processed/ subdirectories
       - ./alembic:/app/alembic
     ports:
       - "8000:8000"

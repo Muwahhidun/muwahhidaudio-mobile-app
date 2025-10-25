@@ -67,7 +67,8 @@ class Lesson(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)  # Auto-generated: teacher_book_year_series_урок_N
     description = Column(Text, nullable=True)
-    audio_path = Column(String(500), nullable=True)  # Path to MP3 file
+    audio_path = Column(String(500), nullable=True)  # Path to processed MP3 file (processed/)
+    original_audio_path = Column(String(500), nullable=True)  # Path to original uploaded file (original/)
     lesson_number = Column(Integer, nullable=True)
     duration_seconds = Column(Integer, nullable=True)
     tags = Column(String(500), nullable=True)  # Comma-separated tags
