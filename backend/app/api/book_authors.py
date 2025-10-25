@@ -1,0 +1,148 @@
+"""
+Book Authors API endpoints.
+"""
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from app.schemas.content import BookAuthorResponse, BookAuthorCreate, BookAuthorUpdate
+from app.crud import book_author as author_crud
+from app.api.auth import get_current_user
+from app.models import User
+
+router = APIRouter(prefix="/book-authors", tags=["Book Authors"])
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Require admin role."""
+    if current_user.role.level < 2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+
+@router.get("", response_model=List[BookAuthorResponse])
+async def get_authors(
+    search: Optional[str] = Query(None, description="Search by name or biography"),
+    birth_year_from: Optional[int] = Query(None, description="Filter by birth year from"),
+    birth_year_to: Optional[int] = Query(None, description="Filter by birth year to"),
+    death_year_from: Optional[int] = Query(None, description="Filter by death year from"),
+    death_year_to: Optional[int] = Query(None, description="Filter by death year to"),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Get all active book authors with optional search and filters.
+
+    Args:
+        search: Search by name or biography
+        birth_year_from: Filter by birth year from (inclusive)
+        birth_year_to: Filter by birth year to (inclusive)
+        death_year_from: Filter by death year from (inclusive)
+        death_year_to: Filter by death year to (inclusive)
+
+    Returns list of book authors ordered by name.
+    """
+    authors = await author_crud.get_all_authors(
+        db,
+        search=search,
+        birth_year_from=birth_year_from,
+        birth_year_to=birth_year_to,
+        death_year_from=death_year_from,
+        death_year_to=death_year_to
+    )
+    return authors
+
+
+@router.get("/{author_id}", response_model=BookAuthorResponse)
+async def get_author(author_id: int, db: AsyncSession = Depends(get_db)):
+    """
+    Get book author by ID.
+
+    Args:
+        author_id: Author ID
+
+    Returns:
+        Author object
+    """
+    author = await author_crud.get_author_by_id(db, author_id)
+
+    if not author:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book author not found"
+        )
+
+    return author
+
+
+@router.post("", response_model=BookAuthorResponse, status_code=status.HTTP_201_CREATED)
+async def create_author(
+    author_data: BookAuthorCreate,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """
+    Create a new book author (Admin only).
+
+    Args:
+        author_data: Author creation data
+
+    Returns:
+        Created author object
+    """
+    author = await author_crud.create_author(db, author_data)
+    return author
+
+
+@router.put("/{author_id}", response_model=BookAuthorResponse)
+async def update_author(
+    author_id: int,
+    author_data: BookAuthorUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """
+    Update book author (Admin only).
+
+    Args:
+        author_id: Author ID
+        author_data: Author update data
+
+    Returns:
+        Updated author object
+    """
+    author = await author_crud.update_author(db, author_id, author_data)
+
+    if not author:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book author not found"
+        )
+
+    return author
+
+
+@router.delete("/{author_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_author(
+    author_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """
+    Delete book author (Admin only).
+
+    Performs soft delete by setting is_active=False.
+
+    Args:
+        author_id: Author ID
+    """
+    deleted = await author_crud.delete_author(db, author_id)
+
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Book author not found"
+        )
