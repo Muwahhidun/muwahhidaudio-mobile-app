@@ -12,19 +12,24 @@ from app.schemas.lesson import LessonTeacherCreate, LessonTeacherUpdate
 
 async def get_all_teachers(
     db: AsyncSession,
-    search: Optional[str] = None
+    search: Optional[str] = None,
+    include_inactive: bool = False
 ) -> List[LessonTeacher]:
     """
-    Get all active teachers with optional search.
+    Get all teachers with optional search.
 
     Args:
         db: Database session
         search: Optional search term for name or biography
+        include_inactive: Include inactive teachers (for admin)
 
     Returns:
         List of LessonTeacher objects
     """
-    query = select(LessonTeacher).where(LessonTeacher.is_active == True)
+    query = select(LessonTeacher)
+
+    if not include_inactive:
+        query = query.where(LessonTeacher.is_active == True)
 
     # Apply search filter
     if search:

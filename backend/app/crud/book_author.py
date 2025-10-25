@@ -15,10 +15,11 @@ async def get_all_authors(
     birth_year_from: Optional[int] = None,
     birth_year_to: Optional[int] = None,
     death_year_from: Optional[int] = None,
-    death_year_to: Optional[int] = None
+    death_year_to: Optional[int] = None,
+    include_inactive: bool = False
 ) -> List[BookAuthor]:
     """
-    Get all active book authors with optional search and filters.
+    Get all book authors with optional search and filters.
 
     Args:
         db: Database session
@@ -27,11 +28,15 @@ async def get_all_authors(
         birth_year_to: Filter by birth year to (inclusive)
         death_year_from: Filter by death year from (inclusive)
         death_year_to: Filter by death year to (inclusive)
+        include_inactive: Include inactive authors (for admin)
 
     Returns:
         List of BookAuthor objects
     """
-    query = select(BookAuthor).where(BookAuthor.is_active == True)
+    query = select(BookAuthor)
+
+    if not include_inactive:
+        query = query.where(BookAuthor.is_active == True)
 
     # Apply search filter
     if search:

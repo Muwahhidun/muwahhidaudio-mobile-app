@@ -18,10 +18,11 @@ async def get_all_lessons(
     book_id: Optional[int] = None,
     theme_id: Optional[int] = None,
     skip: int = 0,
-    limit: int = 100
+    limit: int = 100,
+    include_inactive: bool = False
 ) -> List[Lesson]:
     """
-    Get all active lessons with filters.
+    Get all lessons with filters.
 
     Args:
         db: Database session
@@ -30,6 +31,7 @@ async def get_all_lessons(
         teacher_id: Filter by teacher ID
         book_id: Filter by book ID
         theme_id: Filter by theme ID
+        include_inactive: Include inactive lessons (for admin)
 
     Returns:
         List of lessons
@@ -39,7 +41,10 @@ async def get_all_lessons(
         selectinload(Lesson.teacher),
         selectinload(Lesson.book),
         selectinload(Lesson.theme)
-    ).where(Lesson.is_active == True)
+    )
+
+    if not include_inactive:
+        query = query.where(Lesson.is_active == True)
 
     # Apply filters
     if search:

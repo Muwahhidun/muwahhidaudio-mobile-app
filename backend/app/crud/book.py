@@ -14,25 +14,30 @@ async def get_all_books(
     db: AsyncSession,
     search: Optional[str] = None,
     theme_id: Optional[int] = None,
-    author_id: Optional[int] = None
+    author_id: Optional[int] = None,
+    include_inactive: bool = False
 ) -> List[Book]:
     """
-    Get all active books with optional search and filters.
+    Get all books with optional search and filters.
 
     Args:
         db: Database session
         search: Search query for name or description (case-insensitive)
         theme_id: Filter by theme ID
         author_id: Filter by author ID
+        include_inactive: Include inactive books (for admin)
 
     Returns:
         List of Book objects
     """
     query = (
         select(Book)
-        .where(Book.is_active == True)
         .options(selectinload(Book.theme), selectinload(Book.author))
     )
+
+    # Filter by active status unless include_inactive is True
+    if not include_inactive:
+        query = query.where(Book.is_active == True)
 
     # Add search filter if provided
     if search:

@@ -17,10 +17,11 @@ async def get_all_series(
     book_id: Optional[int] = None,
     theme_id: Optional[int] = None,
     year: Optional[int] = None,
-    is_completed: Optional[bool] = None
+    is_completed: Optional[bool] = None,
+    include_inactive: bool = False
 ) -> List[LessonSeries]:
     """
-    Get all series with relationships (including inactive for admin panel).
+    Get all series with relationships.
 
     Args:
         db: Database session
@@ -30,6 +31,7 @@ async def get_all_series(
         theme_id: Filter by theme
         year: Filter by year
         is_completed: Filter by completion status
+        include_inactive: Include inactive series (for admin)
 
     Returns:
         List of LessonSeries objects
@@ -37,8 +39,9 @@ async def get_all_series(
     from sqlalchemy import or_
 
     query = select(LessonSeries)
-    # ВРЕМЕННО УБРАН ФИЛЬТР для отладки админ-панели
-    # .where(LessonSeries.is_active == True)
+
+    if not include_inactive:
+        query = query.where(LessonSeries.is_active == True)
 
     # Apply search filter
     if search:

@@ -27,17 +27,25 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 @router.get("", response_model=List[ThemeResponse])
 async def get_themes(
     search: Optional[str] = Query(None, description="Search by name or description"),
-    db: AsyncSession = Depends(get_db)
+    include_inactive: bool = Query(False, description="Include inactive themes (admin only)"),
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all active themes with optional search.
+    Get all themes with optional search.
 
     Args:
         search: Search query for name or description (case-insensitive)
+        include_inactive: Include inactive themes (requires admin role)
 
     Returns list of themes ordered by sort_order.
+    For regular users, only active themes are returned.
+    For admins with include_inactive=true, all themes are returned.
     """
-    themes = await theme_crud.get_all_themes(db, search=search)
+    # Only admins can see inactive themes
+    can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
+
+    themes = await theme_crud.get_all_themes(db, search=search, include_inactive=can_see_inactive)
     return themes
 
 

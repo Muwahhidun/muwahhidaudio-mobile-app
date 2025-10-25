@@ -40,14 +40,17 @@ async def get_all_series(
     theme_id: Optional[int] = Query(None, description="Filter by theme ID"),
     year: Optional[int] = Query(None, description="Filter by year"),
     is_completed: Optional[bool] = Query(None, description="Filter by completion status"),
-    db: AsyncSession = Depends(get_db)
+    include_inactive: bool = Query(False, description="Include inactive series (admin only)"),
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all active series with relationships.
+    Get all series with relationships.
 
     Returns:
         List of series ordered by year (newest first) and order
     """
+    can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
     series_list = await series_crud.get_all_series(
         db,
         search=search,
@@ -55,7 +58,8 @@ async def get_all_series(
         book_id=book_id,
         theme_id=theme_id,
         year=year,
-        is_completed=is_completed
+        is_completed=is_completed,
+        include_inactive=can_see_inactive
     )
 
     # Add display_name to each series

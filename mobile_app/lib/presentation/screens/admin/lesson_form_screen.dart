@@ -35,6 +35,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
   bool _isActive = true;
   bool _isLoading = false;
   bool _isTitleManuallyEdited = false;
+  bool _isDurationManuallyEdited = false;
 
   // Audio upload state
   PlatformFile? _selectedAudioFile;
@@ -42,6 +43,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
   double _uploadProgress = 0.0;
   String? _currentAudioPath;
   int? _currentDuration;
+  CancelToken? _uploadCancelToken;
 
   @override
   void initState() {
@@ -53,7 +55,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
       text: widget.lesson?.lessonNumber.toString() ?? '',
     );
     _durationController = TextEditingController(
-      text: widget.lesson?.durationSeconds.toString() ?? '',
+      text: widget.lesson?.durationSeconds?.toString() ?? '',
     );
     _descriptionController = TextEditingController(
       text: widget.lesson?.description ?? '',
@@ -332,6 +334,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
     setState(() {
       _isUploadingAudio = true;
       _uploadProgress = 0.0;
+      _uploadCancelToken = CancelToken();
     });
 
     try {
@@ -355,6 +358,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
       final response = await dio.post(
         '/lessons/${widget.lesson!.id}/audio',
         data: formData,
+        cancelToken: _uploadCancelToken,
         onSendProgress: (sent, total) {
           setState(() {
             _uploadProgress = sent / total;
@@ -372,8 +376,8 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
           _isUploadingAudio = false;
           _uploadProgress = 0.0;
 
-          // Update duration field
-          if (_currentDuration != null) {
+          // Update duration field only if not manually edited
+          if (_currentDuration != null && !_isDurationManuallyEdited) {
             _durationController.text = _currentDuration.toString();
           }
         });
@@ -385,21 +389,41 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
               backgroundColor: Colors.green,
             ),
           );
+
+          // Auto-save the lesson after successful audio upload
+          await _saveLesson();
         }
       }
     } catch (e) {
       setState(() {
         _isUploadingAudio = false;
         _uploadProgress = 0.0;
+        _uploadCancelToken = null;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка загрузки: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Check if upload was cancelled
+        if (e is DioException && e.type == DioExceptionType.cancel) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Загрузка отменена'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ошибка загрузки: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _uploadCancelToken = null;
+        });
       }
     }
   }
@@ -439,7 +463,10 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
       setState(() {
         _currentAudioPath = null;
         _currentDuration = null;
-        _durationController.clear();
+        // Clear duration only if not manually edited
+        if (!_isDurationManuallyEdited) {
+          _durationController.clear();
+        }
       });
 
       if (mounted) {
@@ -462,17 +489,41 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
     }
   }
 
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / 1024 / 1024).toStringAsFixed(2)} MB';
-  }
-
   String _formatDuration(int? seconds) {
     if (seconds == null) return '--:--';
     final minutes = seconds ~/ 60;
     final secs = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  Future<bool> _onWillPop() async {
+    // If audio upload is in progress, show confirmation dialog
+    if (_isUploadingAudio) {
+      final shouldPop = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Идет загрузка аудио'),
+          content: const Text('Прервать загрузку и выйти?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Остаться'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Cancel the upload
+                _uploadCancelToken?.cancel('Пользователь отменил загрузку');
+                Navigator.pop(context, true);
+              },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Выйти'),
+            ),
+          ],
+        ),
+      );
+      return shouldPop ?? false;
+    }
+    return true;
   }
 
   @override
@@ -482,11 +533,22 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
     final booksState = ref.watch(booksProvider);
     final themesState = ref.watch(themesProvider);
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_isUploadingAudio,
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
+        if (didPop) {
+          return;
+        }
+        final shouldPop = await _onWillPop();
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(widget.lesson == null ? 'Создать урок' : 'Редактировать урок'),
         actions: [
-          if (!_isLoading)
+          if (!_isLoading && !_isUploadingAudio)
             TextButton(
               onPressed: _saveLesson,
               child: const Text(
@@ -494,7 +556,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
                 style: TextStyle(color: Colors.white, fontSize: 16),
               ),
             ),
-          if (_isLoading)
+          if (_isLoading || _isUploadingAudio)
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: SizedBox(
@@ -565,12 +627,30 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Duration field (seconds)
+              // Duration field (seconds) - auto-detected from audio
               TextFormField(
                 controller: _durationController,
-                decoration: const InputDecoration(
+                enabled: _isDurationManuallyEdited,
+                decoration: InputDecoration(
                   labelText: 'Длительность (секунды)',
-                  border: OutlineInputBorder(),
+                  hintText: _isDurationManuallyEdited ? 'Введите длительность' : 'Авто-определение из аудио',
+                  border: const OutlineInputBorder(),
+                  filled: !_isDurationManuallyEdited,
+                  fillColor: !_isDurationManuallyEdited ? Colors.grey[100] : null,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _isDurationManuallyEdited ? Icons.lock_open : Icons.edit,
+                      color: _isDurationManuallyEdited ? Colors.green : Colors.grey,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _isDurationManuallyEdited = !_isDurationManuallyEdited;
+                      });
+                    },
+                    tooltip: _isDurationManuallyEdited
+                        ? 'Вернуться к авто-определению'
+                        : 'Редактировать вручную',
+                  ),
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -888,6 +968,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

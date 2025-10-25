@@ -10,18 +10,27 @@ from app.models import Theme, Book, LessonSeries
 from app.schemas.content import ThemeCreate, ThemeUpdate
 
 
-async def get_all_themes(db: AsyncSession, search: Optional[str] = None) -> List[Theme]:
+async def get_all_themes(
+    db: AsyncSession,
+    search: Optional[str] = None,
+    include_inactive: bool = False
+) -> List[Theme]:
     """
-    Get all active themes with optional search.
+    Get all themes with optional search.
 
     Args:
         db: Database session
         search: Search query for name or description (case-insensitive)
+        include_inactive: Include inactive themes (for admin)
 
     Returns:
         List of Theme objects
     """
-    query = select(Theme).where(Theme.is_active == True)
+    query = select(Theme)
+
+    # Filter by active status unless include_inactive is True
+    if not include_inactive:
+        query = query.where(Theme.is_active == True)
 
     # Add search filter if provided
     if search:

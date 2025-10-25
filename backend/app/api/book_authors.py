@@ -31,10 +31,12 @@ async def get_authors(
     birth_year_to: Optional[int] = Query(None, description="Filter by birth year to"),
     death_year_from: Optional[int] = Query(None, description="Filter by death year from"),
     death_year_to: Optional[int] = Query(None, description="Filter by death year to"),
-    db: AsyncSession = Depends(get_db)
+    include_inactive: bool = Query(False, description="Include inactive authors (admin only)"),
+    db: AsyncSession = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all active book authors with optional search and filters.
+    Get all book authors with optional search and filters.
 
     Args:
         search: Search by name or biography
@@ -42,16 +44,20 @@ async def get_authors(
         birth_year_to: Filter by birth year to (inclusive)
         death_year_from: Filter by death year from (inclusive)
         death_year_to: Filter by death year to (inclusive)
+        include_inactive: Include inactive authors (requires admin role)
 
     Returns list of book authors ordered by name.
     """
+    can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
+
     authors = await author_crud.get_all_authors(
         db,
         search=search,
         birth_year_from=birth_year_from,
         birth_year_to=birth_year_to,
         death_year_from=death_year_from,
-        death_year_to=death_year_to
+        death_year_to=death_year_to,
+        include_inactive=can_see_inactive
     )
     return authors
 
