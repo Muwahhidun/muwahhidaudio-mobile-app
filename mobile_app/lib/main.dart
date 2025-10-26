@@ -15,6 +15,7 @@ import 'presentation/screens/admin/lessons_management_screen.dart';
 import 'presentation/screens/admin/tests_management_screen.dart';
 import 'presentation/screens/admin/statistics_screen.dart';
 import 'presentation/screens/admin/admin_help_screen.dart';
+import 'presentation/screens/admin/system_settings_screen.dart';
 import 'presentation/screens/themes/themes_screen.dart';
 
 void main() {
@@ -59,6 +60,7 @@ class MyApp extends ConsumerWidget {
         '/admin/tests': (context) => const TestsManagementScreen(),
         '/admin/statistics': (context) => const StatisticsScreen(),
         '/admin/help': (context) => const AdminHelpScreen(),
+        '/admin/system-settings': (context) => const SystemSettingsScreen(),
         '/themes': (context) => const ThemesScreen(),
       },
     );
