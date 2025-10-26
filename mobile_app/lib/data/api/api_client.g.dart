@@ -203,7 +203,7 @@ class _ApiClient implements ApiClient {
     )
         .compose(
           _dio.options,
-          '/api/settings/notifications',
+          '/settings/notifications',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -237,7 +237,7 @@ class _ApiClient implements ApiClient {
     )
         .compose(
           _dio.options,
-          '/api/settings/notifications',
+          '/settings/notifications',
           queryParameters: queryParameters,
           data: _data,
         )
@@ -271,7 +271,7 @@ class _ApiClient implements ApiClient {
     )
         .compose(
           _dio.options,
-          '/api/settings/notifications/test',
+          '/settings/notifications/test',
           queryParameters: queryParameters,
           data: _data,
         )

@@ -33,13 +33,13 @@ abstract class ApiClient {
   Future<ResendVerificationResponse> resendVerification(@Body() ResendVerificationRequest request);
 
   // Settings endpoints
-  @GET('/api/settings/notifications')
+  @GET('/settings/notifications')
   Future<SMTPSettings> getSMTPSettings();
 
-  @PUT('/api/settings/notifications')
+  @PUT('/settings/notifications')
   Future<SMTPSettings> updateSMTPSettings(@Body() SMTPSettings settings);
 
-  @POST('/api/settings/notifications/test')
+  @POST('/settings/notifications/test')
   Future<TestEmailResponse> sendTestEmail(@Body() TestEmailRequest request);
 
   // Themes endpoints
