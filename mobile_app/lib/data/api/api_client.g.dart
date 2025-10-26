@@ -472,6 +472,7 @@ class _ApiClient implements ApiClient {
   @override
   Future<PaginatedResponse<AppThemeModel>> getThemes({
     String? search,
+    int? teacherId,
     bool? includeInactive,
     int? skip,
     int? limit,
@@ -479,6 +480,7 @@ class _ApiClient implements ApiClient {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'search': search,
+      r'teacher_id': teacherId,
       r'include_inactive': includeInactive,
       r'skip': skip,
       r'limit': limit,
@@ -1012,6 +1014,8 @@ class _ApiClient implements ApiClient {
   @override
   Future<PaginatedResponse<TeacherModel>> getTeachers({
     String? search,
+    int? bookId,
+    int? themeId,
     bool? includeInactive,
     int? skip,
     int? limit,
@@ -1019,6 +1023,8 @@ class _ApiClient implements ApiClient {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{
       r'search': search,
+      r'book_id': bookId,
+      r'theme_id': themeId,
       r'include_inactive': includeInactive,
       r'skip': skip,
       r'limit': limit,

@@ -156,7 +156,7 @@ async def get_lesson_by_id(db: AsyncSession, lesson_id: int) -> Optional[Lesson]
             selectinload(Lesson.book),
             selectinload(Lesson.theme)
         )
-        .where(Lesson.id == lesson_id, Lesson.is_active == True)
+        .where(Lesson.id == lesson_id)
     )
     return result.scalar_one_or_none()
 

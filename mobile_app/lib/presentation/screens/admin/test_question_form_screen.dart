@@ -249,7 +249,7 @@ class _TestQuestionFormScreenState
                     items: _lessons.map((lesson) {
                       return DropdownMenuItem<int>(
                         value: lesson.id,
-                        child: Text(lesson.displayTitle ?? lesson.title),
+                        child: Text(lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'),
                       );
                     }).toList(),
                     onChanged: (value) {

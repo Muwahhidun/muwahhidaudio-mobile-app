@@ -6,23 +6,36 @@ from typing import Optional, Tuple
 from pathlib import Path
 
 
-def get_audio_file_path(lesson_id: int, audio_dir: str = "audio_files") -> Optional[Path]:
+def get_audio_file_path(audio_path: Optional[str] = None, lesson_id: Optional[int] = None, audio_dir: str = "audio_files") -> Optional[Path]:
     """
     Get the file path for a lesson's audio file.
 
     Args:
-        lesson_id: Lesson ID
-        audio_dir: Directory containing audio files
+        audio_path: Audio path from lesson record (preferred)
+        lesson_id: Lesson ID (fallback if audio_path not provided)
+        audio_dir: Base directory containing audio files
 
     Returns:
         Path to audio file if it exists, None otherwise
     """
-    # Expected filename format: lesson_{id}.mp3
-    filename = f"lesson_{lesson_id}.mp3"
-    file_path = Path(audio_dir) / filename
+    # If audio_path is provided, use it (it's relative to audio_dir)
+    if audio_path:
+        # Check if path is already absolute or relative to audio_dir
+        if audio_path.startswith('audio_files/'):
+            file_path = Path(audio_path)
+        else:
+            file_path = Path(audio_dir) / audio_path
 
-    if file_path.exists():
-        return file_path
+        if file_path.exists():
+            return file_path
+
+    # Fallback: try lesson_{id}.mp3 format
+    if lesson_id:
+        filename = f"lesson_{lesson_id}.mp3"
+        file_path = Path(audio_dir) / filename
+
+        if file_path.exists():
+            return file_path
 
     return None
 

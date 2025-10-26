@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
-import '../themes/themes_screen.dart';
+import '../library/library_screen.dart';
 import '../feedback/feedback_list_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -37,31 +37,17 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            // Themes Card
+            // Library Card
             _MenuCard(
-              icon: Icons.category,
-              title: 'Темы',
-              subtitle: 'Акыда, Фикх, Сира',
+              icon: Icons.library_books,
+              title: 'Библиотека',
+              subtitle: 'Темы, Лекторы, Книги, Авторы',
               color: Colors.green,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const ThemesScreen(),
+                    builder: (context) => const LibraryScreen(),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // Teachers Card
-            _MenuCard(
-              icon: Icons.person,
-              title: 'Учителя',
-              subtitle: 'Преподаватели уроков',
-              color: Colors.blue,
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Скоро...')),
                 );
               },
             ),
@@ -81,11 +67,11 @@ class HomeScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            // Profile/Data Card
+            // Profile Card
             _MenuCard(
               icon: Icons.account_circle,
-              title: 'Данные',
-              subtitle: 'Профиль пользователя',
+              title: 'Профиль',
+              subtitle: 'Данные пользователя',
               color: Colors.teal,
               onTap: () {
                 Navigator.of(context).push(

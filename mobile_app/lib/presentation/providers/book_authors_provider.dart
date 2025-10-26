@@ -9,20 +9,12 @@ class BookAuthorsState {
   final bool isLoading;
   final String? error;
   final String? searchQuery;
-  final int? birthYearFrom;
-  final int? birthYearTo;
-  final int? deathYearFrom;
-  final int? deathYearTo;
 
   BookAuthorsState({
     this.authors = const [],
     this.isLoading = false,
     this.error,
     this.searchQuery,
-    this.birthYearFrom,
-    this.birthYearTo,
-    this.deathYearFrom,
-    this.deathYearTo,
   });
 
   BookAuthorsState copyWith({
@@ -30,21 +22,12 @@ class BookAuthorsState {
     bool? isLoading,
     String? error,
     String? searchQuery,
-    int? birthYearFrom,
-    int? birthYearTo,
-    int? deathYearFrom,
-    int? deathYearTo,
-    bool clearFilters = false,
   }) {
     return BookAuthorsState(
       authors: authors ?? this.authors,
       isLoading: isLoading ?? this.isLoading,
       error: error,
-      searchQuery: clearFilters ? null : (searchQuery ?? this.searchQuery),
-      birthYearFrom: clearFilters ? null : (birthYearFrom ?? this.birthYearFrom),
-      birthYearTo: clearFilters ? null : (birthYearTo ?? this.birthYearTo),
-      deathYearFrom: clearFilters ? null : (deathYearFrom ?? this.deathYearFrom),
-      deathYearTo: clearFilters ? null : (deathYearTo ?? this.deathYearTo),
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -57,37 +40,15 @@ class BookAuthorsNotifier extends StateNotifier<BookAuthorsState> {
     loadAuthors();
   }
 
-  /// Load all book authors with current filters
-  Future<void> loadAuthors({
-    String? search,
-    int? birthYearFrom,
-    int? birthYearTo,
-    int? deathYearFrom,
-    int? deathYearTo,
-    bool clearFilters = false,
-  }) async {
+  /// Load all book authors with optional search
+  Future<void> loadAuthors({String? search}) async {
     try {
-      state = state.copyWith(
-        isLoading: true,
-        error: null,
-        searchQuery: search,
-        birthYearFrom: birthYearFrom,
-        birthYearTo: birthYearTo,
-        deathYearFrom: deathYearFrom,
-        deathYearTo: deathYearTo,
-        clearFilters: clearFilters,
-      );
-
+      state = state.copyWith(isLoading: true, error: null, searchQuery: search);
       final response = await _apiClient.getBookAuthors(
         search: search,
-        birthYearFrom: birthYearFrom,
-        birthYearTo: birthYearTo,
-        deathYearFrom: deathYearFrom,
-        deathYearTo: deathYearTo,
-        includeInactive: true, // Include inactive for admin management
-        limit: 1000, // Load all authors
+        includeInactive: false,
+        limit: 1000,
       );
-
       state = state.copyWith(
         authors: response.items,
         isLoading: false,
@@ -100,59 +61,24 @@ class BookAuthorsNotifier extends StateNotifier<BookAuthorsState> {
     }
   }
 
-  /// Search authors
+  /// Search book authors
   Future<void> search(String query) async {
-    await loadAuthors(
-      search: query.isEmpty ? null : query,
-      birthYearFrom: state.birthYearFrom,
-      birthYearTo: state.birthYearTo,
-      deathYearFrom: state.deathYearFrom,
-      deathYearTo: state.deathYearTo,
-    );
+    await loadAuthors(search: query.isEmpty ? null : query);
   }
 
-  /// Filter by birth year range
-  Future<void> filterByBirthYear(int? from, int? to) async {
-    await loadAuthors(
-      search: state.searchQuery,
-      birthYearFrom: from,
-      birthYearTo: to,
-      deathYearFrom: state.deathYearFrom,
-      deathYearTo: state.deathYearTo,
-    );
+  /// Clear search and reload all book authors
+  Future<void> clearSearch() async {
+    await loadAuthors();
   }
 
-  /// Filter by death year range
-  Future<void> filterByDeathYear(int? from, int? to) async {
-    await loadAuthors(
-      search: state.searchQuery,
-      birthYearFrom: state.birthYearFrom,
-      birthYearTo: state.birthYearTo,
-      deathYearFrom: from,
-      deathYearTo: to,
-    );
-  }
-
-  /// Clear all filters
-  Future<void> clearFilters() async {
-    await loadAuthors(clearFilters: true);
-  }
-
-  /// Refresh authors with current filters
+  /// Refresh book authors
   Future<void> refresh() async {
-    await loadAuthors(
-      search: state.searchQuery,
-      birthYearFrom: state.birthYearFrom,
-      birthYearTo: state.birthYearTo,
-      deathYearFrom: state.deathYearFrom,
-      deathYearTo: state.deathYearTo,
-    );
+    await loadAuthors(search: state.searchQuery);
   }
 }
 
 /// Book Authors provider
-final bookAuthorsProvider =
-    StateNotifierProvider<BookAuthorsNotifier, BookAuthorsState>((ref) {
+final bookAuthorsProvider = StateNotifierProvider<BookAuthorsNotifier, BookAuthorsState>((ref) {
   final apiClient = ApiClient(DioProvider.getDio());
   return BookAuthorsNotifier(apiClient);
 });

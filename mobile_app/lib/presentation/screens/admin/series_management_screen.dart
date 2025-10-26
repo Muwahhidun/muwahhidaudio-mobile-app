@@ -882,28 +882,27 @@ class _SeriesFormDialogState extends State<SeriesFormDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // ВРЕМЕННО ЗАКОММЕНТИРОВАНО для отладки
-                // // Is completed switch
-                // SwitchListTile(
-                //   title: const Text('Серия завершена'),
-                //   value: _isCompleted,
-                //   onChanged: (value) {
-                //     setState(() {
-                //       _isCompleted = value;
-                //     });
-                //   },
-                // ),
+                // Is completed switch
+                SwitchListTile(
+                  title: const Text('Серия завершена'),
+                  value: _isCompleted,
+                  onChanged: (value) {
+                    setState(() {
+                      _isCompleted = value;
+                    });
+                  },
+                ),
 
-                // // Is active switch
-                // SwitchListTile(
-                //   title: const Text('Активна'),
-                //   value: _isActive,
-                //   onChanged: (value) {
-                //     setState(() {
-                //       _isActive = value;
-                //     });
-                //   },
-                // ),
+                // Is active switch
+                SwitchListTile(
+                  title: const Text('Активна'),
+                  value: _isActive,
+                  onChanged: (value) {
+                    setState(() {
+                      _isActive = value;
+                    });
+                  },
+                ),
               ],
             ),
           ),

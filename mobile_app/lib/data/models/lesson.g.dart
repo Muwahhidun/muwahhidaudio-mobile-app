@@ -111,7 +111,7 @@ Map<String, dynamic> _$ThemeNestedToJson(ThemeNested instance) =>
 
 LessonNested _$LessonNestedFromJson(Map<String, dynamic> json) => LessonNested(
       id: (json['id'] as num).toInt(),
-      title: json['title'] as String,
+      title: json['title'] as String?,
       lessonNumber: (json['lesson_number'] as num).toInt(),
       displayTitle: json['display_title'] as String?,
     );
@@ -126,21 +126,21 @@ Map<String, dynamic> _$LessonNestedToJson(LessonNested instance) =>
 
 Lesson _$LessonFromJson(Map<String, dynamic> json) => Lesson(
       id: (json['id'] as num).toInt(),
-      title: json['title'] as String,
+      title: json['title'] as String?,
       displayTitle: json['display_title'] as String?,
       lessonNumber: (json['lesson_number'] as num).toInt(),
       durationSeconds: (json['duration_seconds'] as num?)?.toInt(),
       formattedDuration: json['formatted_duration'] as String?,
-      audioUrl: json['audio_url'] as String,
+      audioUrl: json['audio_url'] as String?,
       audioFilePath: json['audio_file_path'] as String?,
       description: json['description'] as String?,
       tags: json['tags'] as String?,
       tagsList: (json['tags_list'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
-      isActive: json['is_active'] as bool,
-      seriesId: (json['series_id'] as num).toInt(),
-      teacherId: (json['teacher_id'] as num).toInt(),
+      isActive: json['is_active'] as bool?,
+      seriesId: (json['series_id'] as num?)?.toInt(),
+      teacherId: (json['teacher_id'] as num?)?.toInt(),
       bookId: (json['book_id'] as num?)?.toInt(),
       themeId: (json['theme_id'] as num?)?.toInt(),
       series: json['series'] == null

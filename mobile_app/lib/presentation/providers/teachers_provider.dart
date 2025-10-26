@@ -22,13 +22,12 @@ class TeachersState {
     bool? isLoading,
     String? error,
     String? searchQuery,
-    bool clearFilters = false,
   }) {
     return TeachersState(
       teachers: teachers ?? this.teachers,
       isLoading: isLoading ?? this.isLoading,
       error: error,
-      searchQuery: clearFilters ? null : (searchQuery ?? this.searchQuery),
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -41,22 +40,20 @@ class TeachersNotifier extends StateNotifier<TeachersState> {
     loadTeachers();
   }
 
-  /// Load all teachers with optional search
+  /// Load all teachers with optional search and filters
   Future<void> loadTeachers({
     String? search,
-    bool clearFilters = false,
+    int? bookId,
+    int? themeId,
   }) async {
     try {
-      state = state.copyWith(
-        isLoading: true,
-        error: null,
-        searchQuery: search,
-        clearFilters: clearFilters,
-      );
+      state = state.copyWith(isLoading: true, error: null, searchQuery: search);
       final response = await _apiClient.getTeachers(
         search: search,
-        includeInactive: true, // Include inactive for admin management
-        limit: 1000, // Load all teachers
+        bookId: bookId,
+        themeId: themeId,
+        includeInactive: false,
+        limit: 1000,
       );
       state = state.copyWith(
         teachers: response.items,
@@ -75,20 +72,19 @@ class TeachersNotifier extends StateNotifier<TeachersState> {
     await loadTeachers(search: query.isEmpty ? null : query);
   }
 
-  /// Clear all filters and search
-  Future<void> clearFilters() async {
-    await loadTeachers(clearFilters: true);
+  /// Clear search and reload all teachers
+  Future<void> clearSearch() async {
+    await loadTeachers();
   }
 
-  /// Refresh teachers with current filters
+  /// Refresh teachers
   Future<void> refresh() async {
     await loadTeachers(search: state.searchQuery);
   }
 }
 
 /// Teachers provider
-final teachersProvider =
-    StateNotifierProvider<TeachersNotifier, TeachersState>((ref) {
+final teachersProvider = StateNotifierProvider<TeachersNotifier, TeachersState>((ref) {
   final apiClient = ApiClient(DioProvider.getDio());
   return TeachersNotifier(apiClient);
 });

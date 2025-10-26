@@ -13,6 +13,7 @@ from app.schemas.content import ThemeCreate, ThemeUpdate
 async def count_themes(
     db: AsyncSession,
     search: Optional[str] = None,
+    teacher_id: Optional[int] = None,
     include_inactive: bool = False
 ) -> int:
     """
@@ -21,12 +22,19 @@ async def count_themes(
     Args:
         db: Database session
         search: Search query for name or description
+        teacher_id: Filter by teacher (themes taught by this teacher)
         include_inactive: Include inactive themes (for admin)
 
     Returns:
         Total count of themes matching filters
     """
-    query = select(func.count(Theme.id))
+    query = select(func.count(func.distinct(Theme.id)))
+
+    # Join with LessonSeries if filtering by teacher
+    if teacher_id is not None:
+        query = query.join(LessonSeries, LessonSeries.theme_id == Theme.id)
+        query = query.where(LessonSeries.teacher_id == teacher_id)
+        query = query.where(LessonSeries.is_active == True)
 
     if not include_inactive:
         query = query.where(Theme.is_active == True)
@@ -47,6 +55,7 @@ async def count_themes(
 async def get_all_themes(
     db: AsyncSession,
     search: Optional[str] = None,
+    teacher_id: Optional[int] = None,
     include_inactive: bool = False,
     skip: int = 0,
     limit: int = 100
@@ -57,6 +66,7 @@ async def get_all_themes(
     Args:
         db: Database session
         search: Search query for name or description (case-insensitive)
+        teacher_id: Filter by teacher (themes taught by this teacher)
         include_inactive: Include inactive themes (for admin)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -64,7 +74,13 @@ async def get_all_themes(
     Returns:
         List of Theme objects
     """
-    query = select(Theme)
+    query = select(Theme).distinct()
+
+    # Join with LessonSeries if filtering by teacher
+    if teacher_id is not None:
+        query = query.join(LessonSeries, LessonSeries.theme_id == Theme.id)
+        query = query.where(LessonSeries.teacher_id == teacher_id)
+        query = query.where(LessonSeries.is_active == True)
 
     # Filter by active status unless include_inactive is True
     if not include_inactive:

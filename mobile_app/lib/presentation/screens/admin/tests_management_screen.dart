@@ -233,7 +233,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                             value: null,
                             child: Text('Все'),
                           ),
-                          ...seriesState.seriesList.map((series) {
+                          ...seriesState.series.map((series) {
                             return DropdownMenuItem<int>(
                               value: series.id,
                               child: Text(series.displayName ?? series.name),

@@ -13,6 +13,8 @@ from app.schemas.lesson import LessonTeacherCreate, LessonTeacherUpdate
 async def count_teachers(
     db: AsyncSession,
     search: Optional[str] = None,
+    book_id: Optional[int] = None,
+    theme_id: Optional[int] = None,
     include_inactive: bool = False
 ) -> int:
     """
@@ -21,12 +23,27 @@ async def count_teachers(
     Args:
         db: Database session
         search: Search query for name or biography
+        book_id: Filter by book (teachers who taught this book)
+        theme_id: Filter by theme (teachers who taught this theme)
         include_inactive: Include inactive teachers (for admin)
 
     Returns:
         Total count of teachers matching filters
     """
-    query = select(func.count(LessonTeacher.id))
+    query = select(func.count(func.distinct(LessonTeacher.id)))
+
+    # Join with LessonSeries if filtering by book or theme
+    if book_id is not None or theme_id is not None:
+        query = query.join(LessonSeries, LessonSeries.teacher_id == LessonTeacher.id)
+
+        if book_id is not None:
+            query = query.where(LessonSeries.book_id == book_id)
+
+        if theme_id is not None:
+            query = query.where(LessonSeries.theme_id == theme_id)
+
+        # Filter active series
+        query = query.where(LessonSeries.is_active == True)
 
     if not include_inactive:
         query = query.where(LessonTeacher.is_active == True)
@@ -48,6 +65,8 @@ async def count_teachers(
 async def get_all_teachers(
     db: AsyncSession,
     search: Optional[str] = None,
+    book_id: Optional[int] = None,
+    theme_id: Optional[int] = None,
     include_inactive: bool = False,
     skip: int = 0,
     limit: int = 100
@@ -58,6 +77,8 @@ async def get_all_teachers(
     Args:
         db: Database session
         search: Optional search term for name or biography
+        book_id: Filter by book (teachers who taught this book)
+        theme_id: Filter by theme (teachers who taught this theme)
         include_inactive: Include inactive teachers (for admin)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -65,7 +86,20 @@ async def get_all_teachers(
     Returns:
         List of LessonTeacher objects
     """
-    query = select(LessonTeacher)
+    query = select(LessonTeacher).distinct()
+
+    # Join with LessonSeries if filtering by book or theme
+    if book_id is not None or theme_id is not None:
+        query = query.join(LessonSeries, LessonSeries.teacher_id == LessonTeacher.id)
+
+        if book_id is not None:
+            query = query.where(LessonSeries.book_id == book_id)
+
+        if theme_id is not None:
+            query = query.where(LessonSeries.theme_id == theme_id)
+
+        # Filter active series
+        query = query.where(LessonSeries.is_active == True)
 
     if not include_inactive:
         query = query.where(LessonTeacher.is_active == True)

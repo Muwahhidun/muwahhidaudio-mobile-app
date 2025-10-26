@@ -9,16 +9,12 @@ class BooksState {
   final bool isLoading;
   final String? error;
   final String? searchQuery;
-  final int? themeFilter;
-  final int? authorFilter;
 
   BooksState({
     this.books = const [],
     this.isLoading = false,
     this.error,
     this.searchQuery,
-    this.themeFilter,
-    this.authorFilter,
   });
 
   BooksState copyWith({
@@ -26,17 +22,12 @@ class BooksState {
     bool? isLoading,
     String? error,
     String? searchQuery,
-    int? themeFilter,
-    int? authorFilter,
-    bool clearFilters = false,
   }) {
     return BooksState(
       books: books ?? this.books,
       isLoading: isLoading ?? this.isLoading,
       error: error,
-      searchQuery: clearFilters ? null : (searchQuery ?? this.searchQuery),
-      themeFilter: clearFilters ? null : (themeFilter ?? this.themeFilter),
-      authorFilter: clearFilters ? null : (authorFilter ?? this.authorFilter),
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 }
@@ -54,23 +45,16 @@ class BooksNotifier extends StateNotifier<BooksState> {
     String? search,
     int? themeId,
     int? authorId,
-    bool clearFilters = false,
+    int? teacherId,
   }) async {
     try {
-      state = state.copyWith(
-        isLoading: true,
-        error: null,
-        searchQuery: search,
-        themeFilter: themeId,
-        authorFilter: authorId,
-        clearFilters: clearFilters,
-      );
+      state = state.copyWith(isLoading: true, error: null, searchQuery: search);
       final response = await _apiClient.getBooks(
         search: search,
         themeId: themeId,
         authorId: authorId,
-        includeInactive: true, // Include inactive for admin management
-        limit: 1000, // Load all books
+        includeInactive: false,
+        limit: 1000,
       );
       state = state.copyWith(
         books: response.items,
@@ -86,43 +70,17 @@ class BooksNotifier extends StateNotifier<BooksState> {
 
   /// Search books
   Future<void> search(String query) async {
-    await loadBooks(
-      search: query.isEmpty ? null : query,
-      themeId: state.themeFilter,
-      authorId: state.authorFilter,
-    );
+    await loadBooks(search: query.isEmpty ? null : query);
   }
 
-  /// Filter by theme
-  Future<void> filterByTheme(int? themeId) async {
-    await loadBooks(
-      search: state.searchQuery,
-      themeId: themeId,
-      authorId: state.authorFilter,
-    );
+  /// Clear search and reload all books
+  Future<void> clearSearch() async {
+    await loadBooks();
   }
 
-  /// Filter by author
-  Future<void> filterByAuthor(int? authorId) async {
-    await loadBooks(
-      search: state.searchQuery,
-      themeId: state.themeFilter,
-      authorId: authorId,
-    );
-  }
-
-  /// Clear all filters and search
-  Future<void> clearFilters() async {
-    await loadBooks(clearFilters: true);
-  }
-
-  /// Refresh books with current filters
+  /// Refresh books
   Future<void> refresh() async {
-    await loadBooks(
-      search: state.searchQuery,
-      themeId: state.themeFilter,
-      authorId: state.authorFilter,
-    );
+    await loadBooks(search: state.searchQuery);
   }
 }
 

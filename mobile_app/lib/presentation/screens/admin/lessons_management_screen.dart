@@ -231,7 +231,7 @@ class _LessonsManagementScreenState
                             value: null,
                             child: Text('Все'),
                           ),
-                          ...seriesState.seriesList.map((series) {
+                          ...seriesState.series.map((series) {
                             return DropdownMenuItem<int>(
                               value: series.id,
                               child: Text(series.displayName ?? series.name),
@@ -391,7 +391,7 @@ class _LessonsManagementScreenState
                                     ),
                                   ),
                                   title: Text(
-                                    lesson.displayTitle ?? lesson.title,
+                                    lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -440,15 +440,30 @@ class _LessonsManagementScreenState
                                       IconButton(
                                         icon: const Icon(Icons.edit),
                                         onPressed: () async {
-                                          final result = await Navigator.push<bool>(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  LessonFormScreen(lesson: lesson),
-                                            ),
-                                          );
-                                          if (result == true) {
-                                            _loadLessons();
+                                          // Load full lesson data before editing
+                                          try {
+                                            final dio = DioProvider.getDio();
+                                            final apiClient = ApiClient(dio);
+                                            final fullLesson = await apiClient.getLesson(lesson.id);
+
+                                            if (!mounted) return;
+
+                                            final result = await Navigator.push<bool>(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    LessonFormScreen(lesson: fullLesson),
+                                              ),
+                                            );
+
+                                            if (result == true) {
+                                              _loadLessons();
+                                            }
+                                          } catch (e) {
+                                            if (!mounted) return;
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(content: Text('Ошибка загрузки урока: $e')),
+                                            );
                                           }
                                         },
                                       ),

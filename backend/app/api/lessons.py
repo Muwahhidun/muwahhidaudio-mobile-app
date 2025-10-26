@@ -268,8 +268,8 @@ async def stream_audio(
             detail="Lesson not found"
         )
 
-    # Get audio file path
-    audio_path = get_audio_file_path(lesson_id)
+    # Get audio file path using lesson's audio_path field
+    audio_path = get_audio_file_path(audio_path=lesson.audio_path, lesson_id=lesson_id)
     if not audio_path:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

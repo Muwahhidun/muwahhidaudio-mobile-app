@@ -27,6 +27,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 @router.get("")
 async def get_themes(
     search: Optional[str] = Query(None, description="Search by name or description"),
+    teacher_id: Optional[int] = Query(None, description="Filter by teacher (themes taught by this teacher)"),
     include_inactive: bool = Query(False, description="Include inactive themes (admin only)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -34,10 +35,11 @@ async def get_themes(
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all themes with optional search and pagination.
+    Get all themes with optional search, filters, and pagination.
 
     Args:
         search: Search query for name or description (case-insensitive)
+        teacher_id: Filter by teacher (themes taught by this teacher)
         include_inactive: Include inactive themes (requires admin role)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -50,12 +52,18 @@ async def get_themes(
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
 
     # Get total count
-    total = await theme_crud.count_themes(db, search=search, include_inactive=can_see_inactive)
+    total = await theme_crud.count_themes(
+        db,
+        search=search,
+        teacher_id=teacher_id,
+        include_inactive=can_see_inactive
+    )
 
     # Get themes
     themes = await theme_crud.get_all_themes(
         db,
         search=search,
+        teacher_id=teacher_id,
         include_inactive=can_see_inactive,
         skip=skip,
         limit=limit

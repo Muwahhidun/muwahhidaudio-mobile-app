@@ -72,6 +72,7 @@ abstract class ApiClient {
   @GET('/themes')
   Future<PaginatedResponse<AppThemeModel>> getThemes({
     @Query('search') String? search,
+    @Query('teacher_id') int? teacherId,
     @Query('include_inactive') bool? includeInactive,
     @Query('skip') int? skip,
     @Query('limit') int? limit,
@@ -150,6 +151,8 @@ abstract class ApiClient {
   @GET('/teachers')
   Future<PaginatedResponse<TeacherModel>> getTeachers({
     @Query('search') String? search,
+    @Query('book_id') int? bookId,
+    @Query('theme_id') int? themeId,
     @Query('include_inactive') bool? includeInactive,
     @Query('skip') int? skip,
     @Query('limit') int? limit,

@@ -142,7 +142,7 @@ class ThemeNested {
 @JsonSerializable()
 class LessonNested {
   final int id;
-  final String title;
+  final String? title;
   @JsonKey(name: 'lesson_number')
   final int lessonNumber;
   @JsonKey(name: 'display_title')
@@ -150,7 +150,7 @@ class LessonNested {
 
   LessonNested({
     required this.id,
-    required this.title,
+    this.title,
     required this.lessonNumber,
     this.displayTitle,
   });
@@ -165,7 +165,7 @@ class LessonNested {
 @JsonSerializable()
 class Lesson {
   final int id;
-  final String title;
+  final String? title;
   @JsonKey(name: 'display_title')
   final String? displayTitle;
   @JsonKey(name: 'lesson_number')
@@ -175,7 +175,7 @@ class Lesson {
   @JsonKey(name: 'formatted_duration')
   final String? formattedDuration;
   @JsonKey(name: 'audio_url')
-  final String audioUrl;
+  final String? audioUrl;
   @JsonKey(name: 'audio_file_path')
   final String? audioFilePath;
   final String? description;
@@ -183,11 +183,11 @@ class Lesson {
   @JsonKey(name: 'tags_list')
   final List<String>? tagsList;
   @JsonKey(name: 'is_active')
-  final bool isActive;
+  final bool? isActive;
   @JsonKey(name: 'series_id')
-  final int seriesId;
+  final int? seriesId;
   @JsonKey(name: 'teacher_id')
-  final int teacherId;
+  final int? teacherId;
   @JsonKey(name: 'book_id')
   final int? bookId;
   @JsonKey(name: 'theme_id')
@@ -199,19 +199,19 @@ class Lesson {
 
   Lesson({
     required this.id,
-    required this.title,
+    this.title,
     this.displayTitle,
     required this.lessonNumber,
     this.durationSeconds,
     this.formattedDuration,
-    required this.audioUrl,
+    this.audioUrl,
     this.audioFilePath,
     this.description,
     this.tags,
     this.tagsList,
-    required this.isActive,
-    required this.seriesId,
-    required this.teacherId,
+    this.isActive,
+    this.seriesId,
+    this.teacherId,
     this.bookId,
     this.themeId,
     this.series,

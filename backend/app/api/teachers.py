@@ -32,6 +32,8 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 @router.get("")
 async def get_teachers(
     search: Optional[str] = Query(None, description="Search by name or biography"),
+    book_id: Optional[int] = Query(None, description="Filter by book (teachers who taught this book)"),
+    theme_id: Optional[int] = Query(None, description="Filter by theme (teachers who taught this theme)"),
     include_inactive: bool = Query(False, description="Include inactive teachers (admin only)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -39,10 +41,12 @@ async def get_teachers(
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all teachers with optional search and pagination.
+    Get all teachers with optional search, filters, and pagination.
 
     Args:
         search: Search query for name or biography (case-insensitive)
+        book_id: Filter by book (teachers who taught this book)
+        theme_id: Filter by theme (teachers who taught this theme)
         include_inactive: Include inactive teachers (requires admin role)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -55,12 +59,20 @@ async def get_teachers(
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
 
     # Get total count
-    total = await teacher_crud.count_teachers(db, search=search, include_inactive=can_see_inactive)
+    total = await teacher_crud.count_teachers(
+        db,
+        search=search,
+        book_id=book_id,
+        theme_id=theme_id,
+        include_inactive=can_see_inactive
+    )
 
     # Get teachers
     teachers = await teacher_crud.get_all_teachers(
         db,
         search=search,
+        book_id=book_id,
+        theme_id=theme_id,
         include_inactive=can_see_inactive,
         skip=skip,
         limit=limit

@@ -89,9 +89,9 @@ class _LessonFormDialogState extends ConsumerState<LessonFormDialog> {
     }
 
     final seriesState = ref.read(seriesProvider);
-    final selectedSeries = seriesState.seriesList.firstWhere(
+    final selectedSeries = seriesState.series.firstWhere(
       (s) => s.id == seriesId,
-      orElse: () => seriesState.seriesList.first,
+      orElse: () => seriesState.series.first,
     );
 
     setState(() {
@@ -114,9 +114,9 @@ class _LessonFormDialogState extends ConsumerState<LessonFormDialog> {
     final teachersState = ref.read(teachersProvider);
     final booksState = ref.read(booksProvider);
 
-    final series = seriesState.seriesList.firstWhere(
+    final series = seriesState.series.firstWhere(
       (s) => s.id == _selectedSeriesId,
-      orElse: () => seriesState.seriesList.first,
+      orElse: () => seriesState.series.first,
     );
 
     final teacher = teachersState.teachers.firstWhere(
@@ -325,7 +325,7 @@ class _LessonFormDialogState extends ConsumerState<LessonFormDialog> {
                     labelText: 'Серия *',
                     border: OutlineInputBorder(),
                   ),
-                  items: seriesState.seriesList.map((series) {
+                  items: seriesState.series.map((series) {
                     return DropdownMenuItem<int>(
                       value: series.id,
                       child: Text(series.displayName ?? series.name),

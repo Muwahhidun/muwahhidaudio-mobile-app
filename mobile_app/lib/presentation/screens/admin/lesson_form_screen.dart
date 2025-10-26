@@ -68,7 +68,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
       _selectedTeacherId = widget.lesson!.teacherId;
       _selectedBookId = widget.lesson!.bookId;
       _selectedThemeId = widget.lesson!.themeId;
-      _isActive = widget.lesson!.isActive;
+      _isActive = widget.lesson!.isActive ?? true;
       // По умолчанию заблокировано даже для существующих уроков
 
       // Initialize audio data if exists
@@ -104,9 +104,9 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
     }
 
     final seriesState = ref.read(seriesProvider);
-    final selectedSeries = seriesState.seriesList.firstWhere(
+    final selectedSeries = seriesState.series.firstWhere(
       (s) => s.id == seriesId,
-      orElse: () => seriesState.seriesList.first,
+      orElse: () => seriesState.series.first,
     );
 
     setState(() {
@@ -129,9 +129,9 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
     final teachersState = ref.read(teachersProvider);
     final booksState = ref.read(booksProvider);
 
-    final series = seriesState.seriesList.firstWhere(
+    final series = seriesState.series.firstWhere(
       (s) => s.id == _selectedSeriesId,
-      orElse: () => seriesState.seriesList.first,
+      orElse: () => seriesState.series.first,
     );
 
     final teacher = teachersState.teachers.firstWhere(
@@ -686,7 +686,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
                   labelText: 'Серия *',
                   border: OutlineInputBorder(),
                 ),
-                items: seriesState.seriesList.map((series) {
+                items: seriesState.series.map((series) {
                   return DropdownMenuItem<int>(
                     value: series.id,
                     child: Text(series.displayName ?? series.name),

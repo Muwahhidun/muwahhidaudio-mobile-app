@@ -53,9 +53,9 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
     // Initialize book_id from series when editing
     if (!_isInitialized && widget.test != null && _selectedSeriesId != null) {
       final seriesState = ref.read(seriesProvider);
-      final series = seriesState.seriesList.firstWhere(
+      final series = seriesState.series.firstWhere(
         (s) => s.id == _selectedSeriesId,
-        orElse: () => seriesState.seriesList.first,
+        orElse: () => seriesState.series.first,
       );
       _selectedBookId = series.bookId;
       _isInitialized = true;
@@ -160,7 +160,7 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
     // Filter books by selected teacher
     final availableBooks = _selectedTeacherId == null
         ? <dynamic>[]
-        : seriesState.seriesList
+        : seriesState.series
             .where((s) => s.teacherId == _selectedTeacherId)
             .map((s) => s.bookId)
             .toSet()
@@ -170,7 +170,7 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
     // Filter series by selected teacher and book
     final availableSeries = (_selectedTeacherId == null || _selectedBookId == null)
         ? <dynamic>[]
-        : seriesState.seriesList
+        : seriesState.series
             .where((s) => s.teacherId == _selectedTeacherId && s.bookId == _selectedBookId)
             .toList();
 
