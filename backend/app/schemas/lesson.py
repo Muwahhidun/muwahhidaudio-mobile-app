@@ -179,6 +179,7 @@ class LessonUpdate(BaseModel):
     lesson_number: Optional[int] = None
     duration_seconds: Optional[int] = None
     tags: Optional[str] = None
+    waveform_data: Optional[str] = None  # JSON array of waveform amplitude values
     series_id: Optional[int] = None
     book_id: Optional[int] = None
     teacher_id: Optional[int] = None
@@ -209,6 +210,7 @@ class LessonWithRelations(LessonResponse):
     formatted_duration: Optional[str] = None  # e.g., "30м 15с"
     audio_url: Optional[str] = None  # API URL for audio streaming
     tags_list: Optional[List[str]] = None  # Parsed tags
+    waveform_data: Optional[str] = None  # JSON array of waveform amplitude values
 
     # Related entities
     series: Optional[LessonSeriesNested] = None

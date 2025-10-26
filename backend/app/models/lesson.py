@@ -72,6 +72,7 @@ class Lesson(Base, TimestampMixin):
     lesson_number = Column(Integer, nullable=True)
     duration_seconds = Column(Integer, nullable=True)
     tags = Column(String(500), nullable=True)  # Comma-separated tags
+    waveform_data = Column(Text, nullable=True)  # JSON array of waveform amplitude values
     series_id = Column(Integer, ForeignKey("lesson_series.id", ondelete="RESTRICT"), nullable=False, index=True)
     book_id = Column(Integer, ForeignKey("books.id", ondelete="SET NULL"), nullable=True, index=True)
     teacher_id = Column(Integer, ForeignKey("lesson_teachers.id", ondelete="SET NULL"), nullable=True, index=True)

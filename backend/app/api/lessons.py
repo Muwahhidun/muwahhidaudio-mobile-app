@@ -509,3 +509,70 @@ async def delete_lesson_audio(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error deleting audio: {str(e)}"
         )
+
+
+@router.post("/{lesson_id}/generate-waveform", status_code=status.HTTP_200_OK)
+async def generate_lesson_waveform(
+    lesson_id: int,
+    samples: int = Query(100, ge=50, le=500, description="Number of waveform samples"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """
+    Generate waveform data for a lesson's audio file (Admin only).
+
+    Args:
+        lesson_id: Lesson ID
+        samples: Number of waveform samples to generate (default: 100)
+
+    Returns:
+        Dictionary with waveform data and lesson info
+    """
+    from app.utils.waveform import generate_waveform_json
+    from app.utils.audio import get_audio_file_path
+    from app.crud.lesson import update_lesson
+    from app.schemas.lesson import LessonUpdate
+
+    # Check lesson exists
+    lesson = await lesson_crud.get_lesson_by_id(db, lesson_id)
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lesson not found"
+        )
+
+    # Check if lesson has audio
+    if not lesson.audio_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lesson has no audio file"
+        )
+
+    # Get audio file path
+    audio_path = get_audio_file_path(audio_path=lesson.audio_path, lesson_id=lesson_id)
+    if not audio_path:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Audio file not found: {lesson.audio_path}"
+        )
+
+    try:
+        # Generate waveform data
+        waveform_json = generate_waveform_json(audio_path, samples=samples)
+
+        # Update lesson with waveform data
+        lesson_update = LessonUpdate(waveform_data=waveform_json)
+        await update_lesson(db, lesson_id, lesson_update)
+
+        return {
+            "message": "Waveform generated successfully",
+            "lesson_id": lesson_id,
+            "waveform_data": waveform_json,
+            "samples": samples
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating waveform: {str(e)}"
+        )
