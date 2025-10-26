@@ -120,6 +120,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Register new user
+  /// Does NOT auto-login. User must verify email first.
   Future<bool> register({
     required String email,
     required String username,
@@ -130,7 +131,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      final response = await _apiClient.register(
+      await _apiClient.register(
         RegisterRequest(
           email: email,
           username: username,
@@ -140,20 +141,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
         ),
       );
 
-      // Save tokens
-      await _storage.write(
-        key: AppConstants.accessTokenKey,
-        value: response.accessToken,
-      );
-      await _storage.write(
-        key: AppConstants.refreshTokenKey,
-        value: response.refreshToken,
-      );
+      // Do NOT save tokens or log in user
+      // User must verify email first before logging in
 
       state = state.copyWith(
-        user: response.user,
-        isAuthenticated: true,
         isLoading: false,
+        error: null,
       );
 
       return true;
