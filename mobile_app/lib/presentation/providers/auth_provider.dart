@@ -159,6 +159,28 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// Update user profile
+  Future<bool> updateProfile(UserProfileUpdate profileData) async {
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+
+      final updatedUser = await _apiClient.updateProfile(profileData);
+
+      state = state.copyWith(
+        user: updatedUser,
+        isLoading: false,
+      );
+
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: _getErrorMessage(e),
+      );
+      return false;
+    }
+  }
+
   /// Logout
   Future<void> logout() async {
     await _storage.delete(key: AppConstants.accessTokenKey);

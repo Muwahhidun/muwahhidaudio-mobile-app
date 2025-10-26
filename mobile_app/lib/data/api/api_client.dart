@@ -9,6 +9,7 @@ import '../models/series.dart';
 import '../models/lesson.dart';
 import '../models/paginated_response.dart';
 import '../models/system_settings.dart';
+import '../models/feedback.dart';
 
 part 'api_client.g.dart';
 
@@ -26,6 +27,9 @@ abstract class ApiClient {
   @GET('/auth/me')
   Future<User> getCurrentUser();
 
+  @PUT('/auth/me')
+  Future<User> updateProfile(@Body() UserProfileUpdate profileData);
+
   @GET('/auth/verify-email')
   Future<EmailVerificationResponse> verifyEmail(@Query('token') String token);
 
@@ -41,6 +45,28 @@ abstract class ApiClient {
 
   @POST('/settings/notifications/test')
   Future<TestEmailResponse> sendTestEmail(@Body() TestEmailRequest request);
+
+  // Users management endpoints
+  @GET('/users')
+  Future<PaginatedResponse<User>> getUsers({
+    @Query('search') String? search,
+    @Query('role_id') int? roleId,
+    @Query('is_active') bool? isActive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
+  });
+
+  @GET('/users/{id}')
+  Future<User> getUserById(@Path('id') int id);
+
+  @PUT('/users/{id}')
+  Future<User> updateUser(
+    @Path('id') int id,
+    @Body() Map<String, dynamic> userData,
+  );
+
+  @DELETE('/users/{id}')
+  Future<void> deleteUser(@Path('id') int id);
 
   // Themes endpoints
   @GET('/themes')
@@ -197,4 +223,49 @@ abstract class ApiClient {
 
   @DELETE('/lessons/{id}')
   Future<void> deleteLesson(@Path('id') int id);
+
+  // Feedback endpoints
+  @POST('/feedbacks')
+  Future<Feedback> createFeedback(@Body() FeedbackCreate feedback);
+
+  @GET('/feedbacks/my')
+  Future<PaginatedFeedbacksResponse> getMyFeedbacks({
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
+  });
+
+  @GET('/feedbacks/{id}')
+  Future<Feedback> getFeedback(@Path('id') int id);
+
+  @GET('/feedbacks')
+  Future<PaginatedFeedbacksResponse> getAllFeedbacks({
+    @Query('status_filter') String? statusFilter,
+    @Query('user_id') int? userId,
+    @Query('search') String? search,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
+  });
+
+  @PUT('/feedbacks/{id}')
+  Future<Feedback> updateFeedback(
+    @Path('id') int id,
+    @Body() FeedbackAdminUpdate update,
+  );
+
+  @POST('/feedbacks/{id}/messages')
+  Future<FeedbackMessage> createFeedbackMessage(
+    @Path('id') int id,
+    @Body() FeedbackMessageCreate message,
+  );
+
+  @DELETE('/feedbacks/{feedbackId}/messages/{messageId}')
+  Future<void> deleteFeedbackMessage(
+    @Path('feedbackId') int feedbackId,
+    @Path('messageId') int messageId,
+  );
+
+  @DELETE('/feedbacks/{id}')
+  Future<void> deleteFeedback(
+    @Path('id') int id,
+  );
 }

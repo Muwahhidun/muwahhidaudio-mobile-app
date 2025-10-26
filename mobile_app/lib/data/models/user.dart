@@ -133,3 +133,32 @@ class AuthResponse {
 
   Map<String, dynamic> toJson() => _$AuthResponseToJson(this);
 }
+
+/// User profile update request model
+@JsonSerializable()
+class UserProfileUpdate {
+  final String? email;
+  final String? username;
+  @JsonKey(name: 'current_password')
+  final String currentPassword;
+  @JsonKey(name: 'new_password')
+  final String? newPassword;
+  @JsonKey(name: 'first_name')
+  final String? firstName;
+  @JsonKey(name: 'last_name')
+  final String? lastName;
+
+  UserProfileUpdate({
+    this.email,
+    this.username,
+    required this.currentPassword,
+    this.newPassword,
+    this.firstName,
+    this.lastName,
+  });
+
+  factory UserProfileUpdate.fromJson(Map<String, dynamic> json) =>
+      _$UserProfileUpdateFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserProfileUpdateToJson(this);
+}

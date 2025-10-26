@@ -7,7 +7,7 @@ from app.models.content import Theme, BookAuthor, Book
 from app.models.lesson import LessonTeacher, LessonSeries, Lesson
 from app.models.test import Test, TestQuestion, TestAttempt
 from app.models.bookmark import Bookmark
-from app.models.feedback import Feedback
+from app.models.feedback import Feedback, FeedbackMessage
 from app.models.system_settings import SystemSettings
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     # Other models
     "Bookmark",
     "Feedback",
+    "FeedbackMessage",
     # System models
     "SystemSettings",
 ]

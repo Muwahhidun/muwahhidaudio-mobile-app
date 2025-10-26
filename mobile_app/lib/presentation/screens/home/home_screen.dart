@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../themes/themes_screen.dart';
+import '../feedback/feedback_list_screen.dart';
+import '../profile/profile_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -28,33 +30,6 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // User Info Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Icon(
-                      Icons.account_circle,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      user?.displayName ?? '',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
             // Browse Section
             Text(
               'Обзор',
@@ -101,6 +76,38 @@ class HomeScreen extends ConsumerWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Скоро...')),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Profile/Data Card
+            _MenuCard(
+              icon: Icons.account_circle,
+              title: 'Данные',
+              subtitle: 'Профиль пользователя',
+              color: Colors.teal,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Feedback Card
+            _MenuCard(
+              icon: Icons.feedback,
+              title: 'Обратная связь',
+              subtitle: 'Связаться с администрацией',
+              color: Colors.purple,
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const FeedbackListScreen(),
+                  ),
                 );
               },
             ),

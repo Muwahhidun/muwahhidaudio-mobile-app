@@ -1,32 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../data/models/test.dart';
+import '../../../data/models/user.dart';
+import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
-import '../../../core/constants/app_icons.dart';
-import '../../providers/series_provider.dart';
-import '../../providers/teachers_provider.dart';
-import '../../providers/books_provider.dart';
-import '../../providers/themes_provider.dart';
-import 'test_form_screen.dart';
-import 'test_questions_screen.dart';
+import 'user_edit_screen.dart';
 
-class TestsManagementScreen extends ConsumerStatefulWidget {
-  const TestsManagementScreen({super.key});
+class UsersManagementScreen extends ConsumerStatefulWidget {
+  const UsersManagementScreen({super.key});
 
   @override
-  ConsumerState<TestsManagementScreen> createState() =>
-      _TestsManagementScreenState();
+  ConsumerState<UsersManagementScreen> createState() =>
+      _UsersManagementScreenState();
 }
 
-class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
+class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
   final TextEditingController _searchController = TextEditingController();
-  List<Test> _tests = [];
+  List<User> _users = [];
   bool _isLoading = false;
   String? _error;
-  int? _selectedSeriesId;
-  int? _selectedTeacherId;
-  int? _selectedBookId;
-  int? _selectedThemeId;
+  int? _selectedRoleId;
+  bool? _selectedIsActive;
 
   // Pagination
   int _currentPage = 0;
@@ -36,7 +29,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
   @override
   void initState() {
     super.initState();
-    _loadTests();
+    _loadUsers();
   }
 
   @override
@@ -45,7 +38,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
     super.dispose();
   }
 
-  Future<void> _loadTests({bool resetPage = false}) async {
+  Future<void> _loadUsers({bool resetPage = false}) async {
     if (resetPage) {
       _currentPage = 0;
     }
@@ -56,31 +49,18 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
     });
 
     try {
-      final dio = DioProvider.getDio();
-      final response = await dio.get(
-        '/tests',
-        queryParameters: {
-          if (_searchController.text.isNotEmpty)
-            'search': _searchController.text,
-          if (_selectedSeriesId != null) 'series_id': _selectedSeriesId,
-          if (_selectedTeacherId != null) 'teacher_id': _selectedTeacherId,
-          if (_selectedBookId != null) 'book_id': _selectedBookId,
-          if (_selectedThemeId != null) 'theme_id': _selectedThemeId,
-          'include_inactive': true,
-          'skip': _currentPage * _itemsPerPage,
-          'limit': _itemsPerPage,
-        },
+      final apiClient = ApiClient(DioProvider.getDio());
+      final response = await apiClient.getUsers(
+        search: _searchController.text.isNotEmpty ? _searchController.text : null,
+        roleId: _selectedRoleId,
+        isActive: _selectedIsActive,
+        skip: _currentPage * _itemsPerPage,
+        limit: _itemsPerPage,
       );
 
-      final data = response.data as Map<String, dynamic>;
-      final items = (data['items'] as List)
-          .map((e) => Test.fromJson(e as Map<String, dynamic>))
-          .toList();
-      final total = data['total'] as int;
-
       setState(() {
-        _tests = items;
-        _totalItems = total;
+        _users = response.items;
+        _totalItems = response.total;
         _isLoading = false;
       });
     } catch (e) {
@@ -96,7 +76,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
       setState(() {
         _currentPage++;
       });
-      _loadTests();
+      _loadUsers();
     }
   }
 
@@ -105,20 +85,20 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
       setState(() {
         _currentPage--;
       });
-      _loadTests();
+      _loadUsers();
     }
   }
 
   int get _totalPages => (_totalItems / _itemsPerPage).ceil();
 
-  Future<void> _deleteTest(int id) async {
+  Future<void> _deleteUser(int id) async {
     try {
-      final dio = DioProvider.getDio();
-      await dio.delete('/tests/$id');
-      _loadTests();
+      final apiClient = ApiClient(DioProvider.getDio());
+      await apiClient.deleteUser(id);
+      _loadUsers();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Тест удален')),
+          const SnackBar(content: Text('Пользователь удален')),
         );
       }
     } catch (e) {
@@ -132,30 +112,9 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final seriesState = ref.watch(seriesProvider);
-    final teachersState = ref.watch(teachersProvider);
-    final booksState = ref.watch(booksProvider);
-    final themesState = ref.watch(themesProvider);
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Управление тестами'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const TestFormScreen(),
-                ),
-              );
-              if (result == true) {
-                _loadTests();
-              }
-            },
-          ),
-        ],
+        title: const Text('Управление пользователями'),
       ),
       body: Column(
         children: [
@@ -171,7 +130,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                       child: TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          labelText: 'Поиск по названию или описанию',
+                          labelText: 'Поиск по email или логину',
                           prefixIcon: const Icon(Icons.search),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
@@ -180,7 +139,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                                     setState(() {
                                       _searchController.clear();
                                     });
-                                    _loadTests(resetPage: true);
+                                    _loadUsers(resetPage: true);
                                   },
                                 )
                               : null,
@@ -188,7 +147,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                         ),
                         onChanged: (value) {
                           setState(() {}); // Rebuild to show/hide X button
-                          _loadTests(resetPage: true);
+                          _loadUsers(resetPage: true);
                         },
                       ),
                     ),
@@ -197,12 +156,10 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                       onPressed: () {
                         setState(() {
                           _searchController.clear();
-                          _selectedSeriesId = null;
-                          _selectedTeacherId = null;
-                          _selectedBookId = null;
-                          _selectedThemeId = null;
+                          _selectedRoleId = null;
+                          _selectedIsActive = null;
                         });
-                        _loadTests(resetPage: true);
+                        _loadUsers(resetPage: true);
                       },
                       icon: const Icon(Icons.filter_alt_off),
                       label: const Text('Сброс'),
@@ -217,127 +174,67 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Filters row 1: Series and Teacher
+                // Filters row: Role and Status
                 Row(
                   children: [
-                    // Series filter
+                    // Role filter
                     Expanded(
                       child: DropdownButtonFormField<int>(
-                        value: _selectedSeriesId,
+                        value: _selectedRoleId,
                         decoration: const InputDecoration(
-                          labelText: 'Серия',
+                          labelText: 'Роль',
                           border: OutlineInputBorder(),
                         ),
-                        items: [
-                          const DropdownMenuItem<int>(
+                        items: const [
+                          DropdownMenuItem<int>(
                             value: null,
                             child: Text('Все'),
                           ),
-                          ...seriesState.seriesList.map((series) {
-                            return DropdownMenuItem<int>(
-                              value: series.id,
-                              child: Text(series.displayName ?? series.name),
-                            );
-                          }),
+                          DropdownMenuItem<int>(
+                            value: 1,
+                            child: Text('User'),
+                          ),
+                          DropdownMenuItem<int>(
+                            value: 2,
+                            child: Text('Admin'),
+                          ),
                         ],
                         onChanged: (value) {
                           setState(() {
-                            _selectedSeriesId = value;
+                            _selectedRoleId = value;
                           });
-                          _loadTests(resetPage: true);
+                          _loadUsers(resetPage: true);
                         },
                       ),
                     ),
                     const SizedBox(width: 12),
-                    // Teacher filter
+                    // Active status filter
                     Expanded(
-                      child: DropdownButtonFormField<int>(
-                        value: _selectedTeacherId,
+                      child: DropdownButtonFormField<bool>(
+                        value: _selectedIsActive,
                         decoration: const InputDecoration(
-                          labelText: 'Преподаватель',
+                          labelText: 'Статус',
                           border: OutlineInputBorder(),
                         ),
-                        items: [
-                          const DropdownMenuItem<int>(
+                        items: const [
+                          DropdownMenuItem<bool>(
                             value: null,
                             child: Text('Все'),
                           ),
-                          ...teachersState.teachers.map((teacher) {
-                            return DropdownMenuItem<int>(
-                              value: teacher.id,
-                              child: Text(teacher.name),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedTeacherId = value;
-                          });
-                          _loadTests(resetPage: true);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // Filters row 2: Book and Theme
-                Row(
-                  children: [
-                    // Book filter
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        value: _selectedBookId,
-                        decoration: const InputDecoration(
-                          labelText: 'Книга',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Все'),
+                          DropdownMenuItem<bool>(
+                            value: true,
+                            child: Text('Активные'),
                           ),
-                          ...booksState.books.map((book) {
-                            return DropdownMenuItem<int>(
-                              value: book.id,
-                              child: Text(book.name),
-                            );
-                          }),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedBookId = value;
-                          });
-                          _loadTests(resetPage: true);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Theme filter
-                    Expanded(
-                      child: DropdownButtonFormField<int>(
-                        value: _selectedThemeId,
-                        decoration: const InputDecoration(
-                          labelText: 'Тема',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: [
-                          const DropdownMenuItem<int>(
-                            value: null,
-                            child: Text('Все'),
+                          DropdownMenuItem<bool>(
+                            value: false,
+                            child: Text('Заблокированные'),
                           ),
-                          ...themesState.themes.map((theme) {
-                            return DropdownMenuItem<int>(
-                              value: theme.id,
-                              child: Text(theme.name),
-                            );
-                          }),
                         ],
                         onChanged: (value) {
                           setState(() {
-                            _selectedThemeId = value;
+                            _selectedIsActive = value;
                           });
-                          _loadTests(resetPage: true);
+                          _loadUsers(resetPage: true);
                         },
                       ),
                     ),
@@ -347,7 +244,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
             ),
           ),
 
-          // Tests list with pagination
+          // Users list with pagination
           Expanded(
             child: Column(
               children: [
@@ -362,71 +259,53 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                                   Text('Ошибка: $_error'),
                                   const SizedBox(height: 16),
                                   ElevatedButton(
-                                    onPressed: _loadTests,
+                                    onPressed: _loadUsers,
                                     child: const Text('Повторить'),
                                   ),
                                 ],
                               ),
                             )
-                          : _tests.isEmpty
+                          : _users.isEmpty
                               ? const Center(
-                                  child: Text('Тесты не найдены'),
+                                  child: Text('Пользователи не найдены'),
                                 )
                               : ListView.builder(
-                                  itemCount: _tests.length,
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 16),
+                                  itemCount: _users.length,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
                                   itemBuilder: (context, index) {
-                                    final test = _tests[index];
+                                    final user = _users[index];
                                     return Card(
                                       margin: const EdgeInsets.only(bottom: 8),
                                       child: ListTile(
                                         leading: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: AppIcons.testColor.withAlpha(25),
+                                            color: Colors.indigo.withAlpha(25),
                                             borderRadius: BorderRadius.circular(8),
                                           ),
-                                          child: Icon(
-                                            AppIcons.test,
-                                            color: AppIcons.testColor,
+                                          child: const Icon(
+                                            Icons.person,
+                                            color: Colors.indigo,
                                           ),
                                         ),
                                         title: Text(
-                                          test.title,
+                                          user.username,
                                           style: const TextStyle(
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
                                         subtitle: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            if (test.series != null)
-                                              Text(
-                                                'Серия: ${test.series!.displayName}',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            if (test.teacher != null)
-                                              Text(
-                                                'Преподаватель: ${test.teacher!.name}',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
                                             Text(
-                                              'Вопросов: ${test.questionsCount} | Проходной балл: ${test.passingScore}%',
+                                              user.email,
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[600],
                                               ),
                                             ),
                                             Text(
-                                              'Время на вопрос: ${test.timePerQuestionSeconds} сек',
+                                              'Роль: ${user.role.name} | ${user.isActive ? "Активен" : "Заблокирован"} | Email: ${user.emailVerified ? "✓" : "✗"}',
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey[600],
@@ -438,33 +317,17 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             IconButton(
-                                              icon: const Icon(Icons.quiz),
-                                              tooltip: 'Вопросы',
-                                              onPressed: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        TestQuestionsScreen(
-                                                            test: test),
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                            IconButton(
                                               icon: const Icon(Icons.edit),
                                               onPressed: () async {
-                                                final result =
-                                                    await Navigator.push<bool>(
+                                                final result = await Navigator.push<bool>(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (context) =>
-                                                        TestFormScreen(
-                                                            test: test),
+                                                        UserEditScreen(user: user),
                                                   ),
                                                 );
                                                 if (result == true) {
-                                                  _loadTests();
+                                                  _loadUsers();
                                                 }
                                               },
                                             ),
@@ -472,36 +335,29 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                                               icon: const Icon(Icons.delete),
                                               color: Colors.red,
                                               onPressed: () async {
-                                                final confirm =
-                                                    await showDialog<bool>(
+                                                final confirm = await showDialog<bool>(
                                                   context: context,
-                                                  builder: (context) =>
-                                                      AlertDialog(
-                                                    title: const Text(
-                                                        'Подтверждение'),
+                                                  builder: (context) => AlertDialog(
+                                                    title: const Text('Подтверждение'),
                                                     content: const Text(
-                                                        'Удалить этот тест?'),
+                                                        'Удалить этого пользователя?'),
                                                     actions: [
                                                       TextButton(
                                                         onPressed: () =>
-                                                            Navigator.pop(
-                                                                context, false),
-                                                        child: const Text(
-                                                            'Отмена'),
+                                                            Navigator.pop(context, false),
+                                                        child: const Text('Отмена'),
                                                       ),
                                                       TextButton(
                                                         onPressed: () =>
-                                                            Navigator.pop(
-                                                                context, true),
-                                                        child: const Text(
-                                                            'Удалить'),
+                                                            Navigator.pop(context, true),
+                                                        child: const Text('Удалить'),
                                                       ),
                                                     ],
                                                   ),
                                                 );
 
                                                 if (confirm == true) {
-                                                  _deleteTest(test.id);
+                                                  _deleteUser(user.id);
                                                 }
                                               },
                                             ),

@@ -66,6 +66,7 @@ class _LessonsManagementScreenState
           if (_selectedTeacherId != null) 'teacher_id': _selectedTeacherId,
           if (_selectedBookId != null) 'book_id': _selectedBookId,
           if (_selectedThemeId != null) 'theme_id': _selectedThemeId,
+          'include_inactive': true,
           'skip': _currentPage * _itemsPerPage,
           'limit': _itemsPerPage,
         },

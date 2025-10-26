@@ -108,9 +108,7 @@ class AdminPanelScreen extends StatelessWidget {
             subtitle: 'Роли, блокировка, удаление',
             color: Colors.indigo,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('В разработке')),
-              );
+              Navigator.pushNamed(context, '/admin/users');
             },
           ),
           const SizedBox(height: 12),
@@ -120,9 +118,7 @@ class AdminPanelScreen extends StatelessWidget {
             subtitle: 'Сообщения от пользователей',
             color: Colors.amber,
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('В разработке')),
-              );
+              Navigator.pushNamed(context, '/admin/feedbacks');
             },
           ),
           const SizedBox(height: 12),

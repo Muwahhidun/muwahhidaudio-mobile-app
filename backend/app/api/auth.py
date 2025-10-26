@@ -7,10 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.schemas.user import (
     UserRegister, UserLogin, UserResponse, Token, TokenWithUser,
-    EmailVerificationRequest, ResendVerificationRequest
+    EmailVerificationRequest, ResendVerificationRequest, RefreshTokenRequest,
+    UserProfileUpdate
 )
 from app.crud import user as user_crud
-from app.auth.jwt import create_access_token, create_refresh_token
+from app.auth.jwt import create_access_token, create_refresh_token, verify_token
 from app.auth.dependencies import get_current_user
 from app.models import User
 from app.services.email import send_verification_email
@@ -153,6 +154,58 @@ async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    profile_data: UserProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update current user profile.
+
+    Requires authentication (Bearer token).
+
+    - **email**: New email address (optional)
+    - **username**: New username (optional)
+    - **current_password**: Current password (required for verification)
+    - **new_password**: New password (optional)
+    - **first_name**: First name (optional)
+    - **last_name**: Last name (optional)
+
+    Returns updated user data.
+
+    Raises:
+    - 400: Invalid current password
+    - 409: Email or username already taken
+    """
+    try:
+        updated_user = await user_crud.update_user_profile(
+            db=db,
+            user=current_user,
+            email=profile_data.email,
+            username=profile_data.username,
+            current_password=profile_data.current_password,
+            new_password=profile_data.new_password,
+            first_name=profile_data.first_name,
+            last_name=profile_data.last_name
+        )
+
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Incorrect current password"
+            )
+
+        await db.commit()
+        return updated_user
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e)
+        )
+
+
 @router.get("/verify-email")
 async def verify_email(
     token: str = Query(..., description="Email verification token"),
@@ -235,3 +288,66 @@ async def resend_verification(
         print(f"Failed to send verification email: {e}")
 
     return {"message": "If this email is registered, a verification link has been sent"}
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token_endpoint(
+    request: RefreshTokenRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Refresh access token using refresh token.
+
+    - **refresh_token**: Valid refresh token
+
+    Returns:
+    - **access_token**: New JWT access token (valid for 1 hour)
+    - **refresh_token**: New JWT refresh token (valid for 7 days)
+    - **token_type**: Token type (bearer)
+
+    Raises:
+    - 401: Invalid or expired refresh token
+    - 404: User not found or inactive
+    """
+    # Verify refresh token
+    payload = verify_token(request.refresh_token, token_type="refresh")
+
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Get user ID from payload
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    # Get user from database
+    user = await user_crud.get_user_by_id(db, int(user_id))
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user"
+        )
+
+    # Create new tokens
+    new_access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
+    new_refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "bearer"
+    }

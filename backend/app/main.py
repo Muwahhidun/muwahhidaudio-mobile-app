@@ -41,24 +41,39 @@ app = FastAPI(
 )
 
 # CORS middleware - allow all origins in debug mode
-# Note: allow_credentials cannot be True when allow_origins is ["*"]
-# So we use allow_origin_regex instead
-if settings.DEBUG:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origin_regex=r"http://localhost:\d+",  # Match any localhost port
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-else:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.allowed_origins_list,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+# For development, we allow all localhost origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:3002",
+        "http://localhost:3003",
+        "http://localhost:3004",
+        "http://localhost:3065",
+        "http://localhost:3066",
+        "http://localhost:3067",
+        "http://localhost:3068",
+        "http://localhost:3069",
+        "http://localhost:3070",
+        "http://localhost:3071",
+        "http://localhost:3072",
+        "http://localhost:3073",
+        "http://localhost:3074",
+        "http://localhost:3075",
+        "http://localhost:3076",
+        "http://localhost:3077",
+        "http://localhost:3080",
+        "http://localhost:3081",
+        "http://localhost:3082",
+        "http://localhost:3085",
+        "http://localhost:3086",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
 
 @app.get("/")
@@ -81,7 +96,7 @@ async def health_check():
 
 
 # Include API routers
-from app.api import auth, themes, books, book_authors, teachers, series, lessons, tests, statistics, migration, settings as settings_api
+from app.api import auth, themes, books, book_authors, teachers, series, lessons, tests, statistics, migration, settings as settings_api, users, feedbacks
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(themes.router, prefix=settings.API_V1_PREFIX)
@@ -91,6 +106,8 @@ app.include_router(teachers.router, prefix=settings.API_V1_PREFIX)
 app.include_router(series.router, prefix=settings.API_V1_PREFIX)
 app.include_router(lessons.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tests.router, prefix=settings.API_V1_PREFIX)
+app.include_router(users.router)
+app.include_router(feedbacks.router, prefix=settings.API_V1_PREFIX)
 app.include_router(statistics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(migration.router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_api.router)

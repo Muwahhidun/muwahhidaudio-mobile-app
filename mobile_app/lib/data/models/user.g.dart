@@ -87,3 +87,23 @@ Map<String, dynamic> _$AuthResponseToJson(AuthResponse instance) =>
       'token_type': instance.tokenType,
       'user': instance.user,
     };
+
+UserProfileUpdate _$UserProfileUpdateFromJson(Map<String, dynamic> json) =>
+    UserProfileUpdate(
+      email: json['email'] as String?,
+      username: json['username'] as String?,
+      currentPassword: json['current_password'] as String,
+      newPassword: json['new_password'] as String?,
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+    );
+
+Map<String, dynamic> _$UserProfileUpdateToJson(UserProfileUpdate instance) =>
+    <String, dynamic>{
+      'email': instance.email,
+      'username': instance.username,
+      'current_password': instance.currentPassword,
+      'new_password': instance.newPassword,
+      'first_name': instance.firstName,
+      'last_name': instance.lastName,
+    };

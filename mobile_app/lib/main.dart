@@ -16,6 +16,10 @@ import 'presentation/screens/admin/tests_management_screen.dart';
 import 'presentation/screens/admin/statistics_screen.dart';
 import 'presentation/screens/admin/admin_help_screen.dart';
 import 'presentation/screens/admin/system_settings_screen.dart';
+import 'presentation/screens/admin/smtp_settings_screen.dart';
+import 'presentation/screens/admin/sender_settings_screen.dart';
+import 'presentation/screens/admin/users_management_screen.dart';
+import 'presentation/screens/admin/feedbacks_management_screen.dart';
 import 'presentation/screens/themes/themes_screen.dart';
 
 void main() {
@@ -58,9 +62,13 @@ class MyApp extends ConsumerWidget {
         '/admin/series': (context) => const SeriesManagementScreen(),
         '/admin/lessons': (context) => const LessonsManagementScreen(),
         '/admin/tests': (context) => const TestsManagementScreen(),
+        '/admin/users': (context) => const UsersManagementScreen(),
+        '/admin/feedbacks': (context) => const FeedbacksManagementScreen(),
         '/admin/statistics': (context) => const StatisticsScreen(),
         '/admin/help': (context) => const AdminHelpScreen(),
         '/admin/system-settings': (context) => const SystemSettingsScreen(),
+        '/admin/smtp-settings': (context) => const SmtpSettingsScreen(),
+        '/admin/sender-settings': (context) => const SenderSettingsScreen(),
         '/themes': (context) => const ThemesScreen(),
       },
     );
