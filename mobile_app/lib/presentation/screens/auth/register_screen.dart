@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../../core/utils/validators.dart';
+import 'email_verification_screen.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -49,14 +50,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (!mounted) return;
 
       if (success) {
-        // Show success message and navigate
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Регистрация успешна! Проверьте почту для подтверждения.'),
-            backgroundColor: Colors.green,
+        // Navigate to email verification screen
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => EmailVerificationScreen(
+              email: _emailController.text.trim(),
+            ),
           ),
         );
-        Navigator.of(context).pop();
       } else {
         final error = ref.read(authProvider).error;
         ScaffoldMessenger.of(context).showSnackBar(
