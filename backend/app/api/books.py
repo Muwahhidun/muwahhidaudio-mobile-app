@@ -24,39 +24,61 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@router.get("", response_model=List[BookWithRelations])
+@router.get("")
 async def get_books(
     search: Optional[str] = Query(None, description="Search by name or description"),
     theme_id: Optional[int] = Query(None, description="Filter by theme ID"),
     author_id: Optional[int] = Query(None, description="Filter by author ID"),
     include_inactive: bool = Query(False, description="Include inactive books (admin only)"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all books with optional search and filters.
+    Get all books with optional search, filters, and pagination.
 
     Args:
         search: Search query for name or description (case-insensitive)
         theme_id: Filter by theme ID
         author_id: Filter by author ID
         include_inactive: Include inactive books (requires admin role)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
-    Returns list of books ordered by sort_order.
+    Returns dictionary with books list, total count, skip, and limit.
     For regular users, only active books are returned.
     For admins with include_inactive=true, all books are returned.
     """
     # Only admins can see inactive books
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
 
-    books = await book_crud.get_all_books(
+    # Get total count
+    total = await book_crud.count_books(
         db,
         search=search,
         theme_id=theme_id,
         author_id=author_id,
         include_inactive=can_see_inactive
     )
-    return books
+
+    # Get books
+    books = await book_crud.get_all_books(
+        db,
+        search=search,
+        theme_id=theme_id,
+        author_id=author_id,
+        include_inactive=can_see_inactive,
+        skip=skip,
+        limit=limit
+    )
+
+    return {
+        "items": books,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
 
 
 @router.get("/{book_id}", response_model=BookWithRelations)

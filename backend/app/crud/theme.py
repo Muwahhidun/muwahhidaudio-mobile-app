@@ -10,18 +10,56 @@ from app.models import Theme, Book, LessonSeries
 from app.schemas.content import ThemeCreate, ThemeUpdate
 
 
-async def get_all_themes(
+async def count_themes(
     db: AsyncSession,
     search: Optional[str] = None,
     include_inactive: bool = False
+) -> int:
+    """
+    Count total number of themes with filters.
+
+    Args:
+        db: Database session
+        search: Search query for name or description
+        include_inactive: Include inactive themes (for admin)
+
+    Returns:
+        Total count of themes matching filters
+    """
+    query = select(func.count(Theme.id))
+
+    if not include_inactive:
+        query = query.where(Theme.is_active == True)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(
+            or_(
+                Theme.name.ilike(search_term),
+                Theme.description.ilike(search_term)
+            )
+        )
+
+    result = await db.execute(query)
+    return result.scalar_one()
+
+
+async def get_all_themes(
+    db: AsyncSession,
+    search: Optional[str] = None,
+    include_inactive: bool = False,
+    skip: int = 0,
+    limit: int = 100
 ) -> List[Theme]:
     """
-    Get all themes with optional search.
+    Get all themes with optional search and pagination.
 
     Args:
         db: Database session
         search: Search query for name or description (case-insensitive)
         include_inactive: Include inactive themes (for admin)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
     Returns:
         List of Theme objects
@@ -42,7 +80,7 @@ async def get_all_themes(
             )
         )
 
-    query = query.order_by(Theme.sort_order, Theme.name)
+    query = query.order_by(Theme.sort_order, Theme.name).offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())
 

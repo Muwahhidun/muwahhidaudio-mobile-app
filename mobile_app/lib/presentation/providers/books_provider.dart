@@ -65,14 +65,15 @@ class BooksNotifier extends StateNotifier<BooksState> {
         authorFilter: authorId,
         clearFilters: clearFilters,
       );
-      final books = await _apiClient.getBooks(
+      final response = await _apiClient.getBooks(
         search: search,
         themeId: themeId,
         authorId: authorId,
         includeInactive: true, // Include inactive for admin management
+        limit: 1000, // Load all books
       );
       state = state.copyWith(
-        books: books,
+        books: response.items,
         isLoading: false,
       );
     } catch (e) {

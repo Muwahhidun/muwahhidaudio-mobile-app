@@ -10,18 +10,57 @@ from app.models import LessonTeacher, LessonSeries, Lesson, Theme, Book
 from app.schemas.lesson import LessonTeacherCreate, LessonTeacherUpdate
 
 
-async def get_all_teachers(
+async def count_teachers(
     db: AsyncSession,
     search: Optional[str] = None,
     include_inactive: bool = False
+) -> int:
+    """
+    Count total number of teachers with filters.
+
+    Args:
+        db: Database session
+        search: Search query for name or biography
+        include_inactive: Include inactive teachers (for admin)
+
+    Returns:
+        Total count of teachers matching filters
+    """
+    query = select(func.count(LessonTeacher.id))
+
+    if not include_inactive:
+        query = query.where(LessonTeacher.is_active == True)
+
+    if search:
+        from sqlalchemy import or_
+        search_term = f"%{search}%"
+        query = query.where(
+            or_(
+                LessonTeacher.name.ilike(search_term),
+                LessonTeacher.biography.ilike(search_term)
+            )
+        )
+
+    result = await db.execute(query)
+    return result.scalar_one()
+
+
+async def get_all_teachers(
+    db: AsyncSession,
+    search: Optional[str] = None,
+    include_inactive: bool = False,
+    skip: int = 0,
+    limit: int = 100
 ) -> List[LessonTeacher]:
     """
-    Get all teachers with optional search.
+    Get all teachers with optional search and pagination.
 
     Args:
         db: Database session
         search: Optional search term for name or biography
         include_inactive: Include inactive teachers (for admin)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
     Returns:
         List of LessonTeacher objects
@@ -42,7 +81,7 @@ async def get_all_teachers(
             )
         )
 
-    query = query.order_by(LessonTeacher.name)
+    query = query.order_by(LessonTeacher.name).offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())
 

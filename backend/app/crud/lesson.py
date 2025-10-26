@@ -85,10 +85,11 @@ async def count_lessons(
     series_id: Optional[int] = None,
     teacher_id: Optional[int] = None,
     book_id: Optional[int] = None,
-    theme_id: Optional[int] = None
+    theme_id: Optional[int] = None,
+    include_inactive: bool = False
 ) -> int:
     """
-    Count total number of active lessons with filters.
+    Count total number of lessons with filters.
 
     Args:
         db: Database session
@@ -97,13 +98,17 @@ async def count_lessons(
         teacher_id: Filter by teacher ID
         book_id: Filter by book ID
         theme_id: Filter by theme ID
+        include_inactive: Include inactive lessons (for admin)
 
     Returns:
         Total count of lessons matching filters
     """
     from sqlalchemy import func
 
-    query = select(func.count(Lesson.id)).where(Lesson.is_active == True)
+    query = select(func.count(Lesson.id))
+
+    if not include_inactive:
+        query = query.where(Lesson.is_active == True)
 
     # Apply same filters as get_all_lessons
     if search:

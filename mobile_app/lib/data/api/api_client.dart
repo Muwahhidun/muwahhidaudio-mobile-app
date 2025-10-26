@@ -7,6 +7,7 @@ import '../models/book_author.dart';
 import '../models/teacher.dart';
 import '../models/series.dart';
 import '../models/lesson.dart';
+import '../models/paginated_response.dart';
 
 part 'api_client.g.dart';
 
@@ -26,9 +27,11 @@ abstract class ApiClient {
 
   // Themes endpoints
   @GET('/themes')
-  Future<List<AppThemeModel>> getThemes({
+  Future<PaginatedResponse<AppThemeModel>> getThemes({
     @Query('search') String? search,
     @Query('include_inactive') bool? includeInactive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
   });
 
   @GET('/themes/{id}')
@@ -48,11 +51,13 @@ abstract class ApiClient {
 
   // Books endpoints
   @GET('/books')
-  Future<List<BookModel>> getBooks({
+  Future<PaginatedResponse<BookModel>> getBooks({
     @Query('search') String? search,
     @Query('theme_id') int? themeId,
     @Query('author_id') int? authorId,
     @Query('include_inactive') bool? includeInactive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
   });
 
   @GET('/books/{id}')
@@ -72,13 +77,15 @@ abstract class ApiClient {
 
   // Book Authors endpoints
   @GET('/book-authors')
-  Future<List<BookAuthorModel>> getBookAuthors({
+  Future<PaginatedResponse<BookAuthorModel>> getBookAuthors({
     @Query('search') String? search,
     @Query('birth_year_from') int? birthYearFrom,
     @Query('birth_year_to') int? birthYearTo,
     @Query('death_year_from') int? deathYearFrom,
     @Query('death_year_to') int? deathYearTo,
     @Query('include_inactive') bool? includeInactive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
   });
 
   @GET('/book-authors/{id}')
@@ -98,9 +105,11 @@ abstract class ApiClient {
 
   // Teachers endpoints
   @GET('/teachers')
-  Future<List<TeacherModel>> getTeachers({
+  Future<PaginatedResponse<TeacherModel>> getTeachers({
     @Query('search') String? search,
     @Query('include_inactive') bool? includeInactive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
   });
 
   @GET('/teachers/{id}')
@@ -120,7 +129,7 @@ abstract class ApiClient {
 
   // Series endpoints
   @GET('/series')
-  Future<List<SeriesModel>> getSeries({
+  Future<PaginatedResponse<SeriesModel>> getSeries({
     @Query('search') String? search,
     @Query('teacher_id') int? teacherId,
     @Query('book_id') int? bookId,
@@ -128,6 +137,8 @@ abstract class ApiClient {
     @Query('year') int? year,
     @Query('is_completed') bool? isCompleted,
     @Query('include_inactive') bool? includeInactive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
   });
 
   @GET('/series/{id}')
@@ -147,13 +158,15 @@ abstract class ApiClient {
 
   // Lessons endpoints
   @GET('/lessons')
-  Future<List<Lesson>> getLessons({
+  Future<PaginatedResponse<Lesson>> getLessons({
     @Query('search') String? search,
     @Query('series_id') int? seriesId,
     @Query('teacher_id') int? teacherId,
     @Query('book_id') int? bookId,
     @Query('theme_id') int? themeId,
     @Query('include_inactive') bool? includeInactive,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
   });
 
   @GET('/lessons/{id}')

@@ -22,7 +22,6 @@ class Test(Base, TimestampMixin):
     time_per_question_seconds = Column(Integer, default=30)
     questions_count = Column(Integer, default=0)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
-    order = Column(Integer, default=0)
 
     # Relationships
     series = relationship("LessonSeries", back_populates="tests")

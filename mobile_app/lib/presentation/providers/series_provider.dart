@@ -104,7 +104,7 @@ class SeriesNotifier extends StateNotifier<SeriesState> {
       final actualYear = clearFilters ? null : year;
       final actualIsCompleted = clearFilters ? null : isCompleted;
 
-      final series = await _apiClient.getSeries(
+      final response = await _apiClient.getSeries(
         search: actualSearch,
         teacherId: actualTeacherId,
         bookId: actualBookId,
@@ -112,10 +112,11 @@ class SeriesNotifier extends StateNotifier<SeriesState> {
         year: actualYear,
         isCompleted: actualIsCompleted,
         includeInactive: true, // Include inactive for admin management
+        limit: 1000, // Load all series
       );
 
       state = state.copyWith(
-        seriesList: series,
+        seriesList: response.items,
         isLoading: false,
       );
     } catch (e) {

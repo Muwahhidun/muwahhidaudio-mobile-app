@@ -81,7 +81,7 @@ async def health_check():
 
 
 # Include API routers
-from app.api import auth, themes, books, book_authors, teachers, series, lessons, tests, migration
+from app.api import auth, themes, books, book_authors, teachers, series, lessons, tests, statistics, migration
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(themes.router, prefix=settings.API_V1_PREFIX)
@@ -91,4 +91,5 @@ app.include_router(teachers.router, prefix=settings.API_V1_PREFIX)
 app.include_router(series.router, prefix=settings.API_V1_PREFIX)
 app.include_router(lessons.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tests.router, prefix=settings.API_V1_PREFIX)
+app.include_router(statistics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(migration.router, prefix=settings.API_V1_PREFIX)

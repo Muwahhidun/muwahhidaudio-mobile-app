@@ -106,7 +106,8 @@ async def get_all_lessons(
     book_id: Optional[int] = Query(None, description="Filter by book ID"),
     theme_id: Optional[int] = Query(None, description="Filter by theme ID"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(10, ge=1, le=1000, description="Maximum number of records to return"),
+    include_inactive: bool = Query(False, description="Include inactive lessons (admin only)"),
     db: AsyncSession = Depends(get_db)
 ):
     """
@@ -122,7 +123,8 @@ async def get_all_lessons(
         series_id=series_id,
         teacher_id=teacher_id,
         book_id=book_id,
-        theme_id=theme_id
+        theme_id=theme_id,
+        include_inactive=include_inactive
     )
 
     # Get lessons
@@ -134,7 +136,8 @@ async def get_all_lessons(
         book_id=book_id,
         theme_id=theme_id,
         skip=skip,
-        limit=limit
+        limit=limit,
+        include_inactive=include_inactive
     )
 
     return {

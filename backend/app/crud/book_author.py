@@ -3,10 +3,44 @@ CRUD operations for BookAuthor model.
 """
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, func, or_
 
 from app.models import BookAuthor
 from app.schemas.content import BookAuthorCreate, BookAuthorUpdate
+
+
+async def count_book_authors(
+    db: AsyncSession,
+    search: Optional[str] = None,
+    include_inactive: bool = False
+) -> int:
+    """
+    Count total number of book authors with filters.
+
+    Args:
+        db: Database session
+        search: Search by name or biography
+        include_inactive: Include inactive authors (for admin)
+
+    Returns:
+        Total count of book authors matching filters
+    """
+    query = select(func.count(BookAuthor.id))
+
+    if not include_inactive:
+        query = query.where(BookAuthor.is_active == True)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(
+            or_(
+                BookAuthor.name.ilike(search_term),
+                BookAuthor.biography.ilike(search_term)
+            )
+        )
+
+    result = await db.execute(query)
+    return result.scalar_one()
 
 
 async def get_all_authors(
@@ -16,10 +50,12 @@ async def get_all_authors(
     birth_year_to: Optional[int] = None,
     death_year_from: Optional[int] = None,
     death_year_to: Optional[int] = None,
-    include_inactive: bool = False
+    include_inactive: bool = False,
+    skip: int = 0,
+    limit: int = 100
 ) -> List[BookAuthor]:
     """
-    Get all book authors with optional search and filters.
+    Get all book authors with optional search, filters, and pagination.
 
     Args:
         db: Database session
@@ -29,6 +65,8 @@ async def get_all_authors(
         death_year_from: Filter by death year from (inclusive)
         death_year_to: Filter by death year to (inclusive)
         include_inactive: Include inactive authors (for admin)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
     Returns:
         List of BookAuthor objects
@@ -60,7 +98,7 @@ async def get_all_authors(
     if death_year_to is not None:
         query = query.where(BookAuthor.death_year <= death_year_to)
 
-    query = query.order_by(BookAuthor.name)
+    query = query.order_by(BookAuthor.name).offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())
 

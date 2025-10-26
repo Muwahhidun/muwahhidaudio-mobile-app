@@ -103,7 +103,7 @@ async def get_all_tests(
     theme_id: Optional[int] = Query(None, description="Filter by theme ID (via series)"),
     include_inactive: bool = Query(False, description="Include inactive tests"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(10, ge=1, le=100, description="Maximum number of records to return"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(require_admin)
 ):
@@ -120,7 +120,8 @@ async def get_all_tests(
         series_id=series_id,
         teacher_id=teacher_id,
         book_id=book_id,
-        theme_id=theme_id
+        theme_id=theme_id,
+        include_inactive=include_inactive
     )
 
     # Get tests

@@ -29,21 +29,49 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@router.get("", response_model=List[LessonTeacherResponse])
+@router.get("")
 async def get_teachers(
     search: Optional[str] = Query(None, description="Search by name or biography"),
     include_inactive: bool = Query(False, description="Include inactive teachers (admin only)"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all teachers with optional search.
+    Get all teachers with optional search and pagination.
 
-    Returns list of teachers ordered by name.
+    Args:
+        search: Search query for name or biography (case-insensitive)
+        include_inactive: Include inactive teachers (requires admin role)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+
+    Returns dictionary with teachers list, total count, skip, and limit.
+    For regular users, only active teachers are returned.
+    For admins with include_inactive=true, all teachers are returned.
     """
+    # Only admins can see inactive teachers
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
-    teachers = await teacher_crud.get_all_teachers(db, search=search, include_inactive=can_see_inactive)
-    return teachers
+
+    # Get total count
+    total = await teacher_crud.count_teachers(db, search=search, include_inactive=can_see_inactive)
+
+    # Get teachers
+    teachers = await teacher_crud.get_all_teachers(
+        db,
+        search=search,
+        include_inactive=can_see_inactive,
+        skip=skip,
+        limit=limit
+    )
+
+    return {
+        "items": teachers,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
 
 
 @router.get("/{teacher_id}", response_model=LessonTeacherResponse)

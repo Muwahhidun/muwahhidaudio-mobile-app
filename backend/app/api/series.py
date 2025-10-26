@@ -32,7 +32,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@router.get("", response_model=List[LessonSeriesWithRelations])
+@router.get("")
 async def get_all_series(
     search: Optional[str] = Query(None, description="Search by name or description"),
     teacher_id: Optional[int] = Query(None, description="Filter by teacher ID"),
@@ -41,17 +41,34 @@ async def get_all_series(
     year: Optional[int] = Query(None, description="Filter by year"),
     is_completed: Optional[bool] = Query(None, description="Filter by completion status"),
     include_inactive: bool = Query(False, description="Include inactive series (admin only)"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all series with relationships.
+    Get all series with relationships and pagination.
 
-    Returns:
-        List of series ordered by year (newest first) and order
+    Args:
+        search: Search query for name or description (case-insensitive)
+        teacher_id: Filter by teacher ID
+        book_id: Filter by book ID
+        theme_id: Filter by theme ID
+        year: Filter by year
+        is_completed: Filter by completion status
+        include_inactive: Include inactive series (requires admin role)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
+
+    Returns dictionary with series list, total count, skip, and limit.
+    Series are ordered by year (newest first) and order.
+    For regular users, only active series are returned.
+    For admins with include_inactive=true, all series are returned.
     """
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
-    series_list = await series_crud.get_all_series(
+
+    # Get total count
+    total = await series_crud.count_series(
         db,
         search=search,
         teacher_id=teacher_id,
@@ -62,8 +79,22 @@ async def get_all_series(
         include_inactive=can_see_inactive
     )
 
+    # Get series
+    series_list = await series_crud.get_all_series(
+        db,
+        search=search,
+        teacher_id=teacher_id,
+        book_id=book_id,
+        theme_id=theme_id,
+        year=year,
+        is_completed=is_completed,
+        include_inactive=can_see_inactive,
+        skip=skip,
+        limit=limit
+    )
+
     # Add display_name to each series
-    result = []
+    items = []
     for series in series_list:
         series_dict = {
             "id": series.id,
@@ -83,9 +114,14 @@ async def get_all_series(
             "theme": series.theme,
             "display_name": f"{series.year} - {series.name}"
         }
-        result.append(LessonSeriesWithRelations(**series_dict))
+        items.append(LessonSeriesWithRelations(**series_dict))
 
-    return result
+    return {
+        "items": items,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
 
 
 @router.post("", response_model=LessonSeriesWithRelations, status_code=status.HTTP_201_CREATED)

@@ -53,12 +53,13 @@ class TeachersNotifier extends StateNotifier<TeachersState> {
         searchQuery: search,
         clearFilters: clearFilters,
       );
-      final teachers = await _apiClient.getTeachers(
+      final response = await _apiClient.getTeachers(
         search: search,
         includeInactive: true, // Include inactive for admin management
+        limit: 1000, // Load all teachers
       );
       state = state.copyWith(
-        teachers: teachers,
+        teachers: response.items,
         isLoading: false,
       );
     } catch (e) {

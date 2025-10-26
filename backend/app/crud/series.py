@@ -3,11 +3,70 @@ CRUD operations for LessonSeries model.
 """
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 
 from app.models import LessonSeries
 from app.schemas.lesson import LessonSeriesCreate, LessonSeriesUpdate
+
+
+async def count_series(
+    db: AsyncSession,
+    search: Optional[str] = None,
+    teacher_id: Optional[int] = None,
+    book_id: Optional[int] = None,
+    theme_id: Optional[int] = None,
+    year: Optional[int] = None,
+    is_completed: Optional[bool] = None,
+    include_inactive: bool = False
+) -> int:
+    """
+    Count total number of series with filters.
+
+    Args:
+        db: Database session
+        search: Search query for name or description
+        teacher_id: Filter by teacher
+        book_id: Filter by book
+        theme_id: Filter by theme
+        year: Filter by year
+        is_completed: Filter by completion status
+        include_inactive: Include inactive series (for admin)
+
+    Returns:
+        Total count of series matching filters
+    """
+    query = select(func.count(LessonSeries.id))
+
+    if not include_inactive:
+        query = query.where(LessonSeries.is_active == True)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(
+            or_(
+                LessonSeries.name.ilike(search_term),
+                LessonSeries.description.ilike(search_term)
+            )
+        )
+
+    if teacher_id is not None:
+        query = query.where(LessonSeries.teacher_id == teacher_id)
+
+    if book_id is not None:
+        query = query.where(LessonSeries.book_id == book_id)
+
+    if theme_id is not None:
+        query = query.where(LessonSeries.theme_id == theme_id)
+
+    if year is not None:
+        query = query.where(LessonSeries.year == year)
+
+    if is_completed is not None:
+        query = query.where(LessonSeries.is_completed == is_completed)
+
+    result = await db.execute(query)
+    return result.scalar_one()
 
 
 async def get_all_series(
@@ -18,10 +77,12 @@ async def get_all_series(
     theme_id: Optional[int] = None,
     year: Optional[int] = None,
     is_completed: Optional[bool] = None,
-    include_inactive: bool = False
+    include_inactive: bool = False,
+    skip: int = 0,
+    limit: int = 100
 ) -> List[LessonSeries]:
     """
-    Get all series with relationships.
+    Get all series with relationships and pagination.
 
     Args:
         db: Database session
@@ -32,12 +93,12 @@ async def get_all_series(
         year: Filter by year
         is_completed: Filter by completion status
         include_inactive: Include inactive series (for admin)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
     Returns:
         List of LessonSeries objects
     """
-    from sqlalchemy import or_
-
     query = select(LessonSeries)
 
     if not include_inactive:
@@ -73,7 +134,7 @@ async def get_all_series(
         selectinload(LessonSeries.teacher),
         selectinload(LessonSeries.book),
         selectinload(LessonSeries.theme)
-    ).order_by(LessonSeries.year.desc(), LessonSeries.order)
+    ).order_by(LessonSeries.year.desc(), LessonSeries.order).offset(skip).limit(limit)
 
     result = await db.execute(query)
     return list(result.scalars().all())

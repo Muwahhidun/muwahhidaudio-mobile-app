@@ -24,7 +24,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
-@router.get("", response_model=List[BookAuthorResponse])
+@router.get("")
 async def get_authors(
     search: Optional[str] = Query(None, description="Search by name or biography"),
     birth_year_from: Optional[int] = Query(None, description="Filter by birth year from"),
@@ -32,11 +32,13 @@ async def get_authors(
     death_year_from: Optional[int] = Query(None, description="Filter by death year from"),
     death_year_to: Optional[int] = Query(None, description="Filter by death year to"),
     include_inactive: bool = Query(False, description="Include inactive authors (admin only)"),
+    skip: int = Query(0, ge=0, description="Number of records to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
     db: AsyncSession = Depends(get_db),
     current_user: Optional[User] = Depends(get_current_user)
 ):
     """
-    Get all book authors with optional search and filters.
+    Get all book authors with optional search, filters, and pagination.
 
     Args:
         search: Search by name or biography
@@ -45,11 +47,20 @@ async def get_authors(
         death_year_from: Filter by death year from (inclusive)
         death_year_to: Filter by death year to (inclusive)
         include_inactive: Include inactive authors (requires admin role)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
-    Returns list of book authors ordered by name.
+    Returns dictionary with authors list, total count, skip, and limit.
+    For regular users, only active authors are returned.
+    For admins with include_inactive=true, all authors are returned.
     """
+    # Only admins can see inactive authors
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
 
+    # Get total count
+    total = await author_crud.count_book_authors(db, search=search, include_inactive=can_see_inactive)
+
+    # Get authors
     authors = await author_crud.get_all_authors(
         db,
         search=search,
@@ -57,9 +68,17 @@ async def get_authors(
         birth_year_to=birth_year_to,
         death_year_from=death_year_from,
         death_year_to=death_year_to,
-        include_inactive=can_see_inactive
+        include_inactive=can_see_inactive,
+        skip=skip,
+        limit=limit
     )
-    return authors
+
+    return {
+        "items": authors,
+        "total": total,
+        "skip": skip,
+        "limit": limit
+    }
 
 
 @router.get("/{author_id}", response_model=BookAuthorResponse)

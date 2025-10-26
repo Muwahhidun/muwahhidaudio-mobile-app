@@ -44,12 +44,13 @@ class ThemesNotifier extends StateNotifier<ThemesState> {
   Future<void> loadThemes({String? search}) async {
     try {
       state = state.copyWith(isLoading: true, error: null, searchQuery: search);
-      final themes = await _apiClient.getThemes(
+      final response = await _apiClient.getThemes(
         search: search,
         includeInactive: true, // Include inactive for admin management
+        limit: 1000, // Load all themes
       );
       state = state.copyWith(
-        themes: themes,
+        themes: response.items,
         isLoading: false,
       );
     } catch (e) {

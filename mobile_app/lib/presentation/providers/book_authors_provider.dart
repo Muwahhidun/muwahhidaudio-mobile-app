@@ -78,17 +78,18 @@ class BookAuthorsNotifier extends StateNotifier<BookAuthorsState> {
         clearFilters: clearFilters,
       );
 
-      final authors = await _apiClient.getBookAuthors(
+      final response = await _apiClient.getBookAuthors(
         search: search,
         birthYearFrom: birthYearFrom,
         birthYearTo: birthYearTo,
         deathYearFrom: deathYearFrom,
         deathYearTo: deathYearTo,
         includeInactive: true, // Include inactive for admin management
+        limit: 1000, // Load all authors
       );
 
       state = state.copyWith(
-        authors: authors,
+        authors: response.items,
         isLoading: false,
       );
     } catch (e) {

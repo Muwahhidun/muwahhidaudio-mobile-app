@@ -3,11 +3,55 @@ CRUD operations for Book model.
 """
 from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 
 from app.models import Book
 from app.schemas.content import BookCreate, BookUpdate
+
+
+async def count_books(
+    db: AsyncSession,
+    search: Optional[str] = None,
+    theme_id: Optional[int] = None,
+    author_id: Optional[int] = None,
+    include_inactive: bool = False
+) -> int:
+    """
+    Count total number of books with filters.
+
+    Args:
+        db: Database session
+        search: Search query for name or description
+        theme_id: Filter by theme ID
+        author_id: Filter by author ID
+        include_inactive: Include inactive books (for admin)
+
+    Returns:
+        Total count of books matching filters
+    """
+    query = select(func.count(Book.id))
+
+    if not include_inactive:
+        query = query.where(Book.is_active == True)
+
+    if search:
+        search_term = f"%{search}%"
+        query = query.where(
+            or_(
+                Book.name.ilike(search_term),
+                Book.description.ilike(search_term)
+            )
+        )
+
+    if theme_id is not None:
+        query = query.where(Book.theme_id == theme_id)
+
+    if author_id is not None:
+        query = query.where(Book.author_id == author_id)
+
+    result = await db.execute(query)
+    return result.scalar_one()
 
 
 async def get_all_books(
@@ -15,10 +59,12 @@ async def get_all_books(
     search: Optional[str] = None,
     theme_id: Optional[int] = None,
     author_id: Optional[int] = None,
-    include_inactive: bool = False
+    include_inactive: bool = False,
+    skip: int = 0,
+    limit: int = 100
 ) -> List[Book]:
     """
-    Get all books with optional search and filters.
+    Get all books with optional search, filters, and pagination.
 
     Args:
         db: Database session
@@ -26,6 +72,8 @@ async def get_all_books(
         theme_id: Filter by theme ID
         author_id: Filter by author ID
         include_inactive: Include inactive books (for admin)
+        skip: Number of records to skip
+        limit: Maximum number of records to return
 
     Returns:
         List of Book objects
@@ -57,7 +105,7 @@ async def get_all_books(
     if author_id is not None:
         query = query.where(Book.author_id == author_id)
 
-    query = query.order_by(Book.sort_order, Book.name)
+    query = query.order_by(Book.sort_order, Book.name).offset(skip).limit(limit)
     result = await db.execute(query)
     return list(result.scalars().all())
 

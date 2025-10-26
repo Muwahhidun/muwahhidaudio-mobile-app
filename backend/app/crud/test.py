@@ -77,8 +77,8 @@ async def get_all_tests(
         if theme_id:
             query = query.where(LessonSeries.theme_id == theme_id)
 
-    # Order by series and order field
-    query = query.order_by(Test.series_id, Test.order)
+    # Order by series
+    query = query.order_by(Test.series_id)
 
     # Apply pagination
     query = query.offset(skip).limit(limit)
@@ -93,10 +93,11 @@ async def count_tests(
     series_id: Optional[int] = None,
     teacher_id: Optional[int] = None,
     book_id: Optional[int] = None,
-    theme_id: Optional[int] = None
+    theme_id: Optional[int] = None,
+    include_inactive: bool = False
 ) -> int:
     """
-    Count total number of active tests with filters.
+    Count total number of tests with filters.
 
     Args:
         db: Database session
@@ -105,11 +106,15 @@ async def count_tests(
         teacher_id: Filter by teacher ID
         book_id: Filter by book ID (via series)
         theme_id: Filter by theme ID (via series)
+        include_inactive: Include inactive tests (for admin)
 
     Returns:
         Total count of tests matching filters
     """
-    query = select(func.count(Test.id)).where(Test.is_active == True)
+    query = select(func.count(Test.id))
+
+    if not include_inactive:
+        query = query.where(Test.is_active == True)
 
     # Apply same filters as get_all_tests
     if search:
