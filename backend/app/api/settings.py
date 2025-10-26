@@ -102,8 +102,7 @@ async def send_test_email_endpoint(
     try:
         await send_test_email(
             db=db,
-            to_email=request.test_email,
-            admin_name=current_user.username or current_user.email
+            to_email=request.test_email
         )
 
         return TestEmailResponse(

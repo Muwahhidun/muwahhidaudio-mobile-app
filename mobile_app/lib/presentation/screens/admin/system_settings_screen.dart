@@ -31,6 +31,9 @@ class _SystemSettingsScreenState extends State<SystemSettingsScreen>
         title: const Text('Системные настройки'),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
           tabs: const [
             Tab(
               icon: Icon(Icons.notifications_outlined),
