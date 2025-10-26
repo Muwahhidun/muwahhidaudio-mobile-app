@@ -8,6 +8,7 @@ import '../models/teacher.dart';
 import '../models/series.dart';
 import '../models/lesson.dart';
 import '../models/paginated_response.dart';
+import '../models/system_settings.dart';
 
 part 'api_client.g.dart';
 
@@ -24,6 +25,22 @@ abstract class ApiClient {
 
   @GET('/auth/me')
   Future<User> getCurrentUser();
+
+  @GET('/auth/verify-email')
+  Future<EmailVerificationResponse> verifyEmail(@Query('token') String token);
+
+  @POST('/auth/resend-verification')
+  Future<ResendVerificationResponse> resendVerification(@Body() ResendVerificationRequest request);
+
+  // Settings endpoints
+  @GET('/api/settings/notifications')
+  Future<SMTPSettings> getSMTPSettings();
+
+  @PUT('/api/settings/notifications')
+  Future<SMTPSettings> updateSMTPSettings(@Body() SMTPSettings settings);
+
+  @POST('/api/settings/notifications/test')
+  Future<TestEmailResponse> sendTestEmail(@Body() TestEmailRequest request);
 
   // Themes endpoints
   @GET('/themes')

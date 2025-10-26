@@ -62,13 +62,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// Login with email and password
-  Future<bool> login(String email, String password) async {
+  /// Login with username/email and password
+  Future<bool> login(String loginOrEmail, String password) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
       final response = await _apiClient.login(
-        LoginRequest(email: email, password: password),
+        LoginRequest(loginOrEmail: loginOrEmail, password: password),
       );
 
       // Save tokens
@@ -100,9 +100,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Register new user
   Future<bool> register({
     required String email,
+    required String username,
     required String password,
-    String? username,
-    String? fullName,
+    String? firstName,
+    String? lastName,
   }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
@@ -110,9 +111,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final response = await _apiClient.register(
         RegisterRequest(
           email: email,
-          password: password,
           username: username,
-          fullName: fullName,
+          password: password,
+          firstName: firstName,
+          lastName: lastName,
         ),
       );
 
