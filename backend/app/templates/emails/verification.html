@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтвердите регистрацию</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 28px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .content p {
+            margin: 15px 0;
+            font-size: 16px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 40px;
+            background-color: #3498db;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .info-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid: #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            margin: 0;
+            font-size: 14px;
+            color: #555;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            color: #777;
+            font-size: 14px;
+        }
+        .footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Подтвердите регистрацию</h1>
+        </div>
+
+        <div class="content">
+            <p>Здравствуйте, <strong>{{ username }}</strong>!</p>
+
+            <p>Спасибо за регистрацию в системе исламских аудио-уроков Muwahhid.</p>
+
+            <p>Для завершения регистрации и активации вашей учётной записи, пожалуйста, подтвердите ваш email-адрес, нажав на кнопку ниже:</p>
+        </div>
+
+        <div class="button-container">
+            <a href="{{ verification_url }}" class="button">Подтвердить email</a>
+        </div>
+
+        <div class="info-box">
+            <p><strong>Обратите внимание:</strong></p>
+            <p>• Эта ссылка действительна в течение 30 дней</p>
+            <p>• Если кнопка не работает, скопируйте и вставьте эту ссылку в браузер:</p>
+            <p style="word-break: break-all; margin-top: 10px;"><a href="{{ verification_url }}">{{ verification_url }}</a></p>
+        </div>
+
+        <div class="content">
+            <p>Если вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.</p>
+        </div>
+
+        <div class="footer">
+            <p>С уважением,<br>
+            Команда Muwahhid</p>
+            <p><a href="{{ frontend_url }}">{{ frontend_url }}</a></p>
+        </div>
+    </div>
+</body>
+</html>

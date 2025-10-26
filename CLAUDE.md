@@ -100,7 +100,42 @@ Key relationships:
 - Content: `/api/themes`, `/api/books`, `/api/book-authors`
 - Lessons: `/api/teachers`, `/api/series`, `/api/lessons`
 - Audio: `/api/lessons/{id}/audio` - streaming with Range request support
-- Admin: `/api/migration/*` - migration utilities
+- Admin: `/api/migration/*` - migration utilities, `/api/statistics` - admin dashboard statistics
+- Tests: `/api/tests` - tests and questions for lesson series (one test per series)
+
+**Pagination Architecture:**
+
+All list API endpoints support pagination with a consistent pattern:
+
+Backend:
+- All CRUD modules have `count_*()` methods using `func.count()`
+- All `get_all_*()` methods accept `skip` and `limit` parameters
+- Endpoints return: `{"items": [...], "total": X, "skip": Y, "limit": Z}`
+- Query parameters: `skip` (offset, default 0), `limit` (max records, default 100)
+
+Example CRUD pattern:
+```python
+async def count_themes(db, search=None, include_inactive=False) -> int:
+    query = select(func.count(Theme.id))
+    # Apply filters
+    return await db.scalar(query)
+
+async def get_all_themes(db, search=None, include_inactive=False, skip=0, limit=100):
+    query = select(Theme)
+    # Apply filters
+    query = query.offset(skip).limit(limit)
+    return await db.scalars(query)
+```
+
+Frontend:
+- Generic `PaginatedResponse<T>` model in `lib/data/models/paginated_response.dart`
+- Retrofit API client returns `Future<PaginatedResponse<Model>>`
+- Providers extract `.items` from paginated response
+- Admin screens use direct Dio calls with pagination state management
+
+**Business Rules:**
+- Tests table has UNIQUE constraint on `series_id` (one test per series)
+- Lesson model uses `audio_path` field (NOT `audio_file_path`)
 
 ### Testing Backend
 
@@ -134,6 +169,9 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 # Run on connected device/emulator
 flutter run
+
+# Run on Chrome (web) with custom port
+flutter run -d chrome --web-port=3064
 
 # Build APK
 flutter build apk --release
@@ -178,6 +216,36 @@ The app includes an admin panel (`/admin` route) for managing:
 - Books and Book Authors
 - Teachers
 - Lesson Series
+- Tests
+
+**Admin Management Screens Pattern:**
+Admin screens (`lib/presentation/screens/admin/*_management_screen.dart`) follow a consistent pattern:
+- Use direct Dio API calls instead of Riverpod providers
+- Local state management with StatefulWidget
+- Pagination state: `_currentPage`, `_totalItems`, `_itemsPerPage = 10`
+- Standard features: search, add, edit, delete, toggle active status
+- Pagination UI at bottom with page navigation controls
+
+Example pagination implementation:
+```dart
+int _currentPage = 0;
+int _totalItems = 0;
+final int _itemsPerPage = 10;
+
+Future<void> _loadItems({bool resetPage = false}) async {
+  final dio = DioProvider.getDio();
+  final response = await dio.get('/endpoint', queryParameters: {
+    'include_inactive': true,
+    'skip': _currentPage * _itemsPerPage,
+    'limit': _itemsPerPage,
+  });
+  final data = response.data as Map<String, dynamic>;
+  setState(() {
+    _items = (data['items'] as List).map((e) => Model.fromJson(e)).toList();
+    _totalItems = data['total'] as int;
+  });
+}
+```
 
 ### Code Generation
 
@@ -256,3 +324,46 @@ Backend includes utility scripts in the root:
 ## Audio Files
 
 Audio lessons are stored in `backend/audio_files/` and served via streaming endpoint with Range request support for seeking.
+
+## Troubleshooting
+
+### Backend Issues
+
+**Database not creating:**
+```bash
+docker-compose down -v  # Remove volumes
+docker-compose up -d    # Recreate
+```
+
+**Alembic not detecting changes:**
+```bash
+# Ensure models are imported in app/models/__init__.py
+docker-compose restart api
+docker-compose exec api alembic revision --autogenerate -m "Description"
+```
+
+**500 errors on API endpoints:**
+- Check field names match model definitions (e.g., `Lesson.audio_path` not `audio_file_path`)
+- Verify migrations are applied: `docker-compose exec api alembic current`
+- Check API logs: `docker-compose logs -f api`
+
+### Frontend Issues
+
+**Code generation errors:**
+```bash
+# Clean generated files and rebuild
+cd mobile_app
+flutter clean
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+**Type mismatch errors with API responses:**
+- Verify API returns paginated format: `{"items": [], "total": 0, "skip": 0, "limit": 100}`
+- Check Retrofit client returns `PaginatedResponse<Model>`
+- Ensure providers extract `.items` from response
+
+**Admin screens not loading data:**
+- Verify user has admin role (level >= 2)
+- Check `include_inactive: true` is set in query parameters
+- Verify pagination parameters are correct: `skip = page * itemsPerPage`

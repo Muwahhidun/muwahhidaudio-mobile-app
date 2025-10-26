@@ -2,7 +2,7 @@
 User and Role models.
 Handles authentication and authorization.
 """
-from sqlalchemy import Column, Integer, String, Boolean, BigInteger, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, BigInteger, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from app.database import Base
 from app.models.base import TimestampMixin
@@ -32,10 +32,14 @@ class User(Base, TimestampMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     first_name = Column(String(255), nullable=True)
     last_name = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
+    email_verified = Column(Boolean, default=False, nullable=False)
+    verification_token = Column(String(255), nullable=True)
+    verification_token_expires = Column(DateTime, nullable=True)
     role_id = Column(Integer, ForeignKey("roles.id"), default=3, nullable=False)  # Default: User role
 
     # Relationships

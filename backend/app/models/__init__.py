@@ -8,6 +8,7 @@ from app.models.lesson import LessonTeacher, LessonSeries, Lesson
 from app.models.test import Test, TestQuestion, TestAttempt
 from app.models.bookmark import Bookmark
 from app.models.feedback import Feedback
+from app.models.system_settings import SystemSettings
 
 __all__ = [
     # User models
@@ -28,4 +29,6 @@ __all__ = [
     # Other models
     "Bookmark",
     "Feedback",
+    # System models
+    "SystemSettings",
 ]

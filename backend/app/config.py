@@ -47,6 +47,20 @@ class Settings(BaseSettings):
     CACHE_TTL_SERIES: int = 1800  # 30 minutes
     CACHE_TTL_LESSONS: int = 1800  # 30 minutes
 
+    # Email & SMTP (fallback if not in database)
+    SMTP_HOST: str = "smtp.mail.ru"
+    SMTP_PORT: int = 465
+    SMTP_USERNAME: str = "x@muwahhid.ru"
+    SMTP_PASSWORD: str = "tv4RAYKDrZFtgmMEd5oS"
+    SMTP_USE_SSL: bool = True
+    EMAIL_FROM_NAME: str = "Muwahhid"
+    EMAIL_FROM_ADDRESS: str = "x@muwahhid.ru"
+    FRONTEND_URL: str = "http://localhost:3065"
+
+    # Encryption key for sensitive data (32 url-safe base64-encoded bytes)
+    # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    SETTINGS_ENCRYPTION_KEY: str = ""  # Will auto-generate if empty (dev only)
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
