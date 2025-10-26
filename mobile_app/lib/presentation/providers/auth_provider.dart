@@ -1,9 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dio/dio.dart';
 import '../../config/app_constants.dart';
 import '../../data/models/user.dart';
 import '../../data/api/api_client.dart';
 import '../../data/api/dio_provider.dart';
+
+/// Helper function to extract error message from exception
+String _getErrorMessage(dynamic error) {
+  if (error is DioException) {
+    // Try to get error message from response
+    if (error.response?.data != null) {
+      final data = error.response!.data;
+      if (data is Map && data['detail'] != null) {
+        return data['detail'].toString();
+      }
+    }
+    // Fallback to generic message based on status code
+    if (error.response?.statusCode == 401) {
+      return 'Неверный логин или пароль';
+    } else if (error.response?.statusCode == 403) {
+      return 'Доступ запрещен. Проверьте подтверждение email.';
+    }
+    return error.message ?? 'Ошибка соединения';
+  }
+  return error.toString();
+}
 
 /// Auth state
 class AuthState {
@@ -91,7 +113,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: _getErrorMessage(e),
       );
       return false;
     }
@@ -138,7 +160,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: _getErrorMessage(e),
       );
       return false;
     }
