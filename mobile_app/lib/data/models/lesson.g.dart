@@ -138,6 +138,7 @@ Lesson _$LessonFromJson(Map<String, dynamic> json) => Lesson(
       tagsList: (json['tags_list'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      waveformData: json['waveform_data'] as String?,
       isActive: json['is_active'] as bool?,
       seriesId: (json['series_id'] as num?)?.toInt(),
       teacherId: (json['teacher_id'] as num?)?.toInt(),
@@ -169,6 +170,7 @@ Map<String, dynamic> _$LessonToJson(Lesson instance) => <String, dynamic>{
       'description': instance.description,
       'tags': instance.tags,
       'tags_list': instance.tagsList,
+      'waveform_data': instance.waveformData,
       'is_active': instance.isActive,
       'series_id': instance.seriesId,
       'teacher_id': instance.teacherId,

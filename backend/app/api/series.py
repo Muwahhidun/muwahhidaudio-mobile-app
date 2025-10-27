@@ -302,7 +302,8 @@ async def get_series_lessons(series_id: int, db: AsyncSession = Depends(get_db))
             display_title=lesson_crud.get_display_title(lsn),
             duration_seconds=lsn.duration_seconds,
             formatted_duration=lesson_crud.format_duration(lsn.duration_seconds),
-            audio_url=lesson_crud.get_audio_url(lsn.id)
+            audio_url=lesson_crud.get_audio_url(lsn.id),
+            waveform_data=lsn.waveform_data
         ))
 
     return result

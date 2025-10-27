@@ -182,6 +182,8 @@ class Lesson {
   final String? tags;
   @JsonKey(name: 'tags_list')
   final List<String>? tagsList;
+  @JsonKey(name: 'waveform_data')
+  final String? waveformData;
   @JsonKey(name: 'is_active')
   final bool? isActive;
   @JsonKey(name: 'series_id')
@@ -209,6 +211,7 @@ class Lesson {
     this.description,
     this.tags,
     this.tagsList,
+    this.waveformData,
     this.isActive,
     this.seriesId,
     this.teacherId,

@@ -1,10 +1,11 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../../data/models/lesson.dart';
 import '../../../config/api_config.dart';
-import 'dart:math' as math;
 
 /// Enhanced Audio Player Screen with modern UI and animations
 class PlayerScreen extends StatefulWidget {
@@ -31,6 +32,12 @@ class _PlayerScreenState extends State<PlayerScreen>
   double _playbackSpeed = 1.0;
   late AnimationController _pulseController;
   late AnimationController _waveController;
+
+  // Smooth interpolation для плавной анимации waveform (60 FPS как у Samsung)
+  Ticker? _smoothTicker;
+  Duration _lastRealPosition = Duration.zero;
+  final ValueNotifier<Duration> _smoothPositionNotifier = ValueNotifier(Duration.zero);
+  DateTime _lastTickTime = DateTime.now();
 
   @override
   void initState() {
@@ -61,9 +68,26 @@ class _PlayerScreenState extends State<PlayerScreen>
 
       _audioPlayer.play();
 
+      // Подписка на playerStateStream для автоплея следующего урока
       _audioPlayer.playerStateStream.listen((state) {
         if (state.processingState == ProcessingState.completed) {
           _playNextLesson();
+        }
+
+        // Управление smooth ticker в зависимости от состояния плеера
+        if (state.playing) {
+          _startSmoothTicker();
+        } else {
+          _stopSmoothTicker();
+        }
+      });
+
+      // Подписка на positionStream для коррекции smooth position
+      _audioPlayer.positionStream.listen((position) {
+        _lastRealPosition = position;
+        // Корректируем smooth position для синхронизации
+        if ((_smoothPositionNotifier.value - position).abs() > const Duration(milliseconds: 200)) {
+          _smoothPositionNotifier.value = position;
         }
       });
     } catch (e) {
@@ -71,6 +95,29 @@ class _PlayerScreenState extends State<PlayerScreen>
         _error = 'Ошибка загрузки аудио: $e';
       });
     }
+  }
+
+  void _startSmoothTicker() {
+    if (_smoothTicker != null && _smoothTicker!.isActive) return;
+
+    _smoothTicker = createTicker(_onTick);
+    _lastTickTime = DateTime.now();
+    _smoothTicker!.start();
+  }
+
+  void _stopSmoothTicker() {
+    _smoothTicker?.stop();
+    _smoothTicker?.dispose();
+    _smoothTicker = null;
+  }
+
+  void _onTick(Duration elapsed) {
+    final now = DateTime.now();
+    final delta = now.difference(_lastTickTime);
+    _lastTickTime = now;
+
+    // Интерполируем позицию: добавляем время с учетом playback speed
+    _smoothPositionNotifier.value += delta * _playbackSpeed;
   }
 
   void _playNextLesson() {
@@ -112,8 +159,81 @@ class _PlayerScreenState extends State<PlayerScreen>
     _audioPlayer.setSpeed(speed);
   }
 
+  void _showSpeedMenu(BuildContext context) {
+    final RenderBox button = context.findRenderObject() as RenderBox;
+    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
+    final RelativeRect position = RelativeRect.fromRect(
+      Rect.fromPoints(
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
+      ),
+      Offset.zero & overlay.size,
+    );
+
+    showMenu<double>(
+      context: context,
+      position: position,
+      color: Colors.transparent,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      items: [0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
+        return PopupMenuItem<double>(
+          value: speed,
+          padding: EdgeInsets.zero,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                width: 80,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: 0.35),
+                      Colors.white.withValues(alpha: 0.15),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${speed}x',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                    if (_playbackSpeed == speed)
+                      Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Colors.green.shade700,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    ).then((speed) {
+      if (speed != null) {
+        _changeSpeed(speed);
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _stopSmoothTicker();
+    _smoothPositionNotifier.dispose();
     _pulseController.dispose();
     _waveController.dispose();
     _audioPlayer.dispose();
@@ -133,6 +253,25 @@ class _PlayerScreenState extends State<PlayerScreen>
     return '$minutes:${twoDigits(seconds)}';
   }
 
+  /// Формирует breadcrumbs с заменой последнего элемента на "Урок X из Y"
+  List<String> _getBreadcrumbsWithLesson() {
+    if (widget.breadcrumbs.isEmpty || widget.playlist.isEmpty) {
+      return widget.breadcrumbs;
+    }
+
+    // Берем все элементы кроме последнего
+    final breadcrumbsWithoutLast = widget.breadcrumbs.sublist(0, widget.breadcrumbs.length - 1);
+
+    // Добавляем "Урок X из Y" как последний элемент
+    final lessonNumber = widget.playlist.indexOf(widget.lesson) + 1;
+    final totalLessons = widget.playlist.length;
+
+    return [
+      ...breadcrumbsWithoutLast,
+      'Урок $lessonNumber из $totalLessons',
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,9 +281,9 @@ class _PlayerScreenState extends State<PlayerScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.green.shade50,
               Colors.green.shade100,
-              Colors.teal.shade50,
+              Colors.green.shade200,
+              Colors.teal.shade100,
             ],
           ),
         ),
@@ -173,12 +312,12 @@ class _PlayerScreenState extends State<PlayerScreen>
                 ),
               ),
 
-              // Breadcrumbs
+              // Breadcrumbs with lesson info
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Breadcrumbs(
-                  path: widget.breadcrumbs,
+                  path: _getBreadcrumbsWithLesson(),
                 ),
               ),
 
@@ -231,20 +370,6 @@ class _PlayerScreenState extends State<PlayerScreen>
           _buildAudioVisualizer(),
           const SizedBox(height: 32),
 
-          // Lesson title
-          Text(
-            widget.lesson.displayTitle ??
-                widget.lesson.title ??
-                'Урок ${widget.lesson.lessonNumber}',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-
           // Lesson info
           if (widget.lesson.teacher != null)
             Container(
@@ -270,14 +395,6 @@ class _PlayerScreenState extends State<PlayerScreen>
 
           // Playback controls
           _buildPlaybackControls(),
-          const SizedBox(height: 32),
-
-          // Playback speed control
-          _buildSpeedControl(),
-          const SizedBox(height: 24),
-
-          // Playlist info
-          if (widget.playlist.isNotEmpty) _buildPlaylistInfo(),
         ],
       ),
     );
@@ -359,13 +476,33 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                   ),
                   child: isPlaying
-                      ? AnimatedBuilder(
-                          animation: _waveController,
-                          builder: (context, child) {
+                      ? ValueListenableBuilder<Duration>(
+                          valueListenable: _smoothPositionNotifier,
+                          builder: (context, smoothPosition, child) {
+                            // Используем smooth position для плавной анимации (60 FPS)
+                            final duration = _audioPlayer.duration ?? Duration.zero;
+                            final progress = duration.inMilliseconds > 0
+                                ? smoothPosition.inMilliseconds / duration.inMilliseconds
+                                : 0.0;
+
+                            // Parse waveform data from lesson
+                            List<int>? waveformData;
+                            if (widget.lesson.waveformData != null) {
+                              try {
+                                final parsed = jsonDecode(widget.lesson.waveformData!);
+                                if (parsed is List) {
+                                  waveformData = parsed.cast<int>();
+                                }
+                              } catch (e) {
+                                // If parsing fails, waveformData remains null
+                              }
+                            }
+
                             return CustomPaint(
                               painter: WaveformPainter(
-                                animation: _waveController.value,
+                                waveformData: waveformData,
                                 isPlaying: isPlaying,
+                                progress: progress,
                               ),
                               size: const Size(260, 260),
                             );
@@ -458,6 +595,47 @@ class _PlayerScreenState extends State<PlayerScreen>
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             color: Colors.green.shade800,
+                          ),
+                        ),
+                        // Speed control button with glassmorphism
+                        GestureDetector(
+                          onTap: () => _showSpeedMenu(context),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Colors.white.withValues(alpha: 0.4),
+                                      Colors.white.withValues(alpha: 0.2),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.speed, size: 14, color: Colors.green.shade800),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${_playbackSpeed}x',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        color: Colors.green.shade800,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -645,162 +823,81 @@ class _PlayerScreenState extends State<PlayerScreen>
     );
   }
 
-  Widget _buildSpeedControl() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.3),
-                Colors.white.withValues(alpha: 0.1),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Скорость воспроизведения',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                  Text(
-                    '${_playbackSpeed}x',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade700,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                children: [0.75, 1.0, 1.25, 1.5, 2.0].map((speed) {
-                  return ChoiceChip(
-                    label: Text('${speed}x'),
-                    selected: _playbackSpeed == speed,
-                    selectedColor: Colors.green.shade600,
-                    backgroundColor: Colors.white.withValues(alpha: 0.7),
-                    labelStyle: TextStyle(
-                      color: _playbackSpeed == speed
-                          ? Colors.white
-                          : Colors.green.shade800,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (selected) {
-                      if (selected) {
-                        _changeSpeed(speed);
-                      }
-                    },
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPlaylistInfo() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(15),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.3),
-                Colors.white.withValues(alpha: 0.1),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              Text(
-                'Плейлист',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Урок ${widget.playlist.indexOf(widget.lesson) + 1} из ${widget.playlist.length}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.green.shade700,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
-/// Custom painter for animated waveform visualization
+/// Custom painter for real waveform visualization
 class WaveformPainter extends CustomPainter {
-  final double animation;
+  final List<int>? waveformData;
   final bool isPlaying;
+  final double progress; // Playback progress (0.0 to 1.0)
 
   WaveformPainter({
-    required this.animation,
+    this.waveformData,
     required this.isPlaying,
+    this.progress = 0.0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (!isPlaying) return;
+    if (!isPlaying || waveformData == null || waveformData!.isEmpty) return;
 
     final paint = Paint()
       ..style = PaintingStyle.fill
       ..strokeWidth = 2;
 
     final centerY = size.height / 2;
-    final barCount = 30;
-    final barWidth = size.width / (barCount * 2);
-    final spacing = barWidth;
+    final totalPoints = waveformData!.length;
 
-    for (int i = 0; i < barCount; i++) {
-      final x = (i * (barWidth + spacing)) + spacing;
+    // ОКНО ВОЛНЫ: показываем только 100 точек вокруг текущей позиции
+    const windowSize = 100;
 
-      // Create varied heights using sine waves (reduced amplitude)
-      final heightFactor = (math.sin((i / barCount) * math.pi * 2 + animation * math.pi * 2) + 1) / 2;
-      final height = 30 + (heightFactor * 40);
+    // Вычисляем центр окна (текущая позиция)
+    final centerIndex = (progress * totalPoints).floor();
 
-      // Gradient color based on position
-      final colorValue = (i / barCount);
-      paint.color = Color.lerp(
-        Colors.green.shade400,
-        Colors.green.shade700,
-        colorValue,
-      )!.withValues(alpha: 0.7);
+    // Определяем границы окна
+    int startIndex = (centerIndex - windowSize ~/ 2).clamp(0, totalPoints - windowSize);
+    int endIndex = (startIndex + windowSize).clamp(windowSize, totalPoints);
+
+    // Корректируем если дошли до конца
+    if (endIndex == totalPoints) {
+      startIndex = totalPoints - windowSize;
+    }
+
+    // Извлекаем только видимую часть waveform
+    final visibleWaveform = waveformData!.sublist(startIndex, endIndex);
+    final visibleCount = visibleWaveform.length;
+
+    // Теперь рисуем только видимые точки, но на всю ширину контейнера
+    final barWidth = (size.width / visibleCount) * 0.4; // Тонкие бары - 40% пространства
+    final spacing = (size.width / visibleCount) * 0.6;
+
+    for (int i = 0; i < visibleCount; i++) {
+      final x = (i * (barWidth + spacing)) + barWidth / 2;
+
+      // Get amplitude from visible waveform
+      final amplitude = visibleWaveform[i];
+
+      // Увеличиваем высоту: минимум 40px, максимум 200px
+      final height = 40 + (amplitude / 100) * 160;
+
+      // Определяем глобальный индекс для правильной подсветки
+      final globalIndex = startIndex + i;
+
+      // Color based on playback position (сравниваем с глобальным индексом)
+      // Already played: darker green, current: bright green, upcoming: light green
+      Color barColor;
+      if (globalIndex < centerIndex) {
+        // Already played - darker green
+        barColor = Colors.green.shade800.withValues(alpha: 0.9);
+      } else if (globalIndex == centerIndex) {
+        // Current position - bright accent
+        barColor = Colors.green.shade600;
+      } else {
+        // Not yet played - medium green
+        barColor = Colors.green.shade500.withValues(alpha: 0.7);
+      }
+
+      paint.color = barColor;
 
       // Draw vertical bar
       final rect = RRect.fromRectAndRadius(
@@ -818,6 +915,8 @@ class WaveformPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(WaveformPainter oldDelegate) {
-    return animation != oldDelegate.animation || isPlaying != oldDelegate.isPlaying;
+    return waveformData != oldDelegate.waveformData ||
+        isPlaying != oldDelegate.isPlaying ||
+        progress != oldDelegate.progress;
   }
 }

@@ -5,7 +5,7 @@ import os
 import tempfile
 import shutil
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Query, UploadFile, File, BackgroundTasks
 from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -344,6 +344,7 @@ async def stream_audio(
 @router.post("/{lesson_id}/audio", status_code=status.HTTP_200_OK)
 async def upload_lesson_audio(
     lesson_id: int,
+    background_tasks: BackgroundTasks,
     audio_file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_admin)
@@ -425,8 +426,11 @@ async def upload_lesson_audio(
         )
         updated_lesson = await lesson_crud.update_lesson(db, lesson_id, lesson_update)
 
+        # Schedule waveform generation in background (non-blocking)
+        background_tasks.add_task(generate_waveform_background, lesson_id=lesson_id, samples=100)
+
         return {
-            "message": "Audio uploaded and processed successfully",
+            "message": "Audio uploaded and processed successfully. Waveform generation started in background.",
             "original_path": original_path,
             "processed_path": processed_path,
             "duration_seconds": duration,
@@ -511,6 +515,58 @@ async def delete_lesson_audio(
         )
 
 
+# ============================================
+# Background Task Functions
+# ============================================
+
+async def generate_waveform_background(lesson_id: int, samples: int = 100):
+    """
+    Background task to generate waveform data for a lesson's audio file.
+    This runs asynchronously after audio upload without blocking the response.
+
+    Args:
+        lesson_id: Lesson ID
+        samples: Number of waveform samples to generate (default: 100)
+    """
+    from app.utils.waveform import generate_waveform_json
+    from app.utils.audio import get_audio_file_path
+    from app.crud.lesson import update_lesson
+    from app.schemas.lesson import LessonUpdate
+    from app.database import AsyncSessionLocal
+
+    # Create new database session for background task
+    async with AsyncSessionLocal() as db:
+        try:
+            # Get lesson
+            lesson = await lesson_crud.get_lesson_by_id(db, lesson_id)
+            if not lesson or not lesson.audio_path:
+                print(f"[Waveform BG] Skipping lesson {lesson_id}: No audio file")
+                return
+
+            # Get audio file path
+            audio_path = get_audio_file_path(audio_path=lesson.audio_path, lesson_id=lesson_id)
+            if not audio_path:
+                print(f"[Waveform BG] Audio file not found for lesson {lesson_id}: {lesson.audio_path}")
+                return
+
+            # Generate waveform data
+            print(f"[Waveform BG] Generating waveform for lesson {lesson_id}...")
+            waveform_json = generate_waveform_json(audio_path, samples=samples)
+
+            # Update lesson with waveform data
+            lesson_update = LessonUpdate(waveform_data=waveform_json)
+            await update_lesson(db, lesson_id, lesson_update)
+
+            print(f"[Waveform BG] Successfully generated waveform for lesson {lesson_id}")
+
+        except Exception as e:
+            print(f"[Waveform BG] Error generating waveform for lesson {lesson_id}: {str(e)}")
+
+
+# ============================================
+# Waveform Generation Endpoints
+# ============================================
+
 @router.post("/{lesson_id}/generate-waveform", status_code=status.HTTP_200_OK)
 async def generate_lesson_waveform(
     lesson_id: int,
@@ -576,3 +632,60 @@ async def generate_lesson_waveform(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error generating waveform: {str(e)}"
         )
+
+
+@router.post("/generate-all-waveforms", status_code=status.HTTP_202_ACCEPTED)
+async def generate_all_waveforms(
+    background_tasks: BackgroundTasks,
+    samples: int = Query(100, ge=50, le=500, description="Number of waveform samples"),
+    regenerate: bool = Query(False, description="Regenerate even if waveform already exists"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """
+    Generate waveforms for all lessons with audio files (Admin only).
+
+    This endpoint starts background tasks to generate waveforms for all lessons.
+    Returns immediately with a count of lessons that will be processed.
+
+    Args:
+        samples: Number of waveform samples to generate (default: 100)
+        regenerate: If True, regenerate waveforms even if they already exist
+
+    Returns:
+        Dictionary with count of lessons to be processed
+    """
+    from sqlalchemy import select, and_
+    from app.models import Lesson
+
+    # Build query to find lessons that need waveform generation
+    query = select(Lesson).where(
+        and_(
+            Lesson.audio_path.isnot(None),
+            Lesson.audio_path != ''
+        )
+    )
+
+    # If not regenerating, only get lessons without waveform
+    if not regenerate:
+        query = query.where(
+            Lesson.waveform_data.is_(None)
+        )
+
+    result = await db.execute(query)
+    lessons = result.scalars().all()
+
+    # Schedule background task for each lesson
+    for lesson in lessons:
+        background_tasks.add_task(
+            generate_waveform_background,
+            lesson_id=lesson.id,
+            samples=samples
+        )
+
+    return {
+        "message": f"Waveform generation started for {len(lessons)} lessons",
+        "lessons_count": len(lessons),
+        "samples": samples,
+        "regenerate": regenerate
+    }
