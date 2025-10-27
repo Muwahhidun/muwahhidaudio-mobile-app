@@ -10,6 +10,7 @@ import '../models/lesson.dart';
 import '../models/paginated_response.dart';
 import '../models/system_settings.dart';
 import '../models/feedback.dart';
+import '../models/bookmark.dart';
 
 part 'api_client.g.dart';
 
@@ -271,4 +272,32 @@ abstract class ApiClient {
   Future<void> deleteFeedback(
     @Path('id') int id,
   );
+
+  // Bookmarks endpoints
+  @GET('/bookmarks/series')
+  Future<PaginatedResponse<SeriesWithBookmarks>> getBookmarkedSeries({
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
+  });
+
+  @GET('/bookmarks/series/{seriesId}')
+  Future<List<Bookmark>> getSeriesBookmarks(@Path('seriesId') int seriesId);
+
+  @GET('/bookmarks/check/{lessonId}')
+  Future<Bookmark?> checkBookmark(@Path('lessonId') int lessonId);
+
+  @POST('/bookmarks')
+  Future<Bookmark> createBookmark(@Body() BookmarkCreateRequest request);
+
+  @PUT('/bookmarks/{id}')
+  Future<Bookmark> updateBookmark(
+    @Path('id') int id,
+    @Body() BookmarkUpdateRequest request,
+  );
+
+  @DELETE('/bookmarks/{id}')
+  Future<void> deleteBookmark(@Path('id') int id);
+
+  @POST('/bookmarks/toggle')
+  Future<BookmarkToggleResponse> toggleBookmark(@Body() BookmarkCreateRequest request);
 }

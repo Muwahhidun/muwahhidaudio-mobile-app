@@ -28,6 +28,9 @@ import 'presentation/screens/themes/themes_screen.dart';
 // Global audio handler instance
 late AudioHandler audioHandler;
 
+// Global route observer for tracking navigation
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -62,6 +65,7 @@ class MyApp extends ConsumerWidget {
       title: 'Islamic Audio Lessons',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [routeObserver],
       home: authState.isAuthenticated ? const HomeScreen() : const LoginScreen(),
       onGenerateRoute: (settings) {
         // Handle /email-verified?token=xxx route

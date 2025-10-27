@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/mini_player.dart';
 import '../library/library_screen.dart';
+import '../bookmarks/bookmarks_screen.dart';
 import '../feedback/feedback_list_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -61,8 +62,10 @@ class HomeScreen extends ConsumerWidget {
               subtitle: 'Избранные уроки',
               color: Colors.orange,
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Скоро...')),
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const BookmarksScreen(),
+                  ),
                 );
               },
             ),

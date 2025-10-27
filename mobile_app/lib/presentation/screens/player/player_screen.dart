@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:just_audio/just_audio.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../../data/models/lesson.dart';
+import '../../../data/models/bookmark.dart';
+import '../../../data/api/dio_provider.dart';
 import '../../../main.dart' as app;
 import '../../../core/audio/audio_handler.dart';
 import '../../../core/audio/audio_service_web.dart';
@@ -33,6 +35,10 @@ class _PlayerScreenState extends State<PlayerScreen>
   double _playbackSpeed = 1.0;
   late AnimationController _pulseController;
 
+  // Bookmark state
+  Bookmark? _bookmark;
+  bool _loadingBookmark = false;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +48,77 @@ class _PlayerScreenState extends State<PlayerScreen>
     )..repeat(reverse: true);
 
     _initializePlayer();
+    _loadBookmark();
+  }
+
+  Future<void> _loadBookmark() async {
+    setState(() {
+      _loadingBookmark = true;
+    });
+
+    try {
+      final dio = DioProvider.getDio();
+      final response = await dio.get('/bookmarks/check/${widget.lesson.id}');
+
+      if (response.data != null) {
+        setState(() {
+          _bookmark = Bookmark.fromJson(response.data as Map<String, dynamic>);
+          _loadingBookmark = false;
+        });
+      } else {
+        setState(() {
+          _bookmark = null;
+          _loadingBookmark = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _loadingBookmark = false;
+      });
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    try {
+      final dio = DioProvider.getDio();
+      final response = await dio.post(
+        '/bookmarks/toggle',
+        data: {
+          'lesson_id': widget.lesson.id,
+          'custom_name': null,
+        },
+      );
+
+      final data = response.data as Map<String, dynamic>;
+      final action = data['action'] as String;
+
+      setState(() {
+        if (action == 'added') {
+          _bookmark = Bookmark.fromJson(data['bookmark'] as Map<String, dynamic>);
+        } else {
+          _bookmark = null;
+        }
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              action == 'added'
+                  ? 'Добавлено в закладки'
+                  : 'Удалено из закладок',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _initializePlayer() async {
@@ -430,19 +507,40 @@ class _PlayerScreenState extends State<PlayerScreen>
       title = '${widget.lesson.book!.name} - Урок ${widget.lesson.lessonNumber}';
     }
 
+    final isBookmarked = _bookmark != null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
-          // Lesson title with book name - large and bold
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.green.shade900,
-            ),
-            textAlign: TextAlign.center,
+          // Lesson title with book name and bookmark star
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Lesson title - large and bold
+              Flexible(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade900,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Bookmark star button
+              IconButton(
+                icon: Icon(
+                  isBookmarked ? Icons.star : Icons.star_border,
+                  color: isBookmarked ? Colors.amber : Colors.grey[600],
+                  size: 32,
+                ),
+                onPressed: _loadingBookmark ? null : _toggleBookmark,
+                tooltip: isBookmarked ? 'Удалить из закладок' : 'Добавить в закладки',
+              ),
+            ],
           ),
           const SizedBox(height: 8),
 
@@ -709,6 +807,10 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         lesson: widget.lesson,
                                         playlist: widget.playlist,
                                       );
+                                      // Force UI update after starting playback
+                                      if (mounted) {
+                                        setState(() {});
+                                      }
                                     } else {
                                       // Same lesson - just toggle play/pause
                                       if (isPlaying) {

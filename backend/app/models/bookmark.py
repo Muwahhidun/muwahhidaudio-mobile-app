@@ -16,7 +16,7 @@ class Bookmark(Base, TimestampMixin):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     lesson_id = Column(Integer, ForeignKey("lessons.id", ondelete="CASCADE"), nullable=False, index=True)
-    custom_name = Column(String(200), nullable=False)
+    custom_name = Column(String(200), nullable=True)
 
     # Unique constraint: one bookmark per user/lesson
     __table_args__ = (

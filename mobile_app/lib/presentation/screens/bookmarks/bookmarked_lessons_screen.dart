@@ -2,28 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../data/models/bookmark.dart';
+import '../../../data/models/lesson.dart';
 import '../../providers/lessons_provider.dart';
-import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
 import '../player/player_screen.dart';
 import '../../../main.dart';
 
-/// Universal screen for showing lessons in a series
-class LessonsScreen extends ConsumerStatefulWidget {
-  final List<String> breadcrumbs;
+/// Screen showing all lessons in a series with bookmark indicators
+class BookmarkedLessonsScreen extends ConsumerStatefulWidget {
   final int seriesId;
+  final String seriesName;
 
-  const LessonsScreen({
+  const BookmarkedLessonsScreen({
     super.key,
-    required this.breadcrumbs,
     required this.seriesId,
+    required this.seriesName,
   });
 
   @override
-  ConsumerState<LessonsScreen> createState() => _LessonsScreenState();
+  ConsumerState<BookmarkedLessonsScreen> createState() =>
+      _BookmarkedLessonsScreenState();
 }
 
-class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
+class _BookmarkedLessonsScreenState
+    extends ConsumerState<BookmarkedLessonsScreen> with RouteAware {
   // Map of lesson_id -> bookmark for quick lookup
   Map<int, Bookmark> _bookmarksMap = {};
   bool _loadingBookmarks = false;
@@ -79,11 +81,15 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
       setState(() {
         _loadingBookmarks = false;
       });
-      // Silently fail - bookmarks are not critical
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка загрузки закладок: $e')),
+        );
+      }
     }
   }
 
-  Future<void> _toggleBookmark(lesson) async {
+  Future<void> _toggleBookmark(Lesson lesson) async {
     try {
       final dio = DioProvider.getDio();
       final response = await dio.post(
@@ -137,13 +143,26 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
       ),
       body: Column(
         children: [
-          // Breadcrumbs
+          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Breadcrumbs(
-              path: widget.breadcrumbs,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.seriesName,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Нажмите на звездочку чтобы добавить/удалить из закладок',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                ),
+              ],
             ),
           ),
 
@@ -158,7 +177,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
   }
 
   Widget _buildLessonsList(LessonsState state) {
-    if (state.isLoading) {
+    if (state.isLoading || _loadingBookmarks) {
       return const Center(child: CircularProgressIndicator());
     }
 
@@ -174,6 +193,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
             ElevatedButton(
               onPressed: () {
                 ref.read(lessonsProvider.notifier).refresh();
+                _loadBookmarks();
               },
               child: const Text('Повторить'),
             ),
@@ -266,12 +286,16 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                   MaterialPageRoute(
                     builder: (context) => PlayerScreen(
                       lesson: lesson,
-                      playlist: state.lessons, // Pass all lessons as playlist
-                      breadcrumbs: [...widget.breadcrumbs, lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'],
+                      playlist: state.lessons,
+                      breadcrumbs: [
+                        'Закладки',
+                        widget.seriesName,
+                        lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
+                      ],
                     ),
                   ),
                 ).then((_) {
-                  // Reload bookmarks when returning
+                  // Reload bookmarks when returning (might have changed)
                   _loadBookmarks();
                 });
               },

@@ -107,6 +107,13 @@ app.add_middleware(
         "http://localhost:3126",
         "http://localhost:3127",
         "http://localhost:3128",
+        "http://localhost:3129",
+        "http://localhost:3130",
+        "http://localhost:3131",
+        "http://localhost:3132",
+        "http://localhost:3133",
+        "http://localhost:3134",
+        "http://localhost:3135",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -135,7 +142,7 @@ async def health_check():
 
 
 # Include API routers
-from app.api import auth, themes, books, book_authors, teachers, series, lessons, tests, statistics, migration, settings as settings_api, users, feedbacks
+from app.api import auth, themes, books, book_authors, teachers, series, lessons, tests, statistics, migration, settings as settings_api, users, feedbacks, bookmarks
 
 app.include_router(auth.router, prefix=settings.API_V1_PREFIX)
 app.include_router(themes.router, prefix=settings.API_V1_PREFIX)
@@ -147,6 +154,7 @@ app.include_router(lessons.router, prefix=settings.API_V1_PREFIX)
 app.include_router(tests.router, prefix=settings.API_V1_PREFIX)
 app.include_router(users.router)
 app.include_router(feedbacks.router, prefix=settings.API_V1_PREFIX)
+app.include_router(bookmarks.router, prefix=settings.API_V1_PREFIX)
 app.include_router(statistics.router, prefix=settings.API_V1_PREFIX)
 app.include_router(migration.router, prefix=settings.API_V1_PREFIX)
 app.include_router(settings_api.router)
