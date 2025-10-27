@@ -228,6 +228,8 @@ class LessonListItem(BaseModel):
     formatted_duration: Optional[str] = None
     audio_url: Optional[str] = None
     waveform_data: Optional[str] = None  # JSON array of waveform amplitude values
+    teacher: Optional[TeacherNested] = None
+    book: Optional[BookNested] = None
 
     class Config:
         from_attributes = True

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:audio_service/audio_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/audio/audio_handler.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/email_verified_screen.dart';
@@ -22,7 +25,25 @@ import 'presentation/screens/admin/users_management_screen.dart';
 import 'presentation/screens/admin/feedbacks_management_screen.dart';
 import 'presentation/screens/themes/themes_screen.dart';
 
-void main() {
+// Global audio handler instance
+late AudioHandler audioHandler;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize audio service on mobile platforms only
+  if (!kIsWeb) {
+    audioHandler = await AudioService.init(
+      builder: () => LessonAudioHandler(),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.muwahhid.audio_app.channel.audio',
+        androidNotificationChannelName: 'Audio Lessons',
+        androidNotificationOngoing: true,
+        androidNotificationIcon: 'mipmap/ic_launcher',
+      ),
+    );
+  }
+
   runApp(
     const ProviderScope(
       child: MyApp(),

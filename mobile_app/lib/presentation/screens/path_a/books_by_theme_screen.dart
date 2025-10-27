@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/books_provider.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../data/models/theme.dart';
 import 'teachers_by_theme_book_screen.dart';
@@ -55,6 +56,7 @@ class _BooksByThemeScreenState extends ConsumerState<BooksByThemeScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

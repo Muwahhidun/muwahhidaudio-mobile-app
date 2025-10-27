@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/user.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/mini_player.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -439,6 +440,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 }

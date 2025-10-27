@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/feedback.dart';
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
+import '../../widgets/mini_player.dart';
 
 class FeedbackCreateScreen extends ConsumerStatefulWidget {
   const FeedbackCreateScreen({super.key});
@@ -177,6 +178,7 @@ class _FeedbackCreateScreenState extends ConsumerState<FeedbackCreateScreen> {
           ],
         ),
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 }

@@ -6,6 +6,7 @@ import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../data/models/user.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/mini_player.dart';
 
 class FeedbackDetailScreen extends ConsumerStatefulWidget {
   final model.Feedback feedback;
@@ -162,6 +163,7 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
           if (!_feedback.isClosed) _buildMessageInput(),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

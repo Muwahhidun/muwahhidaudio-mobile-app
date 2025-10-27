@@ -1,11 +1,12 @@
 import 'dart:ui';
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:just_audio/just_audio.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../../data/models/lesson.dart';
-import '../../../config/api_config.dart';
+import '../../../main.dart' as app;
+import '../../../core/audio/audio_handler.dart';
+import '../../../core/audio/audio_service_web.dart';
 
 /// Enhanced Audio Player Screen with modern UI and animations
 class PlayerScreen extends StatefulWidget {
@@ -25,19 +26,12 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen>
-    with TickerProviderStateMixin {
-  late AudioPlayer _audioPlayer;
+    with SingleTickerProviderStateMixin {
+  AudioPlayer? _audioPlayer;
   bool _isInitialized = false;
   String? _error;
   double _playbackSpeed = 1.0;
   late AnimationController _pulseController;
-  late AnimationController _waveController;
-
-  // Smooth interpolation для плавной анимации waveform (60 FPS как у Samsung)
-  Ticker? _smoothTicker;
-  Duration _lastRealPosition = Duration.zero;
-  final ValueNotifier<Duration> _smoothPositionNotifier = ValueNotifier(Duration.zero);
-  DateTime _lastTickTime = DateTime.now();
 
   @override
   void initState() {
@@ -47,77 +41,65 @@ class _PlayerScreenState extends State<PlayerScreen>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _waveController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 3500),
-    )..repeat();
-
     _initializePlayer();
   }
 
   Future<void> _initializePlayer() async {
-    _audioPlayer = AudioPlayer();
-
     try {
-      final audioUrl = '${ApiConfig.baseUrl}${widget.lesson.audioUrl}';
-      await _audioPlayer.setUrl(audioUrl);
+      if (kIsWeb) {
+        // Web: Use singleton AudioServiceWeb for persistent playback
+        final audioService = AudioServiceWeb();
 
-      setState(() {
-        _isInitialized = true;
-      });
+        // Just connect to the player, don't start playing automatically
+        _audioPlayer = audioService.player;
 
-      _audioPlayer.play();
+        // Update playlist reference in case user navigates to different series
+        audioService.updatePlaylist(widget.playlist);
 
-      // Подписка на playerStateStream для автоплея следующего урока
-      _audioPlayer.playerStateStream.listen((state) {
-        if (state.processingState == ProcessingState.completed) {
-          _playNextLesson();
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
         }
 
-        // Управление smooth ticker в зависимости от состояния плеера
-        if (state.playing) {
-          _startSmoothTicker();
-        } else {
-          _stopSmoothTicker();
-        }
-      });
+        // Set callback for auto-play next when lesson completes
+        audioService.onLessonCompleted = () {
+          // Navigate to next lesson screen
+          if (mounted) {
+            _playNextLesson();
+          }
+        };
+      } else {
+        // Mobile: Use AudioHandler for background playback
+        final handler = app.audioHandler as LessonAudioHandler;
+        await handler.playLesson(
+          lesson: widget.lesson,
+          playlist: widget.playlist,
+        );
 
-      // Подписка на positionStream для коррекции smooth position
-      _audioPlayer.positionStream.listen((position) {
-        _lastRealPosition = position;
-        // Корректируем smooth position для синхронизации
-        if ((_smoothPositionNotifier.value - position).abs() > const Duration(milliseconds: 200)) {
-          _smoothPositionNotifier.value = position;
+        // Get the underlying player for UI updates
+        _audioPlayer = handler.player;
+
+        if (mounted) {
+          setState(() {
+            _isInitialized = true;
+          });
         }
-      });
+
+        // Listen for completion to play next
+        _audioPlayer!.playerStateStream.listen((state) {
+          if (mounted && state.processingState == ProcessingState.completed) {
+            _playNextLesson();
+          }
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Ошибка загрузки аудио: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Ошибка загрузки аудио: $e';
+        });
+      }
     }
-  }
-
-  void _startSmoothTicker() {
-    if (_smoothTicker != null && _smoothTicker!.isActive) return;
-
-    _smoothTicker = createTicker(_onTick);
-    _lastTickTime = DateTime.now();
-    _smoothTicker!.start();
-  }
-
-  void _stopSmoothTicker() {
-    _smoothTicker?.stop();
-    _smoothTicker?.dispose();
-    _smoothTicker = null;
-  }
-
-  void _onTick(Duration elapsed) {
-    final now = DateTime.now();
-    final delta = now.difference(_lastTickTime);
-    _lastTickTime = now;
-
-    // Интерполируем позицию: добавляем время с учетом playback speed
-    _smoothPositionNotifier.value += delta * _playbackSpeed;
   }
 
   void _playNextLesson() {
@@ -152,11 +134,19 @@ class _PlayerScreenState extends State<PlayerScreen>
     }
   }
 
-  void _changeSpeed(double speed) {
+  void _changeSpeed(double speed) async {
     setState(() {
       _playbackSpeed = speed;
     });
-    _audioPlayer.setSpeed(speed);
+
+    if (kIsWeb) {
+      // On web, use AudioServiceWeb
+      await AudioServiceWeb().setSpeed(speed);
+    } else {
+      // On mobile, use AudioHandler which updates both player and notification
+      final handler = app.audioHandler as LessonAudioHandler;
+      await handler.setSpeed(speed);
+    }
   }
 
   void _showSpeedMenu(BuildContext context) {
@@ -232,11 +222,17 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   void dispose() {
-    _stopSmoothTicker();
-    _smoothPositionNotifier.dispose();
     _pulseController.dispose();
-    _waveController.dispose();
-    _audioPlayer.dispose();
+
+    // Clean up based on platform
+    if (kIsWeb) {
+      // Don't dispose the player - AudioServiceWeb keeps it alive for background playback
+      // Only clear the callback
+      AudioServiceWeb().onLessonCompleted = null;
+    }
+    // On mobile, AudioHandler manages the player lifecycle
+    // Don't dispose the player as it's owned by AudioHandler
+
     super.dispose();
   }
 
@@ -318,6 +314,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Breadcrumbs(
                   path: _getBreadcrumbsWithLesson(),
+                  textColor: Colors.green.shade800,
                 ),
               ),
 
@@ -325,7 +322,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               Expanded(
                 child: _error != null
                     ? _buildErrorView()
-                    : !_isInitialized
+                    : (!_isInitialized || _audioPlayer == null)
                         ? const Center(child: CircularProgressIndicator())
                         : _buildPlayerView(),
               ),
@@ -368,26 +365,11 @@ class _PlayerScreenState extends State<PlayerScreen>
 
           // Animated audio visualizer with glassmorphism
           _buildAudioVisualizer(),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
 
-          // Lesson info
-          if (widget.lesson.teacher != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Лектор: ${widget.lesson.teacher!.name}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.green.shade800,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          const SizedBox(height: 32),
+          // Track info (lesson name, teacher, series)
+          _buildTrackInfo(),
+          const SizedBox(height: 24),
 
           // Progress bar with glassmorphism
           _buildProgressBar(),
@@ -401,136 +383,97 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Widget _buildAudioVisualizer() {
-    return StreamBuilder<PlayerState>(
-      stream: _audioPlayer.playerStateStream,
-      builder: (context, snapshot) {
-        final isPlaying = snapshot.data?.playing ?? false;
-
-        return SizedBox(
-          width: 300,
-          height: 300,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-            // Animated pulsating rings when playing
-            if (isPlaying) ...[
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  return Container(
-                    width: 240 + (_pulseController.value * 40),
-                    height: 240 + (_pulseController.value * 40),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.green
-                            .withValues(alpha: 0.3 - (_pulseController.value * 0.3)),
-                        width: 2,
-                      ),
-                    ),
-                  );
-                },
+    return SizedBox(
+      width: 300,
+      height: 300,
+      child: Center(
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withValues(alpha: 0.3),
+                    Colors.white.withValues(alpha: 0.1),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
               ),
-              AnimatedBuilder(
-                animation: _pulseController,
-                builder: (context, child) {
-                  final offset = 0.3;
-                  final value =
-                      ((_pulseController.value + offset) % 1.0);
-                  return Container(
-                    width: 240 + (value * 40),
-                    height: 240 + (value * 40),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.green.withValues(alpha: 0.3 - (value * 0.3)),
-                        width: 2,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-
-            // Main glassmorphism container with wave visualizer
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  width: 260,
-                  height: 260,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.3),
-                        Colors.white.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: isPlaying
-                      ? ValueListenableBuilder<Duration>(
-                          valueListenable: _smoothPositionNotifier,
-                          builder: (context, smoothPosition, child) {
-                            // Используем smooth position для плавной анимации (60 FPS)
-                            final duration = _audioPlayer.duration ?? Duration.zero;
-                            final progress = duration.inMilliseconds > 0
-                                ? smoothPosition.inMilliseconds / duration.inMilliseconds
-                                : 0.0;
-
-                            // Parse waveform data from lesson
-                            List<int>? waveformData;
-                            if (widget.lesson.waveformData != null) {
-                              try {
-                                final parsed = jsonDecode(widget.lesson.waveformData!);
-                                if (parsed is List) {
-                                  waveformData = parsed.cast<int>();
-                                }
-                              } catch (e) {
-                                // If parsing fails, waveformData remains null
-                              }
-                            }
-
-                            return CustomPaint(
-                              painter: WaveformPainter(
-                                waveformData: waveformData,
-                                isPlaying: isPlaying,
-                                progress: progress,
-                              ),
-                              size: const Size(260, 260),
-                            );
-                          },
-                        )
-                      : const Center(
-                          child: Icon(
-                            Icons.headset,
-                            size: 100,
-                            color: Colors.green,
-                          ),
-                        ),
+              child: Center(
+                child: Icon(
+                  Icons.headset,
+                  size: 100,
+                  color: Colors.green.shade800,
                 ),
               ),
             ),
-          ],
+          ),
         ),
-        );
-      },
+      ),
+    );
+  }
+
+  Widget _buildTrackInfo() {
+    // Build title: "Книга - Урок X"
+    String title = 'Урок ${widget.lesson.lessonNumber}';
+    if (widget.lesson.book != null) {
+      title = '${widget.lesson.book!.name} - Урок ${widget.lesson.lessonNumber}';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          // Lesson title with book name - large and bold
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade900,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+
+          // Teacher name only (without "Лектор:")
+          if (widget.lesson.teacher != null)
+            Text(
+              widget.lesson.teacher!.name,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.green.shade800,
+              ),
+              textAlign: TextAlign.center,
+            ),
+        ],
+      ),
     );
   }
 
   Widget _buildProgressBar() {
+    // Check if this lesson is currently playing
+    final isCurrentLesson = kIsWeb
+        ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
+        : true; // On mobile, always show progress
+
     return StreamBuilder<Duration>(
-      stream: _audioPlayer.positionStream,
+      stream: _audioPlayer!.positionStream,
       builder: (context, snapshot) {
-        final position = snapshot.data ?? Duration.zero;
-        final duration = _audioPlayer.duration ?? Duration.zero;
+        // If not current lesson, show static UI
+        final position = isCurrentLesson ? (snapshot.data ?? Duration.zero) : Duration.zero;
+        final duration = isCurrentLesson ? (_audioPlayer!.duration ?? Duration.zero) : (widget.lesson.durationSeconds != null ? Duration(seconds: widget.lesson.durationSeconds!) : Duration.zero);
 
         return ClipRRect(
           borderRadius: BorderRadius.circular(15),
@@ -563,7 +506,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                         overlayRadius: 16,
                       ),
                       activeTrackColor: Colors.green.shade600,
-                      inactiveTrackColor: Colors.grey.shade300,
+                      inactiveTrackColor: Colors.black.withValues(alpha: 0.3),
                       thumbColor: Colors.green.shade700,
                       overlayColor: Colors.green.withValues(alpha: 0.2),
                     ),
@@ -574,7 +517,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                           .toDouble()
                           .clamp(0.0, duration.inSeconds.toDouble()),
                       onChanged: (value) {
-                        _audioPlayer.seek(Duration(seconds: value.toInt()));
+                        _audioPlayer!.seek(Duration(seconds: value.toInt()));
                       },
                     ),
                   ),
@@ -651,11 +594,17 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Widget _buildPlaybackControls() {
+    // Check if this lesson is currently playing
+    final isCurrentLesson = kIsWeb
+        ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
+        : true; // On mobile, always show real state
+
     return StreamBuilder<PlayerState>(
-      stream: _audioPlayer.playerStateStream,
+      stream: _audioPlayer!.playerStateStream,
       builder: (context, snapshot) {
         final playerState = snapshot.data;
-        final isPlaying = playerState?.playing ?? false;
+        // If not current lesson, show paused state
+        final isPlaying = isCurrentLesson ? (playerState?.playing ?? false) : false;
         final processingState = playerState?.processingState;
 
         return Row(
@@ -677,8 +626,8 @@ class _PlayerScreenState extends State<PlayerScreen>
               enabled: true,
               onPressed: () {
                 final newPosition =
-                    _audioPlayer.position - const Duration(seconds: 10);
-                _audioPlayer.seek(
+                    _audioPlayer!.position - const Duration(seconds: 10);
+                _audioPlayer!.seek(
                     newPosition < Duration.zero ? Duration.zero : newPosition);
               },
             ),
@@ -695,10 +644,11 @@ class _PlayerScreenState extends State<PlayerScreen>
                     ),
                   )
                 : StreamBuilder<Duration>(
-                    stream: _audioPlayer.positionStream,
+                    stream: _audioPlayer!.positionStream,
                     builder: (context, snapshot) {
-                      final position = snapshot.data ?? Duration.zero;
-                      final duration = _audioPlayer.duration ?? Duration.zero;
+                      // If not current lesson, show 0 progress
+                      final position = isCurrentLesson ? (snapshot.data ?? Duration.zero) : Duration.zero;
+                      final duration = isCurrentLesson ? (_audioPlayer!.duration ?? Duration.zero) : Duration.zero;
                       final progress = duration.inSeconds > 0
                           ? position.inSeconds / duration.inSeconds
                           : 0.0;
@@ -714,10 +664,10 @@ class _PlayerScreenState extends State<PlayerScreen>
                               height: 72,
                               child: CircularProgressIndicator(
                                 value: progress,
-                                strokeWidth: 3,
-                                backgroundColor: Colors.grey.shade300,
+                                strokeWidth: 5,
+                                backgroundColor: Colors.black.withValues(alpha: 0.5),
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.green.shade600,
+                                  Colors.white,
                                 ),
                               ),
                             ),
@@ -748,11 +698,31 @@ class _PlayerScreenState extends State<PlayerScreen>
                                   isPlaying ? Icons.pause : Icons.play_arrow,
                                   color: Colors.white,
                                 ),
-                                onPressed: () {
-                                  if (isPlaying) {
-                                    _audioPlayer.pause();
+                                onPressed: () async {
+                                  if (kIsWeb) {
+                                    final audioService = AudioServiceWeb();
+
+                                    // Check if we need to switch to a different lesson
+                                    if (audioService.currentLesson?.id != widget.lesson.id) {
+                                      // Different lesson - start playing it
+                                      await audioService.playLesson(
+                                        lesson: widget.lesson,
+                                        playlist: widget.playlist,
+                                      );
+                                    } else {
+                                      // Same lesson - just toggle play/pause
+                                      if (isPlaying) {
+                                        await _audioPlayer!.pause();
+                                      } else {
+                                        await _audioPlayer!.play();
+                                      }
+                                    }
                                   } else {
-                                    _audioPlayer.play();
+                                    if (isPlaying) {
+                                      await _audioPlayer!.pause();
+                                    } else {
+                                      await _audioPlayer!.play();
+                                    }
                                   }
                                 },
                               ),
@@ -770,10 +740,10 @@ class _PlayerScreenState extends State<PlayerScreen>
               size: 40,
               enabled: true,
               onPressed: () {
-                final duration = _audioPlayer.duration ?? Duration.zero;
+                final duration = _audioPlayer!.duration ?? Duration.zero;
                 final newPosition =
-                    _audioPlayer.position + const Duration(seconds: 10);
-                _audioPlayer
+                    _audioPlayer!.position + const Duration(seconds: 10);
+                _audioPlayer!
                     .seek(newPosition > duration ? duration : newPosition);
               },
             ),
@@ -816,107 +786,11 @@ class _PlayerScreenState extends State<PlayerScreen>
         iconSize: size,
         icon: Icon(
           icon,
-          color: enabled ? Colors.green.shade700 : Colors.grey,
+          color: enabled ? Colors.green.shade700 : Colors.black.withValues(alpha: 0.3),
         ),
         onPressed: enabled ? onPressed : null,
       ),
     );
   }
 
-}
-
-/// Custom painter for real waveform visualization
-class WaveformPainter extends CustomPainter {
-  final List<int>? waveformData;
-  final bool isPlaying;
-  final double progress; // Playback progress (0.0 to 1.0)
-
-  WaveformPainter({
-    this.waveformData,
-    required this.isPlaying,
-    this.progress = 0.0,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (!isPlaying || waveformData == null || waveformData!.isEmpty) return;
-
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..strokeWidth = 2;
-
-    final centerY = size.height / 2;
-    final totalPoints = waveformData!.length;
-
-    // ОКНО ВОЛНЫ: показываем только 100 точек вокруг текущей позиции
-    const windowSize = 100;
-
-    // Вычисляем центр окна (текущая позиция)
-    final centerIndex = (progress * totalPoints).floor();
-
-    // Определяем границы окна
-    int startIndex = (centerIndex - windowSize ~/ 2).clamp(0, totalPoints - windowSize);
-    int endIndex = (startIndex + windowSize).clamp(windowSize, totalPoints);
-
-    // Корректируем если дошли до конца
-    if (endIndex == totalPoints) {
-      startIndex = totalPoints - windowSize;
-    }
-
-    // Извлекаем только видимую часть waveform
-    final visibleWaveform = waveformData!.sublist(startIndex, endIndex);
-    final visibleCount = visibleWaveform.length;
-
-    // Теперь рисуем только видимые точки, но на всю ширину контейнера
-    final barWidth = (size.width / visibleCount) * 0.4; // Тонкие бары - 40% пространства
-    final spacing = (size.width / visibleCount) * 0.6;
-
-    for (int i = 0; i < visibleCount; i++) {
-      final x = (i * (barWidth + spacing)) + barWidth / 2;
-
-      // Get amplitude from visible waveform
-      final amplitude = visibleWaveform[i];
-
-      // Увеличиваем высоту: минимум 40px, максимум 200px
-      final height = 40 + (amplitude / 100) * 160;
-
-      // Определяем глобальный индекс для правильной подсветки
-      final globalIndex = startIndex + i;
-
-      // Color based on playback position (сравниваем с глобальным индексом)
-      // Already played: darker green, current: bright green, upcoming: light green
-      Color barColor;
-      if (globalIndex < centerIndex) {
-        // Already played - darker green
-        barColor = Colors.green.shade800.withValues(alpha: 0.9);
-      } else if (globalIndex == centerIndex) {
-        // Current position - bright accent
-        barColor = Colors.green.shade600;
-      } else {
-        // Not yet played - medium green
-        barColor = Colors.green.shade500.withValues(alpha: 0.7);
-      }
-
-      paint.color = barColor;
-
-      // Draw vertical bar
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromCenter(
-          center: Offset(x, centerY),
-          width: barWidth,
-          height: height,
-        ),
-        const Radius.circular(2),
-      );
-
-      canvas.drawRRect(rect, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(WaveformPainter oldDelegate) {
-    return waveformData != oldDelegate.waveformData ||
-        isPlaying != oldDelegate.isPlaying ||
-        progress != oldDelegate.progress;
-  }
 }

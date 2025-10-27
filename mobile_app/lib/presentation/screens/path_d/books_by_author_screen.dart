@@ -4,6 +4,7 @@ import '../../../core/constants/app_icons.dart';
 import '../../../data/models/book_author.dart';
 import '../../providers/books_provider.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 import 'teachers_by_author_book_screen.dart';
 
 class BooksByAuthorScreen extends ConsumerStatefulWidget {
@@ -43,6 +44,7 @@ class _BooksByAuthorScreenState extends ConsumerState<BooksByAuthorScreen> {
           Expanded(child: _buildBody(context, ref, booksState)),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

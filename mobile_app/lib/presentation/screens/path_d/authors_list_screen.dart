@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../providers/book_authors_provider.dart';
+import '../../widgets/mini_player.dart';
 import 'books_by_author_screen.dart';
 
 class AuthorsListScreen extends ConsumerWidget {
@@ -16,6 +17,7 @@ class AuthorsListScreen extends ConsumerWidget {
         title: const Text('Авторы'),
       ),
       body: _buildBody(context, ref, authorsState),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

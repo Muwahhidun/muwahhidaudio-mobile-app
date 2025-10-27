@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/lessons_provider.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 import '../player/player_screen.dart';
 
 /// Universal screen for showing lessons in a series
@@ -55,6 +56,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

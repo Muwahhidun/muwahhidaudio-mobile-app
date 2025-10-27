@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/mini_player.dart';
 import '../library/library_screen.dart';
 import '../feedback/feedback_list_screen.dart';
 import '../profile/profile_screen.dart';
@@ -119,6 +120,7 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 }

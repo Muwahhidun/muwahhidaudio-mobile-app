@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../widgets/mini_player.dart';
 import '../path_a/themes_list_screen.dart';
 import '../path_b/teachers_list_screen.dart';
 import '../path_c/books_list_screen.dart';
@@ -74,6 +75,7 @@ class LibraryScreen extends StatelessWidget {
           ),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 }

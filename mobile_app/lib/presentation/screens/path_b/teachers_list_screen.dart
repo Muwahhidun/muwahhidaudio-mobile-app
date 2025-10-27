@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../providers/teachers_provider.dart';
+import '../../widgets/mini_player.dart';
 import 'themes_by_teacher_screen.dart';
 
 class TeachersListScreen extends ConsumerWidget {
@@ -16,6 +17,7 @@ class TeachersListScreen extends ConsumerWidget {
         title: const Text('Лекторы'),
       ),
       body: _buildBody(context, ref, teachersState),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

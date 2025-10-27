@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../providers/books_provider.dart';
+import '../../widgets/mini_player.dart';
 import 'teachers_by_book_screen.dart';
 
 class BooksListScreen extends ConsumerWidget {
@@ -16,6 +17,7 @@ class BooksListScreen extends ConsumerWidget {
         title: const Text('Книги'),
       ),
       body: _buildBody(context, ref, booksState),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

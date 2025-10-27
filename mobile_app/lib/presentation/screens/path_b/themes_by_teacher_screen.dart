@@ -4,6 +4,7 @@ import '../../../core/constants/app_icons.dart';
 import '../../../data/models/teacher.dart';
 import '../../providers/themes_provider.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 import 'books_by_teacher_theme_screen.dart';
 
 class ThemesByTeacherScreen extends ConsumerStatefulWidget {
@@ -43,6 +44,7 @@ class _ThemesByTeacherScreenState extends ConsumerState<ThemesByTeacherScreen> {
           Expanded(child: _buildBody(context, ref, themesState)),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

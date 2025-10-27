@@ -5,6 +5,7 @@ import '../../../data/models/teacher.dart';
 import '../../../data/models/theme.dart';
 import '../../providers/books_provider.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 import '../series/series_screen.dart';
 
 class BooksByTeacherThemeScreen extends ConsumerStatefulWidget {
@@ -56,6 +57,7 @@ class _BooksByTeacherThemeScreenState extends ConsumerState<BooksByTeacherThemeS
           Expanded(child: _buildBody(context, ref, booksState)),
         ],
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

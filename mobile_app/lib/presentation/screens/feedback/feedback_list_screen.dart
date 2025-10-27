@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../data/models/feedback.dart' as model;
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
+import '../../widgets/mini_player.dart';
 import 'feedback_create_screen.dart';
 import 'feedback_detail_screen.dart';
 
@@ -123,6 +124,7 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Новое обращение'),
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/themes_provider.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../widgets/mini_player.dart';
 import 'books_by_theme_screen.dart';
 
 /// Path A: Step 1 - List of themes
@@ -17,6 +18,7 @@ class ThemesListScreen extends ConsumerWidget {
         title: const Text('Темы'),
       ),
       body: _buildThemesList(context, ref, themesState),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
