@@ -86,10 +86,9 @@ async def get_all_teachers(
     Returns:
         List of LessonTeacher objects
     """
-    query = select(LessonTeacher).distinct()
-
-    # Join with LessonSeries if filtering by book or theme
+    # Use distinct only when joining with other tables
     if book_id is not None or theme_id is not None:
+        query = select(LessonTeacher).distinct()
         query = query.join(LessonSeries, LessonSeries.teacher_id == LessonTeacher.id)
 
         if book_id is not None:
@@ -100,6 +99,9 @@ async def get_all_teachers(
 
         # Filter active series
         query = query.where(LessonSeries.is_active == True)
+    else:
+        # No join needed, simple select
+        query = select(LessonTeacher)
 
     if not include_inactive:
         query = query.where(LessonTeacher.is_active == True)

@@ -57,7 +57,7 @@ class _LessonFormDialogState extends ConsumerState<LessonFormDialog> {
       _selectedTeacherId = widget.lesson!.teacherId;
       _selectedBookId = widget.lesson!.bookId;
       _selectedThemeId = widget.lesson!.themeId;
-      _isActive = widget.lesson!.isActive;
+      _isActive = widget.lesson!.isActive ?? true;
       _isTitleManuallyEdited = true; // Existing lesson has manual title
     }
 

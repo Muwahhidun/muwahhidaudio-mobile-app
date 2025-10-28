@@ -26,7 +26,6 @@ class LessonsScreen extends ConsumerStatefulWidget {
 class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
   // Map of lesson_id -> bookmark for quick lookup
   Map<int, Bookmark> _bookmarksMap = {};
-  bool _loadingBookmarks = false;
 
   @override
   void initState() {
@@ -59,26 +58,22 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
   }
 
   Future<void> _loadBookmarks() async {
-    setState(() {
-      _loadingBookmarks = true;
-    });
-
     try {
       final dio = DioProvider.getDio();
       final response = await dio.get('/bookmarks/series/${widget.seriesId}');
 
-      final bookmarks = (response.data as List)
-          .map((e) => Bookmark.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final bookmarks = (response.data as List).map((e) {
+        final data = e as Map<String, dynamic>;
+        // Remove the nested lesson object to avoid parsing issues
+        data.remove('lesson');
+        return Bookmark.fromJson(data);
+      }).toList();
 
       setState(() {
         _bookmarksMap = {for (var b in bookmarks) b.lessonId: b};
-        _loadingBookmarks = false;
       });
     } catch (e) {
-      setState(() {
-        _loadingBookmarks = false;
-      });
+      print('Error loading bookmarks: $e');
       // Silently fail - bookmarks are not critical
     }
   }

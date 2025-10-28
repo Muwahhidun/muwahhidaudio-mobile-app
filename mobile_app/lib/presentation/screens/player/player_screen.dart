@@ -28,7 +28,7 @@ class PlayerScreen extends StatefulWidget {
 }
 
 class _PlayerScreenState extends State<PlayerScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   AudioPlayer? _audioPlayer;
   bool _isInitialized = false;
   String? _error;
@@ -51,6 +51,19 @@ class _PlayerScreenState extends State<PlayerScreen>
     _loadBookmark();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route observer
+    app.routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void didPopNext() {
+    // Called when returning to this screen
+    _loadBookmark();
+  }
+
   Future<void> _loadBookmark() async {
     setState(() {
       _loadingBookmark = true;
@@ -60,11 +73,25 @@ class _PlayerScreenState extends State<PlayerScreen>
       final dio = DioProvider.getDio();
       final response = await dio.get('/bookmarks/check/${widget.lesson.id}');
 
-      if (response.data != null) {
-        setState(() {
-          _bookmark = Bookmark.fromJson(response.data as Map<String, dynamic>);
-          _loadingBookmark = false;
-        });
+      if (response.data != null && response.data is Map) {
+        try {
+          // Try to parse the bookmark
+          final data = response.data as Map<String, dynamic>;
+          // Remove the nested lesson object to avoid parsing issues
+          data.remove('lesson');
+          final bookmark = Bookmark.fromJson(data);
+
+          setState(() {
+            _bookmark = bookmark;
+            _loadingBookmark = false;
+          });
+        } catch (parseError) {
+          print('Error parsing bookmark: $parseError');
+          setState(() {
+            _bookmark = null;
+            _loadingBookmark = false;
+          });
+        }
       } else {
         setState(() {
           _bookmark = null;
@@ -72,6 +99,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         });
       }
     } catch (e) {
+      print('Error loading bookmark: $e');
       setState(() {
         _loadingBookmark = false;
       });
@@ -299,6 +327,9 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   void dispose() {
+    // Unsubscribe from route observer
+    app.routeObserver.unsubscribe(this);
+
     _pulseController.dispose();
 
     // Clean up based on platform

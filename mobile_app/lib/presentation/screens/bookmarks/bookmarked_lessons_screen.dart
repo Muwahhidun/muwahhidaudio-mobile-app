@@ -69,15 +69,19 @@ class _BookmarkedLessonsScreenState
       final dio = DioProvider.getDio();
       final response = await dio.get('/bookmarks/series/${widget.seriesId}');
 
-      final bookmarks = (response.data as List)
-          .map((e) => Bookmark.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final bookmarks = (response.data as List).map((e) {
+        final data = e as Map<String, dynamic>;
+        // Remove the nested lesson object to avoid parsing issues
+        data.remove('lesson');
+        return Bookmark.fromJson(data);
+      }).toList();
 
       setState(() {
         _bookmarksMap = {for (var b in bookmarks) b.lessonId: b};
         _loadingBookmarks = false;
       });
     } catch (e) {
+      print('Error loading bookmarks: $e');
       setState(() {
         _loadingBookmarks = false;
       });
