@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../data/models/bookmark.dart';
+import '../../../core/audio/audio_service_web.dart';
 import '../../providers/lessons_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
@@ -251,8 +253,43 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                     ),
                     onPressed: () => _toggleBookmark(lesson),
                   ),
-                  // Play button
-                  const Icon(Icons.play_arrow, size: 32, color: Colors.green),
+                  // Play/Pause button with StreamBuilder
+                  if (kIsWeb)
+                    StreamBuilder<bool>(
+                      stream: AudioServiceWeb().player.playingStream,
+                      builder: (context, playingSnapshot) {
+                        final isPlaying = playingSnapshot.data ?? false;
+                        final audioService = AudioServiceWeb();
+                        final isCurrentLesson = audioService.currentLesson?.id == lesson.id;
+                        final showPause = isCurrentLesson && isPlaying;
+
+                        return IconButton(
+                          icon: Icon(
+                            showPause ? Icons.pause : Icons.play_arrow,
+                            size: 32,
+                            color: Colors.green,
+                          ),
+                          onPressed: () async {
+                            if (isCurrentLesson && isPlaying) {
+                              // Pause current lesson
+                              await audioService.player.pause();
+                            } else if (isCurrentLesson && !isPlaying) {
+                              // Resume current lesson
+                              await audioService.player.play();
+                            } else {
+                              // Start new lesson
+                              await audioService.playLesson(
+                                lesson: lesson,
+                                playlist: state.lessons,
+                              );
+                            }
+                            setState(() {}); // Refresh UI
+                          },
+                        );
+                      },
+                    )
+                  else
+                    const Icon(Icons.play_arrow, size: 32, color: Colors.green),
                 ],
               ),
               onTap: () {

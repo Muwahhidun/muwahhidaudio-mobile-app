@@ -31,6 +31,7 @@ async def get_authors(
     birth_year_to: Optional[int] = Query(None, description="Filter by birth year to"),
     death_year_from: Optional[int] = Query(None, description="Filter by death year from"),
     death_year_to: Optional[int] = Query(None, description="Filter by death year to"),
+    has_series: bool = Query(False, description="Filter authors whose books have lesson series"),
     include_inactive: bool = Query(False, description="Include inactive authors (admin only)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -58,7 +59,7 @@ async def get_authors(
     can_see_inactive = include_inactive and current_user and current_user.role.level >= 2
 
     # Get total count
-    total = await author_crud.count_book_authors(db, search=search, include_inactive=can_see_inactive)
+    total = await author_crud.count_book_authors(db, search=search, has_series=has_series, include_inactive=can_see_inactive)
 
     # Get authors
     authors = await author_crud.get_all_authors(
@@ -68,6 +69,7 @@ async def get_authors(
         birth_year_to=birth_year_to,
         death_year_from=death_year_from,
         death_year_to=death_year_to,
+        has_series=has_series,
         include_inactive=can_see_inactive,
         skip=skip,
         limit=limit

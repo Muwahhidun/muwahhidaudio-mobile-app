@@ -6,23 +6,74 @@ import '../../widgets/mini_player.dart';
 import 'books_by_theme_screen.dart';
 
 /// Path A: Step 1 - List of themes
-class ThemesListScreen extends ConsumerWidget {
+class ThemesListScreen extends ConsumerStatefulWidget {
   const ThemesListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ThemesListScreen> createState() => _ThemesListScreenState();
+}
+
+class _ThemesListScreenState extends ConsumerState<ThemesListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themesState = ref.watch(themesProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Темы'),
       ),
-      body: _buildThemesList(context, ref, themesState),
+      body: _buildBody(context, themesState),
       bottomNavigationBar: const MiniPlayer(),
     );
   }
 
-  Widget _buildThemesList(BuildContext context, WidgetRef ref, ThemesState state) {
+  Widget _buildBody(BuildContext context, ThemesState state) {
+    return Column(
+      children: [
+        // Search field
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Поиск тем...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        ref.read(themesProvider.notifier).clearSearch();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {}); // Rebuild to show/hide clear button
+              ref.read(themesProvider.notifier).search(value);
+            },
+          ),
+        ),
+        // List
+        Expanded(
+          child: _buildThemesList(context, state),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThemesList(BuildContext context, ThemesState state) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -56,11 +107,12 @@ class ThemesListScreen extends ConsumerWidget {
     return RefreshIndicator(
       onRefresh: () => ref.read(themesProvider.notifier).refresh(),
       child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: state.themes.length,
         itemBuilder: (context, index) {
           final theme = state.themes[index];
           return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: const EdgeInsets.only(bottom: 12),
             child: ListTile(
               leading: Icon(
                 AppIcons.theme,

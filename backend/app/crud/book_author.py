@@ -5,13 +5,14 @@ from typing import List, Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 
-from app.models import BookAuthor
+from app.models import BookAuthor, Book, LessonSeries
 from app.schemas.content import BookAuthorCreate, BookAuthorUpdate
 
 
 async def count_book_authors(
     db: AsyncSession,
     search: Optional[str] = None,
+    has_series: bool = False,
     include_inactive: bool = False
 ) -> int:
     """
@@ -20,12 +21,19 @@ async def count_book_authors(
     Args:
         db: Database session
         search: Search by name or biography
+        has_series: Only show authors whose books have at least one series
         include_inactive: Include inactive authors (for admin)
 
     Returns:
         Total count of book authors matching filters
     """
-    query = select(func.count(BookAuthor.id))
+    query = select(func.count(func.distinct(BookAuthor.id)))
+
+    # Join with Book and LessonSeries if filtering by has_series
+    if has_series:
+        query = query.join(Book, Book.author_id == BookAuthor.id)
+        query = query.join(LessonSeries, LessonSeries.book_id == Book.id)
+        query = query.where(LessonSeries.is_active == True)
 
     if not include_inactive:
         query = query.where(BookAuthor.is_active == True)
@@ -50,6 +58,7 @@ async def get_all_authors(
     birth_year_to: Optional[int] = None,
     death_year_from: Optional[int] = None,
     death_year_to: Optional[int] = None,
+    has_series: bool = False,
     include_inactive: bool = False,
     skip: int = 0,
     limit: int = 100
@@ -64,6 +73,7 @@ async def get_all_authors(
         birth_year_to: Filter by birth year to (inclusive)
         death_year_from: Filter by death year from (inclusive)
         death_year_to: Filter by death year to (inclusive)
+        has_series: Only show authors whose books have at least one series
         include_inactive: Include inactive authors (for admin)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -71,7 +81,13 @@ async def get_all_authors(
     Returns:
         List of BookAuthor objects
     """
-    query = select(BookAuthor)
+    query = select(BookAuthor).distinct()
+
+    # Join with Book and LessonSeries if filtering by has_series
+    if has_series:
+        query = query.join(Book, Book.author_id == BookAuthor.id)
+        query = query.join(LessonSeries, LessonSeries.book_id == Book.id)
+        query = query.where(LessonSeries.is_active == True)
 
     if not include_inactive:
         query = query.where(BookAuthor.is_active == True)

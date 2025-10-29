@@ -327,20 +327,19 @@ class _MiniPlayerUI extends StatelessWidget {
                     ),
                   ],
 
-                  // Close button - narrow screen only
-                  if (!isWide)
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: () {
-                        if (kIsWeb) {
-                          AudioServiceWeb().stop();
-                        } else {
-                          (app.audioHandler as LessonAudioHandler).stop();
-                        }
-                      },
-                      iconSize: 24,
-                    ),
-                  ],
+                  // Close button - always visible
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () {
+                      if (kIsWeb) {
+                        AudioServiceWeb().stop();
+                      } else {
+                        (app.audioHandler as LessonAudioHandler).stop();
+                      }
+                    },
+                    iconSize: 24,
+                  ),
+                ],
                 ),
               ),
             ),

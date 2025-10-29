@@ -59,6 +59,7 @@ class ThemesNotifier extends StateNotifier<ThemesState> {
       final response = await _apiClient.getThemes(
         search: search,
         teacherId: teacherId,
+        hasSeries: true,
         includeInactive: false,
         limit: 1000,
       );

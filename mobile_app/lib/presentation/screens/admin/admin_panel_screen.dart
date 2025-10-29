@@ -54,8 +54,8 @@ class AdminPanelScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _AdminMenuItem(
             icon: AppIcons.teacher,
-            title: 'Преподаватели',
-            subtitle: 'Управление преподавателями',
+            title: 'Лекторы',
+            subtitle: 'Управление лекторами',
             color: AppIcons.teacherColor,
             onTap: () {
               Navigator.pushNamed(context, '/admin/teachers');

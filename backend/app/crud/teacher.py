@@ -15,6 +15,7 @@ async def count_teachers(
     search: Optional[str] = None,
     book_id: Optional[int] = None,
     theme_id: Optional[int] = None,
+    has_series: bool = False,
     include_inactive: bool = False
 ) -> int:
     """
@@ -25,6 +26,7 @@ async def count_teachers(
         search: Search query for name or biography
         book_id: Filter by book (teachers who taught this book)
         theme_id: Filter by theme (teachers who taught this theme)
+        has_series: Only show teachers that have at least one series
         include_inactive: Include inactive teachers (for admin)
 
     Returns:
@@ -32,18 +34,16 @@ async def count_teachers(
     """
     query = select(func.count(func.distinct(LessonTeacher.id)))
 
-    # Join with LessonSeries if filtering by book or theme
-    if book_id is not None or theme_id is not None:
+    # Join with LessonSeries if filtering by book, theme, or has_series
+    if book_id is not None or theme_id is not None or has_series:
         query = query.join(LessonSeries, LessonSeries.teacher_id == LessonTeacher.id)
+        query = query.where(LessonSeries.is_active == True)
 
         if book_id is not None:
             query = query.where(LessonSeries.book_id == book_id)
 
         if theme_id is not None:
             query = query.where(LessonSeries.theme_id == theme_id)
-
-        # Filter active series
-        query = query.where(LessonSeries.is_active == True)
 
     if not include_inactive:
         query = query.where(LessonTeacher.is_active == True)
@@ -67,6 +67,7 @@ async def get_all_teachers(
     search: Optional[str] = None,
     book_id: Optional[int] = None,
     theme_id: Optional[int] = None,
+    has_series: bool = False,
     include_inactive: bool = False,
     skip: int = 0,
     limit: int = 100
@@ -79,6 +80,7 @@ async def get_all_teachers(
         search: Optional search term for name or biography
         book_id: Filter by book (teachers who taught this book)
         theme_id: Filter by theme (teachers who taught this theme)
+        has_series: Only show teachers that have at least one series
         include_inactive: Include inactive teachers (for admin)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -87,18 +89,16 @@ async def get_all_teachers(
         List of LessonTeacher objects
     """
     # Use distinct only when joining with other tables
-    if book_id is not None or theme_id is not None:
+    if book_id is not None or theme_id is not None or has_series:
         query = select(LessonTeacher).distinct()
         query = query.join(LessonSeries, LessonSeries.teacher_id == LessonTeacher.id)
+        query = query.where(LessonSeries.is_active == True)
 
         if book_id is not None:
             query = query.where(LessonSeries.book_id == book_id)
 
         if theme_id is not None:
             query = query.where(LessonSeries.theme_id == theme_id)
-
-        # Filter active series
-        query = query.where(LessonSeries.is_active == True)
     else:
         # No join needed, simple select
         query = select(LessonTeacher)

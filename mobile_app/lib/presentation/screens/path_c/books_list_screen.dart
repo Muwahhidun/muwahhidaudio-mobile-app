@@ -5,23 +5,75 @@ import '../../providers/books_provider.dart';
 import '../../widgets/mini_player.dart';
 import 'teachers_by_book_screen.dart';
 
-class BooksListScreen extends ConsumerWidget {
+class BooksListScreen extends ConsumerStatefulWidget {
   const BooksListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BooksListScreen> createState() => _BooksListScreenState();
+}
+
+class _BooksListScreenState extends ConsumerState<BooksListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final booksState = ref.watch(booksProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Книги'),
       ),
-      body: _buildBody(context, ref, booksState),
+      body: _buildBody(context, booksState),
       bottomNavigationBar: const MiniPlayer(),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, BooksState state) {
+  Widget _buildBody(BuildContext context, BooksState state) {
+    return Column(
+      children: [
+        // Search field
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Поиск книг...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {});
+                        ref.read(booksProvider.notifier).clearSearch();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {}); // Rebuild to show/hide clear button
+              ref.read(booksProvider.notifier).search(value);
+            },
+          ),
+        ),
+        // List
+        Expanded(
+          child: _buildBooksList(context, state),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBooksList(BuildContext context, BooksState state) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }

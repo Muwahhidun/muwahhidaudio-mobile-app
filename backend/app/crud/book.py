@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 
-from app.models import Book
+from app.models import Book, LessonSeries
 from app.schemas.content import BookCreate, BookUpdate
 
 
@@ -15,6 +15,7 @@ async def count_books(
     search: Optional[str] = None,
     theme_id: Optional[int] = None,
     author_id: Optional[int] = None,
+    has_series: bool = False,
     include_inactive: bool = False
 ) -> int:
     """
@@ -25,12 +26,21 @@ async def count_books(
         search: Search query for name or description
         theme_id: Filter by theme ID
         author_id: Filter by author ID
+        has_series: Only show books that have at least one series
         include_inactive: Include inactive books (for admin)
 
     Returns:
         Total count of books matching filters
     """
-    query = select(func.count(Book.id))
+    query = select(func.count(func.distinct(Book.id)))
+
+    # Join with LessonSeries if filtering by theme, author, or has_series
+    if theme_id is not None or has_series:
+        query = query.join(LessonSeries, LessonSeries.book_id == Book.id)
+        query = query.where(LessonSeries.is_active == True)
+
+        if theme_id is not None:
+            query = query.where(LessonSeries.theme_id == theme_id)
 
     if not include_inactive:
         query = query.where(Book.is_active == True)
@@ -44,9 +54,6 @@ async def count_books(
             )
         )
 
-    if theme_id is not None:
-        query = query.where(Book.theme_id == theme_id)
-
     if author_id is not None:
         query = query.where(Book.author_id == author_id)
 
@@ -59,6 +66,7 @@ async def get_all_books(
     search: Optional[str] = None,
     theme_id: Optional[int] = None,
     author_id: Optional[int] = None,
+    has_series: bool = False,
     include_inactive: bool = False,
     skip: int = 0,
     limit: int = 100
@@ -71,6 +79,7 @@ async def get_all_books(
         search: Search query for name or description (case-insensitive)
         theme_id: Filter by theme ID
         author_id: Filter by author ID
+        has_series: Only show books that have at least one series
         include_inactive: Include inactive books (for admin)
         skip: Number of records to skip
         limit: Maximum number of records to return
@@ -81,7 +90,16 @@ async def get_all_books(
     query = (
         select(Book)
         .options(selectinload(Book.theme), selectinload(Book.author))
+        .distinct()
     )
+
+    # Join with LessonSeries if filtering by theme, author, or has_series
+    if theme_id is not None or has_series:
+        query = query.join(LessonSeries, LessonSeries.book_id == Book.id)
+        query = query.where(LessonSeries.is_active == True)
+
+        if theme_id is not None:
+            query = query.where(LessonSeries.theme_id == theme_id)
 
     # Filter by active status unless include_inactive is True
     if not include_inactive:
@@ -96,10 +114,6 @@ async def get_all_books(
                 Book.description.ilike(search_term)
             )
         )
-
-    # Add theme filter if provided
-    if theme_id is not None:
-        query = query.where(Book.theme_id == theme_id)
 
     # Add author filter if provided
     if author_id is not None:

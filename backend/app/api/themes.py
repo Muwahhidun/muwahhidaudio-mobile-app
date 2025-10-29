@@ -28,6 +28,7 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
 async def get_themes(
     search: Optional[str] = Query(None, description="Search by name or description"),
     teacher_id: Optional[int] = Query(None, description="Filter by teacher (themes taught by this teacher)"),
+    has_series: bool = Query(False, description="Filter themes that have lesson series"),
     include_inactive: bool = Query(False, description="Include inactive themes (admin only)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -56,6 +57,7 @@ async def get_themes(
         db,
         search=search,
         teacher_id=teacher_id,
+        has_series=has_series,
         include_inactive=can_see_inactive
     )
 
@@ -64,6 +66,7 @@ async def get_themes(
         db,
         search=search,
         teacher_id=teacher_id,
+        has_series=has_series,
         include_inactive=can_see_inactive,
         skip=skip,
         limit=limit

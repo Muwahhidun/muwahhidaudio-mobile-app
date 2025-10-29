@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import '../../data/models/lesson.dart';
 import '../../config/api_config.dart';
-import 'media_session_web.dart';
+// Conditional import: use web implementation on web, stub on other platforms
+import 'media_session_stub.dart'
+    if (dart.library.html) 'media_session_web.dart';
 
 /// Singleton audio service for web platform
 /// Keeps audio playing even when navigating away from player screen

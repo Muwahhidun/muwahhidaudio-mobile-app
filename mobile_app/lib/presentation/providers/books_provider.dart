@@ -53,6 +53,7 @@ class BooksNotifier extends StateNotifier<BooksState> {
         search: search,
         themeId: themeId,
         authorId: authorId,
+        hasSeries: true,
         includeInactive: false,
         limit: 1000,
       );

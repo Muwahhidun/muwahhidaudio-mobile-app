@@ -592,14 +592,14 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Widget _buildProgressBar() {
-    // Check if this lesson is currently playing
-    final isCurrentLesson = kIsWeb
-        ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
-        : true; // On mobile, always show progress
-
     return StreamBuilder<Duration>(
       stream: _audioPlayer!.positionStream,
       builder: (context, snapshot) {
+        // Check INSIDE StreamBuilder so it updates on rebuild!
+        final isCurrentLesson = kIsWeb
+            ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
+            : true; // On mobile, always show progress
+
         // If not current lesson, show static UI
         final position = isCurrentLesson ? (snapshot.data ?? Duration.zero) : Duration.zero;
         final duration = isCurrentLesson ? (_audioPlayer!.duration ?? Duration.zero) : (widget.lesson.durationSeconds != null ? Duration(seconds: widget.lesson.durationSeconds!) : Duration.zero);
@@ -723,14 +723,14 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   Widget _buildPlaybackControls() {
-    // Check if this lesson is currently playing
-    final isCurrentLesson = kIsWeb
-        ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
-        : true; // On mobile, always show real state
-
     return StreamBuilder<PlayerState>(
       stream: _audioPlayer!.playerStateStream,
       builder: (context, snapshot) {
+        // Check INSIDE StreamBuilder so it updates on rebuild!
+        final isCurrentLesson = kIsWeb
+            ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
+            : true; // On mobile, always show real state
+
         final playerState = snapshot.data;
         // If not current lesson, show paused state
         final isPlaying = isCurrentLesson ? (playerState?.playing ?? false) : false;
@@ -794,15 +794,15 @@ class _PlayerScreenState extends State<PlayerScreen>
                               child: CircularProgressIndicator(
                                 value: progress,
                                 strokeWidth: 5,
-                                backgroundColor: Colors.black.withValues(alpha: 0.5),
+                                backgroundColor: Colors.transparent,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                                  Colors.green.shade600,
                                 ),
                               ),
                             ),
                             Container(
-                              width: 64,
-                              height: 64,
+                              width: 72,
+                              height: 72,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
@@ -838,21 +838,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         lesson: widget.lesson,
                                         playlist: widget.playlist,
                                       );
-
-                                      // Wait for player state stream to emit playing state
-                                      // This ensures UI updates after audio actually starts
-                                      try {
-                                        await _audioPlayer!.playerStateStream
-                                            .firstWhere(
-                                              (state) => state.playing,
-                                              orElse: () => PlayerState(false, ProcessingState.idle),
-                                            )
-                                            .timeout(Duration(seconds: 2));
-                                      } catch (e) {
-                                        // Timeout or error - just continue
-                                      }
-
-                                      // Force UI update after starting playback
+                                      // Update UI to reflect new current lesson
                                       if (mounted) {
                                         setState(() {});
                                       }
@@ -863,6 +849,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                                       } else {
                                         await _audioPlayer!.play();
                                       }
+                                      // StreamBuilder will automatically update UI - no setState needed
                                     }
                                   } else {
                                     if (isPlaying) {

@@ -101,7 +101,7 @@ class _TeachersManagementScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Управление преподавателями'),
+        title: const Text('Управление лекторами'),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -157,7 +157,7 @@ class _TeachersManagementScreenState
                         ),
                       )
                     : _teachers.isEmpty
-                        ? const Center(child: Text('Нет преподавателей'))
+                        ? const Center(child: Text('Нет лекторов'))
                         : ListView.builder(
                             padding: const EdgeInsets.all(16),
                             itemCount: _teachers.length,
@@ -272,7 +272,7 @@ class _TeachersManagementScreenState
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Удалить преподавателя?'),
+        title: const Text('Удалить лектора?'),
         content: Text('Вы уверены, что хотите удалить "${teacher.name}"?'),
         actions: [
           TextButton(
@@ -298,7 +298,7 @@ class _TeachersManagementScreenState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Преподаватель удалён')),
+          const SnackBar(content: Text('Лектор удалён')),
         );
         await _loadTeachers();
       }
@@ -348,7 +348,7 @@ class _TeacherFormDialogState extends ConsumerState<TeacherFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.teacher == null ? 'Новый преподаватель' : 'Редактировать преподавателя'),
+      title: Text(widget.teacher == null ? 'Новый лектор' : 'Редактировать лектора'),
       content: SizedBox(
         width: 500,
         child: Form(
@@ -361,12 +361,12 @@ class _TeacherFormDialogState extends ConsumerState<TeacherFormDialog> {
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Имя преподавателя',
+                    labelText: 'Имя лектора',
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Введите имя преподавателя';
+                      return 'Введите имя лектора';
                     }
                     return null;
                   },
@@ -451,7 +451,7 @@ class _TeacherFormDialogState extends ConsumerState<TeacherFormDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-                widget.teacher != null ? 'Преподаватель обновлён' : 'Преподаватель создан'),
+                widget.teacher != null ? 'Лектор обновлён' : 'Лектор создан'),
           ),
         );
       }

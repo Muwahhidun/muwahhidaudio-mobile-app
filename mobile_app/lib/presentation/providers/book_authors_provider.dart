@@ -46,6 +46,7 @@ class BookAuthorsNotifier extends StateNotifier<BookAuthorsState> {
       state = state.copyWith(isLoading: true, error: null, searchQuery: search);
       final response = await _apiClient.getBookAuthors(
         search: search,
+        hasSeries: true,
         includeInactive: false,
         limit: 1000,
       );

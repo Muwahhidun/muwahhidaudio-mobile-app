@@ -52,6 +52,7 @@ class TeachersNotifier extends StateNotifier<TeachersState> {
         search: search,
         bookId: bookId,
         themeId: themeId,
+        hasSeries: true,
         includeInactive: false,
         limit: 1000,
       );

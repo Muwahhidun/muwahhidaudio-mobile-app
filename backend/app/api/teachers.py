@@ -34,6 +34,7 @@ async def get_teachers(
     search: Optional[str] = Query(None, description="Search by name or biography"),
     book_id: Optional[int] = Query(None, description="Filter by book (teachers who taught this book)"),
     theme_id: Optional[int] = Query(None, description="Filter by theme (teachers who taught this theme)"),
+    has_series: bool = Query(False, description="Filter teachers that have lesson series"),
     include_inactive: bool = Query(False, description="Include inactive teachers (admin only)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -64,6 +65,7 @@ async def get_teachers(
         search=search,
         book_id=book_id,
         theme_id=theme_id,
+        has_series=has_series,
         include_inactive=can_see_inactive
     )
 
@@ -73,6 +75,7 @@ async def get_teachers(
         search=search,
         book_id=book_id,
         theme_id=theme_id,
+        has_series=has_series,
         include_inactive=can_see_inactive,
         skip=skip,
         limit=limit

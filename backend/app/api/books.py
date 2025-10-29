@@ -29,6 +29,7 @@ async def get_books(
     search: Optional[str] = Query(None, description="Search by name or description"),
     theme_id: Optional[int] = Query(None, description="Filter by theme ID"),
     author_id: Optional[int] = Query(None, description="Filter by author ID"),
+    has_series: bool = Query(False, description="Filter books that have lesson series"),
     include_inactive: bool = Query(False, description="Include inactive books (admin only)"),
     skip: int = Query(0, ge=0, description="Number of records to skip"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
@@ -59,6 +60,7 @@ async def get_books(
         search=search,
         theme_id=theme_id,
         author_id=author_id,
+        has_series=has_series,
         include_inactive=can_see_inactive
     )
 
@@ -68,6 +70,7 @@ async def get_books(
         search=search,
         theme_id=theme_id,
         author_id=author_id,
+        has_series=has_series,
         include_inactive=can_see_inactive,
         skip=skip,
         limit=limit

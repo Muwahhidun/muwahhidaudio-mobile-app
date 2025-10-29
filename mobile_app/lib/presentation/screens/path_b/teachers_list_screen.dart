@@ -5,23 +5,82 @@ import '../../providers/teachers_provider.dart';
 import '../../widgets/mini_player.dart';
 import 'themes_by_teacher_screen.dart';
 
-class TeachersListScreen extends ConsumerWidget {
+class TeachersListScreen extends ConsumerStatefulWidget {
   const TeachersListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TeachersListScreen> createState() => _TeachersListScreenState();
+}
+
+class _TeachersListScreenState extends ConsumerState<TeachersListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    // Load all teachers without filters when this screen opens
+    Future.microtask(() => ref.read(teachersProvider.notifier).loadTeachers());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final teachersState = ref.watch(teachersProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Лекторы'),
       ),
-      body: _buildBody(context, ref, teachersState),
+      body: _buildBody(context, teachersState),
       bottomNavigationBar: const MiniPlayer(),
     );
   }
 
-  Widget _buildBody(BuildContext context, WidgetRef ref, TeachersState state) {
+  Widget _buildBody(BuildContext context, TeachersState state) {
+    return Column(
+      children: [
+        // Search field
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Поиск лекторов...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() {});
+                        ref.read(teachersProvider.notifier).clearSearch();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {}); // Rebuild to show/hide clear button
+              ref.read(teachersProvider.notifier).search(value);
+            },
+          ),
+        ),
+        // List
+        Expanded(
+          child: _buildTeachersList(context, state),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTeachersList(BuildContext context, TeachersState state) {
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
