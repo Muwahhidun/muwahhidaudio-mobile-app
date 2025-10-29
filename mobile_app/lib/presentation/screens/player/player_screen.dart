@@ -838,6 +838,20 @@ class _PlayerScreenState extends State<PlayerScreen>
                                         lesson: widget.lesson,
                                         playlist: widget.playlist,
                                       );
+
+                                      // Wait for player state stream to emit playing state
+                                      // This ensures UI updates after audio actually starts
+                                      try {
+                                        await _audioPlayer!.playerStateStream
+                                            .firstWhere(
+                                              (state) => state.playing,
+                                              orElse: () => PlayerState(false, ProcessingState.idle),
+                                            )
+                                            .timeout(Duration(seconds: 2));
+                                      } catch (e) {
+                                        // Timeout or error - just continue
+                                      }
+
                                       // Force UI update after starting playback
                                       if (mounted) {
                                         setState(() {});
