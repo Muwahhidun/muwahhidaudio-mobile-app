@@ -126,6 +126,7 @@ app.add_middleware(
         "http://localhost:4028",
         "http://localhost:4029",
         "http://localhost:4030",
+        "http://localhost:4031",
         "http://localhost:3119",
         "http://localhost:3120",
         "http://localhost:3121",
