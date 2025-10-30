@@ -5,6 +5,8 @@ import '../../../data/api/dio_provider.dart';
 import '../../providers/series_provider.dart';
 import '../../providers/teachers_provider.dart';
 import '../../providers/books_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class TestFormScreen extends ConsumerStatefulWidget {
   final Test? test;
@@ -199,30 +201,31 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
       });
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.test == null ? 'Новый тест' : 'Редактировать тест'),
-        actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _saveTest,
-              child: const Text('Сохранить'),
-            ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
-            ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.test == null ? 'Новый тест' : 'Редактировать тест'),
+          actions: [
+            if (!_isLoading)
+              TextButton(
+                onPressed: _saveTest,
+                child: const Text('Сохранить'),
+              ),
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              ),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
             // Info card
-            Card(
-              color: Colors.blue[50],
+            GlassCard(
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Row(
@@ -245,169 +248,197 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
             const SizedBox(height: 16),
 
             // Teacher selector (always enabled)
-            DropdownButtonFormField<int>(
-              value: _selectedTeacherId,
-              decoration: const InputDecoration(
-                labelText: 'Преподаватель *',
-                border: OutlineInputBorder(),
-                helperText: 'Обязательное поле',
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: DropdownButtonFormField<int>(
+                value: _selectedTeacherId,
+                decoration: const InputDecoration(
+                  labelText: 'Преподаватель *',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  helperText: 'Обязательное поле',
+                ),
+                items: teachersState.teachers.map((teacher) {
+                  return DropdownMenuItem<int>(
+                    value: teacher.id,
+                    child: Text(teacher.name),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedTeacherId = value;
+                    // Reset dependent fields
+                    _selectedBookId = null;
+                    _selectedSeriesId = null;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Выберите преподавателя';
+                  }
+                  return null;
+                },
               ),
-              items: teachersState.teachers.map((teacher) {
-                return DropdownMenuItem<int>(
-                  value: teacher.id,
-                  child: Text(teacher.name),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedTeacherId = value;
-                  // Reset dependent fields
-                  _selectedBookId = null;
-                  _selectedSeriesId = null;
-                });
-              },
-              validator: (value) {
-                if (value == null) {
-                  return 'Выберите преподавателя';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 16),
 
             // Book selector (disabled until teacher is selected)
-            DropdownButtonFormField<int>(
-              value: safeBookId,
-              decoration: InputDecoration(
-                labelText: 'Книга *',
-                border: const OutlineInputBorder(),
-                helperText: 'Обязательное поле',
-                enabled: _selectedTeacherId != null,
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: DropdownButtonFormField<int>(
+                value: safeBookId,
+                decoration: InputDecoration(
+                  labelText: 'Книга *',
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
+                  helperText: 'Обязательное поле',
+                  enabled: _selectedTeacherId != null,
+                ),
+                items: availableBooks.map((book) {
+                  return DropdownMenuItem<int>(
+                    value: book.id,
+                    child: Text(book.name),
+                  );
+                }).toList(),
+                onChanged: _selectedTeacherId == null
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _selectedBookId = value;
+                          // Reset series when book changes
+                          _selectedSeriesId = null;
+                        });
+                      },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Выберите книгу';
+                  }
+                  return null;
+                },
+                disabledHint: const Text('Сначала выберите преподавателя'),
               ),
-              items: availableBooks.map((book) {
-                return DropdownMenuItem<int>(
-                  value: book.id,
-                  child: Text(book.name),
-                );
-              }).toList(),
-              onChanged: _selectedTeacherId == null
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _selectedBookId = value;
-                        // Reset series when book changes
-                        _selectedSeriesId = null;
-                      });
-                    },
-              validator: (value) {
-                if (value == null) {
-                  return 'Выберите книгу';
-                }
-                return null;
-              },
-              disabledHint: const Text('Сначала выберите преподавателя'),
             ),
             const SizedBox(height: 16),
 
             // Series selector (disabled until teacher and book are selected)
-            DropdownButtonFormField<int>(
-              value: safeSeriesId,
-              decoration: InputDecoration(
-                labelText: 'Серия *',
-                border: const OutlineInputBorder(),
-                helperText: 'Обязательное поле',
-                enabled: _selectedTeacherId != null && _selectedBookId != null,
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: DropdownButtonFormField<int>(
+                value: safeSeriesId,
+                decoration: InputDecoration(
+                  labelText: 'Серия *',
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.all(16),
+                  helperText: 'Обязательное поле',
+                  enabled: _selectedTeacherId != null && _selectedBookId != null,
+                ),
+                items: availableSeries.map((series) {
+                  return DropdownMenuItem<int>(
+                    value: series.id,
+                    child: Text(series.displayName ?? series.name),
+                  );
+                }).toList(),
+                onChanged: (_selectedTeacherId == null || _selectedBookId == null)
+                    ? null
+                    : (value) {
+                        setState(() {
+                          _selectedSeriesId = value;
+                        });
+                      },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Выберите серию';
+                  }
+                  return null;
+                },
+                disabledHint: const Text('Сначала выберите преподавателя и книгу'),
               ),
-              items: availableSeries.map((series) {
-                return DropdownMenuItem<int>(
-                  value: series.id,
-                  child: Text(series.displayName ?? series.name),
-                );
-              }).toList(),
-              onChanged: (_selectedTeacherId == null || _selectedBookId == null)
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _selectedSeriesId = value;
-                      });
-                    },
-              validator: (value) {
-                if (value == null) {
-                  return 'Выберите серию';
-                }
-                return null;
-              },
-              disabledHint: const Text('Сначала выберите преподавателя и книгу'),
             ),
             const SizedBox(height: 16),
 
             // Title (optional - auto-generated if empty)
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Название теста',
-                hintText: 'Авто: "Тест по \'{книга}\' - {серия}"',
-                border: OutlineInputBorder(),
-                helperText: 'Необязательно - будет сгенерировано автоматически',
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Название теста',
+                  hintText: 'Авто: "Тест по \'{книга}\' - {серия}"',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  helperText: 'Необязательно - будет сгенерировано автоматически',
+                ),
+                maxLines: 2,
+                maxLength: 255,
               ),
-              maxLines: 2,
-              maxLength: 255,
             ),
             const SizedBox(height: 16),
 
             // Description (optional)
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Описание',
-                hintText: 'Дополнительная информация о тесте',
-                border: OutlineInputBorder(),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Описание',
+                  hintText: 'Дополнительная информация о тесте',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+                maxLines: 3,
               ),
-              maxLines: 3,
             ),
             const SizedBox(height: 16),
 
             // Passing score
-            TextFormField(
-              controller: _passingScoreController,
-              decoration: const InputDecoration(
-                labelText: 'Проходной балл (%)',
-                border: OutlineInputBorder(),
-                helperText: 'Минимальный процент правильных ответов для прохождения',
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: TextFormField(
+                controller: _passingScoreController,
+                decoration: const InputDecoration(
+                  labelText: 'Проходной балл (%)',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  helperText: 'Минимальный процент правильных ответов для прохождения',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Введите проходной балл';
+                  }
+                  final score = int.tryParse(value);
+                  if (score == null || score < 0 || score > 100) {
+                    return 'Введите число от 0 до 100';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Введите проходной балл';
-                }
-                final score = int.tryParse(value);
-                if (score == null || score < 0 || score > 100) {
-                  return 'Введите число от 0 до 100';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 16),
 
             // Time per question
-            TextFormField(
-              controller: _timePerQuestionController,
-              decoration: const InputDecoration(
-                labelText: 'Время на вопрос (секунды)',
-                border: OutlineInputBorder(),
-                helperText: 'Время, отведенное на каждый вопрос',
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: TextFormField(
+                controller: _timePerQuestionController,
+                decoration: const InputDecoration(
+                  labelText: 'Время на вопрос (секунды)',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                  helperText: 'Время, отведенное на каждый вопрос',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Введите время на вопрос';
+                  }
+                  final time = int.tryParse(value);
+                  if (time == null || time < 1) {
+                    return 'Введите число больше 0';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Введите время на вопрос';
-                }
-                final time = int.tryParse(value);
-                if (time == null || time < 1) {
-                  return 'Введите число больше 0';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 16),
 
@@ -442,6 +473,7 @@ class _TestFormScreenState extends ConsumerState<TestFormScreen> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

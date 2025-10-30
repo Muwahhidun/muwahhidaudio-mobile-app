@@ -14,7 +14,7 @@ Test _$TestFromJson(Map<String, dynamic> json) => Test(
       teacherId: (json['teacher_id'] as num).toInt(),
       passingScore: (json['passing_score'] as num).toInt(),
       timePerQuestionSeconds:
-          (json['time_per_question_seconds'] as num).toInt(),
+          (json['time_per_question_seconds'] as num?)?.toInt(),
       questionsCount: (json['questions_count'] as num).toInt(),
       isActive: json['is_active'] as bool,
       order: (json['order'] as num).toInt(),
@@ -26,6 +26,9 @@ Test _$TestFromJson(Map<String, dynamic> json) => Test(
       teacher: json['teacher'] == null
           ? null
           : TeacherNested.fromJson(json['teacher'] as Map<String, dynamic>),
+      questions: (json['questions'] as List<dynamic>?)
+          ?.map((e) => TestQuestion.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$TestToJson(Test instance) => <String, dynamic>{
@@ -43,6 +46,7 @@ Map<String, dynamic> _$TestToJson(Test instance) => <String, dynamic>{
       'updated_at': instance.updatedAt.toIso8601String(),
       'series': instance.series,
       'teacher': instance.teacher,
+      'questions': instance.questions,
     };
 
 TestQuestion _$TestQuestionFromJson(Map<String, dynamic> json) => TestQuestion(
@@ -52,7 +56,7 @@ TestQuestion _$TestQuestionFromJson(Map<String, dynamic> json) => TestQuestion(
       questionText: json['question_text'] as String,
       options:
           (json['options'] as List<dynamic>).map((e) => e as String).toList(),
-      correctAnswerIndex: (json['correct_answer_index'] as num).toInt(),
+      correctAnswerIndex: (json['correct_answer_index'] as num?)?.toInt(),
       explanation: json['explanation'] as String?,
       order: (json['order'] as num).toInt(),
       points: (json['points'] as num).toInt(),

@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class SystemSettingsScreen extends StatelessWidget {
   const SystemSettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Системные настройки'),
-      ),
-      body: ListView(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Системные настройки'),
+        ),
+        body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
@@ -41,6 +45,7 @@ class SystemSettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -62,13 +67,13 @@ class _SystemSettingsMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
+    return GlassCard(
+      padding: EdgeInsets.zero,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 28),

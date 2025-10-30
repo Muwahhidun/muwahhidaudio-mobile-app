@@ -16,7 +16,7 @@ class Test {
   @JsonKey(name: 'passing_score')
   final int passingScore;
   @JsonKey(name: 'time_per_question_seconds')
-  final int timePerQuestionSeconds;
+  final int? timePerQuestionSeconds;
   @JsonKey(name: 'questions_count')
   final int questionsCount;
   @JsonKey(name: 'is_active')
@@ -31,6 +31,9 @@ class Test {
   final LessonSeriesNested? series;
   final TeacherNested? teacher;
 
+  // Questions list (included when fetching test for taking)
+  final List<TestQuestion>? questions;
+
   Test({
     required this.id,
     required this.title,
@@ -38,7 +41,7 @@ class Test {
     required this.seriesId,
     required this.teacherId,
     required this.passingScore,
-    required this.timePerQuestionSeconds,
+    this.timePerQuestionSeconds,
     required this.questionsCount,
     required this.isActive,
     required this.order,
@@ -46,6 +49,7 @@ class Test {
     required this.updatedAt,
     this.series,
     this.teacher,
+    this.questions,
   });
 
   factory Test.fromJson(Map<String, dynamic> json) => _$TestFromJson(json);
@@ -65,7 +69,7 @@ class TestQuestion {
   final String questionText;
   final List<String> options;
   @JsonKey(name: 'correct_answer_index')
-  final int correctAnswerIndex;
+  final int? correctAnswerIndex;
   final String? explanation;
   final int order;
   final int points;
@@ -79,7 +83,7 @@ class TestQuestion {
     required this.lessonId,
     required this.questionText,
     required this.options,
-    required this.correctAnswerIndex,
+    this.correctAnswerIndex,
     this.explanation,
     required this.order,
     required this.points,

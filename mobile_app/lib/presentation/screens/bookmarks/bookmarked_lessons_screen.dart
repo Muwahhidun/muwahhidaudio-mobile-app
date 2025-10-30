@@ -5,6 +5,8 @@ import '../../../data/models/bookmark.dart';
 import '../../../data/models/lesson.dart';
 import '../../providers/lessons_provider.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../player/player_screen.dart';
 import '../../../main.dart';
 
@@ -141,30 +143,50 @@ class _BookmarkedLessonsScreenState
   Widget build(BuildContext context) {
     final lessonsState = ref.watch(lessonsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Уроки'),
-      ),
-      body: Column(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Уроки'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Column(
         children: [
           // Header
-          Container(
-            width: double.infinity,
+          GlassCard(
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  widget.seriesName,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Нажмите на звездочку чтобы добавить/удалить из закладок',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey[600],
+                Row(
+                  children: [
+                    const Icon(Icons.library_books, color: Colors.blue, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        widget.seriesName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Нажмите на звездочку чтобы добавить/удалить из закладок',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -175,8 +197,9 @@ class _BookmarkedLessonsScreenState
             child: _buildLessonsList(lessonsState),
           ),
         ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -218,59 +241,100 @@ class _BookmarkedLessonsScreenState
         await _loadBookmarks();
       },
       child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: state.lessons.length,
         itemBuilder: (context, index) {
           final lesson = state.lessons[index];
           final isBookmarked = _bookmarksMap.containsKey(lesson.id);
           final bookmark = _bookmarksMap[lesson.id];
 
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: Colors.green,
-                child: Text(
-                  '${lesson.lessonNumber}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+          return GlassCard(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              // Navigate to player with full playlist
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => PlayerScreen(
+                    lesson: lesson,
+                    playlist: state.lessons,
+                    breadcrumbs: [
+                      'Закладки',
+                      widget.seriesName,
+                      lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
+                    ],
                   ),
                 ),
-              ),
-              title: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              ).then((_) {
+                // Reload bookmarks when returning (might have changed)
+                _loadBookmarks();
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Text(
-                    lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  // Show custom note if exists
-                  if (bookmark?.customName != null && bookmark!.customName!.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
+                  // Lesson number avatar
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
                       child: Text(
-                        '"${bookmark.customName}"',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.grey[600],
+                        '${lesson.lessonNumber}',
+                        style: const TextStyle(
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
                       ),
                     ),
-                ],
-              ),
-              subtitle: lesson.formattedDuration != null
-                  ? Row(
+                  ),
+                  const SizedBox(width: 16),
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.access_time, size: 16),
-                        const SizedBox(width: 4),
-                        Text(lesson.formattedDuration!),
+                        Text(
+                          lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        // Show custom note if exists
+                        if (bookmark?.customName != null && bookmark!.customName!.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Text(
+                              '"${bookmark.customName}"',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        if (lesson.formattedDuration != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.access_time, size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  lesson.formattedDuration!,
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
-                    )
-                  : null,
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   // Bookmark star button
                   IconButton(
                     icon: Icon(
@@ -284,25 +348,6 @@ class _BookmarkedLessonsScreenState
                   const Icon(Icons.play_arrow, size: 32, color: Colors.green),
                 ],
               ),
-              onTap: () {
-                // Navigate to player with full playlist
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PlayerScreen(
-                      lesson: lesson,
-                      playlist: state.lessons,
-                      breadcrumbs: [
-                        'Закладки',
-                        widget.seriesName,
-                        lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
-                      ],
-                    ),
-                  ),
-                ).then((_) {
-                  // Reload bookmarks when returning (might have changed)
-                  _loadBookmarks();
-                });
-              },
             ),
           );
         },

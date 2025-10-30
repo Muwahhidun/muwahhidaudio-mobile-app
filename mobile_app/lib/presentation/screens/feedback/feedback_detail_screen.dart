@@ -7,6 +7,8 @@ import '../../../data/api/dio_provider.dart';
 import '../../../data/models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class FeedbackDetailScreen extends ConsumerStatefulWidget {
   final model.Feedback feedback;
@@ -137,33 +139,38 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
     final authState = ref.watch(authProvider);
     final currentUser = authState.user;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Обращение'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshFeedback,
-            tooltip: 'Обновить',
-          ),
-        ],
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Обращение'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _refreshFeedback,
+              tooltip: 'Обновить',
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _buildStatusCard(),
+            _buildSubjectHeader(),
+            const Divider(height: 1),
+            Expanded(
+              child: _isLoading && _feedback == widget.feedback
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? _buildError()
+                      : _buildMessagesList(currentUser),
+            ),
+            if (!_feedback.isClosed) _buildMessageInput(),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: Column(
-        children: [
-          _buildStatusCard(),
-          _buildSubjectHeader(),
-          const Divider(height: 1),
-          Expanded(
-            child: _isLoading && _feedback == widget.feedback
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? _buildError()
-                    : _buildMessagesList(currentUser),
-          ),
-          if (!_feedback.isClosed) _buildMessageInput(),
-        ],
-      ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -194,9 +201,8 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
   }
 
   Widget _buildStatusCard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: Colors.grey[50],
+    return GlassCard(
+      margin: EdgeInsets.zero,
       child: Row(
         children: [
           Icon(
@@ -236,9 +242,8 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
   }
 
   Widget _buildSubjectHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.grey[100],
+    return GlassCard(
+      margin: EdgeInsets.zero,
       child: Row(
         children: [
           const Icon(Icons.subject, size: 20, color: Colors.grey),
@@ -325,12 +330,8 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
   }
 
   Widget _buildMessagesPagination(int totalPages) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
+    return GlassCard(
+      margin: EdgeInsets.zero,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -398,12 +399,7 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                GlassCard(
                   child: Text(
                     _feedback.messageText,
                     style: const TextStyle(fontSize: 15),
@@ -483,12 +479,7 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isAdmin ? Colors.green[50] : Colors.blue[50],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                GlassCard(
                   child: Text(
                     message.messageText,
                     style: const TextStyle(fontSize: 15),
@@ -503,38 +494,29 @@ class _FeedbackDetailScreenState extends ConsumerState<FeedbackDetailScreen> {
   }
 
   Widget _buildMessageInput() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.3),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+    return GlassCard(
+      margin: EdgeInsets.zero,
       child: SafeArea(
         child: Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  hintText: 'Напишите сообщение...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+              child: GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextField(
+                  controller: _messageController,
+                  decoration: const InputDecoration(
+                    hintText: 'Напишите сообщение...',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  enabled: !_isSending,
                 ),
-                maxLines: null,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
-                enabled: !_isSending,
               ),
             ),
             const SizedBox(width: 8),

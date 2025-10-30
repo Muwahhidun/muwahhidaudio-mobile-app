@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/books_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../data/models/theme.dart';
 import 'teachers_by_theme_book_screen.dart';
@@ -34,29 +36,33 @@ class _BooksByThemeScreenState extends ConsumerState<BooksByThemeScreen> {
   Widget build(BuildContext context) {
     final booksState = ref.watch(booksProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Книги'),
-      ),
-      body: Column(
-        children: [
-          // Breadcrumbs
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Breadcrumbs(
-              path: ['Темы', widget.theme.name],
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Книги'),
+        ),
+        body: Column(
+          children: [
+            // Breadcrumbs
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Breadcrumbs(
+                  path: ['Темы', widget.theme.name],
+                ),
+              ),
             ),
-          ),
 
-          // Books list
-          Expanded(
-            child: _buildBooksList(booksState),
-          ),
-        ],
+            // Books list
+            Expanded(
+              child: _buildBooksList(booksState),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -99,17 +105,38 @@ class _BooksByThemeScreenState extends ConsumerState<BooksByThemeScreen> {
         itemCount: state.books.length,
         itemBuilder: (context, index) {
           final book = state.books[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              // Navigate to teachers by theme + book
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TeachersByThemeBookScreen(
+                    theme: widget.theme,
+                    book: book,
+                  ),
+                ),
+              );
+            },
             child: ListTile(
-              leading: Icon(
-                AppIcons.book,
-                color: AppIcons.bookColor,
-                size: 32,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppIcons.bookColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  AppIcons.book,
+                  color: AppIcons.bookColor,
+                  size: 24,
+                ),
               ),
               title: Text(
                 book.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -126,17 +153,6 @@ class _BooksByThemeScreenState extends ConsumerState<BooksByThemeScreen> {
               ),
               isThreeLine: book.author != null && book.description != null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Navigate to teachers by theme + book
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => TeachersByThemeBookScreen(
-                      theme: widget.theme,
-                      book: book,
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },

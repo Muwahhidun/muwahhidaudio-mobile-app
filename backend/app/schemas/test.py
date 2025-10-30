@@ -179,38 +179,72 @@ class TestWithQuestionsUser(TestWithRelations):
 
 
 # ============================================================
-# TEST ATTEMPT SCHEMAS (for future user functionality)
+# TEST ATTEMPT SCHEMAS
 # ============================================================
 
 class TestAttemptCreate(BaseModel):
-    """Schema for creating a test attempt."""
+    """Schema for creating/starting a test attempt."""
     test_id: int
-    lesson_id: Optional[int] = None  # None = overall test, set = personal lesson test
-
-
-class TestAttemptAnswer(BaseModel):
-    """Schema for submitting an answer."""
-    question_id: int
-    selected_answer_index: int
-    time_spent_seconds: int
+    lesson_id: Optional[int] = None  # None = series test, set = lesson test
 
 
 class TestAttemptSubmit(BaseModel):
-    """Schema for submitting a test attempt."""
-    answers: List[TestAttemptAnswer]
+    """Schema for submitting a test attempt with answers."""
+    answers: dict = Field(..., description="Map of question_id to selected_answer_index")
+    time_spent_seconds: int = Field(..., ge=0)
 
 
 class TestAttemptResponse(BaseModel):
     """Schema for test attempt responses."""
     id: int
-    test_id: int
     user_id: int
+    test_id: int
     lesson_id: Optional[int] = None
+    started_at: datetime
+    completed_at: Optional[datetime] = None
     score: int
+    max_score: int
     passed: bool
-    total_time_seconds: int
-    answers_data: dict
-    created_at: datetime
+    answers: Optional[dict] = None
+    time_spent_seconds: Optional[int] = None
 
     class Config:
         from_attributes = True
+
+
+class TestAttemptWithTest(TestAttemptResponse):
+    """Test attempt response with test details."""
+    test: Optional[TestWithRelations] = None
+
+
+# ============================================================
+# STATISTICS SCHEMAS
+# ============================================================
+
+class SeriesStatistics(BaseModel):
+    """Statistics for a series (for user)."""
+    series_id: int
+    total_audio_duration: int = Field(..., description="Total duration in seconds")
+    total_questions: int
+    best_score_percent: Optional[float] = None
+    total_attempts: int = 0
+    passed_count: int = 0
+    last_attempt_date: Optional[datetime] = None
+    has_attempts: bool = False
+
+
+class SeriesStatisticsDetailed(SeriesStatistics):
+    """Detailed statistics for a series with series info."""
+    series_name: str
+    series_year: int
+    book_name: Optional[str] = None
+    teacher_name: Optional[str] = None
+
+
+class UserStatisticsSummary(BaseModel):
+    """Overall statistics summary for a user."""
+    total_tests_taken: int = 0
+    total_tests_passed: int = 0
+    average_score_percent: Optional[float] = None
+    best_score_percent: Optional[float] = None
+    total_time_spent_hours: float = 0.0

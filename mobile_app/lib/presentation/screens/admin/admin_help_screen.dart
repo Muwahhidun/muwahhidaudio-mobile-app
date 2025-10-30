@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class AdminHelpScreen extends StatelessWidget {
   const AdminHelpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Справка для администраторов'),
-      ),
-      body: ListView(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Справка для администраторов'),
+        ),
+        body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildSection(
@@ -308,38 +312,36 @@ class AdminHelpScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 32),
-          Card(
-            color: Colors.blue[50],
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.contact_support, color: Colors.blue[700]),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Нужна помощь?',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[700],
-                        ),
+          GlassCard(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.contact_support, color: Colors.blue[700]),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Нужна помощь?',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Если у вас возникли вопросы или проблемы, которые не описаны в этой справке, обратитесь к техническому администратору или разработчикам приложения.',
-                    style: TextStyle(fontSize: 14),
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Если у вас возникли вопросы или проблемы, которые не описаны в этой справке, обратитесь к техническому администратору или разработчикам приложения.',
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
         ],
+      ),
       ),
     );
   }
@@ -360,7 +362,7 @@ class AdminHelpScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(icon, color: color, size: 24),
@@ -384,8 +386,9 @@ class AdminHelpScreen extends StatelessWidget {
   }
 
   Widget _buildHelpItem(BuildContext context, _HelpItem item) {
-    return Card(
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.zero,
       child: ExpansionTile(
         title: Text(
           item.title,

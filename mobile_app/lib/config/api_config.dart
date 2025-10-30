@@ -13,9 +13,9 @@ class ApiConfig {
       return 'http://localhost:8000';
     }
 
-    // For Android emulator, use 10.0.2.2
+    // For Android device, use local network IP
     if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000';
+      return 'http://192.168.3.216:8000';
     }
 
     // For iOS simulator and desktop, use localhost

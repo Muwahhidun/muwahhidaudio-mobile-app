@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../data/models/bookmark.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import 'bookmarked_lessons_screen.dart';
 
 class BookmarksScreen extends StatefulWidget {
@@ -78,20 +80,32 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Закладки'),
-      ),
-      body: Column(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Закладки'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Column(
         children: [
           // Header
-          Container(
-            width: double.infinity,
+          GlassCard(
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Text(
-              'Серии с закладками',
-              style: Theme.of(context).textTheme.titleMedium,
+            borderRadius: BorderRadius.circular(16),
+            child: Row(
+              children: [
+                const Icon(Icons.bookmark, color: Colors.amber, size: 24),
+                const SizedBox(width: 12),
+                Text(
+                  'Серии с закладками',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ],
             ),
           ),
 
@@ -102,16 +116,10 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
 
           // Pagination controls
           if (_totalPages > 1)
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                border: Border(
-                  top: BorderSide(
-                    color: Theme.of(context).dividerColor,
-                  ),
-                ),
-              ),
+            GlassCard(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              borderRadius: BorderRadius.circular(16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -122,7 +130,9 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   const SizedBox(width: 16),
                   Text(
                     'Страница ${_currentPage + 1} из $_totalPages',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   const SizedBox(width: 16),
                   IconButton(
@@ -135,8 +145,9 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               ),
             ),
         ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -171,7 +182,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
             Icon(
               Icons.bookmark_border,
               size: 64,
-              color: Colors.grey[400],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
             const SizedBox(height: 16),
             Text(
@@ -181,9 +192,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
             const SizedBox(height: 8),
             Text(
               'Добавьте уроки из плеера или библиотеки',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+              style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
           ],
@@ -196,50 +205,91 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         await _loadBookmarkedSeries();
       },
       child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: _series.length,
         itemBuilder: (context, index) {
           final series = _series[index];
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              leading: const Icon(Icons.library_books, color: Colors.blue, size: 32),
-              title: Text(
-                series.displayName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          return GlassCard(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              // Navigate to bookmarked lessons
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => BookmarkedLessonsScreen(
+                    seriesId: series.id,
+                    seriesName: series.displayName,
+                  ),
+                ),
+              ).then((_) {
+                // Reload when returning (in case bookmarks were changed)
+                _loadBookmarkedSeries();
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  if (series.teacher != null)
-                    Text('Лектор: ${series.teacher!.name}'),
-                  if (series.book != null)
-                    Text('Книга: ${series.book!.name}'),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${series.bookmarksCount} ${_pluralUrok(series.bookmarksCount)} в закладках',
-                    style: TextStyle(
-                      color: Colors.amber[700],
-                      fontWeight: FontWeight.w500,
+                  // Icon
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.library_books,
+                      color: Colors.blue,
+                      size: 32,
                     ),
                   ),
+                  const SizedBox(width: 16),
+                  // Content
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          series.displayName,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        if (series.teacher != null)
+                          Text(
+                            'Лектор: ${series.teacher!.name}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        if (series.book != null)
+                          Text(
+                            'Книга: ${series.book!.name}',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(Icons.bookmark, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${series.bookmarksCount} ${_pluralUrok(series.bookmarksCount)}',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.amber[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Arrow
+                  const Icon(Icons.arrow_forward_ios, size: 16),
                 ],
               ),
-              isThreeLine: true,
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Navigate to bookmarked lessons
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => BookmarkedLessonsScreen(
-                      seriesId: series.id,
-                      seriesName: series.displayName,
-                    ),
-                  ),
-                ).then((_) {
-                  // Reload when returning (in case bookmarks were changed)
-                  _loadBookmarkedSeries();
-                });
-              },
             ),
           );
         },

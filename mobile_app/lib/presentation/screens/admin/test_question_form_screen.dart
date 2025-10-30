@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/test.dart';
 import '../../../data/models/lesson.dart';
 import '../../../data/api/dio_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class TestQuestionFormScreen extends ConsumerStatefulWidget {
   final int testId;
@@ -49,7 +51,7 @@ class _TestQuestionFormScreenState
       _optionControllers = widget.question!.options
           .map((option) => TextEditingController(text: option))
           .toList();
-      _correctAnswerIndex = widget.question!.correctAnswerIndex;
+      _correctAnswerIndex = widget.question!.correctAnswerIndex ?? 0;
       _points = widget.question!.points;
       _selectedLessonId = widget.question!.lessonId;
     } else {
@@ -213,76 +215,86 @@ class _TestQuestionFormScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.question == null
-            ? 'Новый вопрос'
-            : 'Редактировать вопрос'),
-        actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _saveQuestion,
-              child: const Text('Сохранить'),
-            ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: CircularProgressIndicator(),
-            ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            // Lesson selector
-            _isLoadingLessons
-                ? const LinearProgressIndicator()
-                : DropdownButtonFormField<int>(
-                    value: _selectedLessonId,
-                    decoration: const InputDecoration(
-                      labelText: 'Урок *',
-                      border: OutlineInputBorder(),
-                      helperText: 'Обязательное поле',
-                    ),
-                    items: _lessons.map((lesson) {
-                      return DropdownMenuItem<int>(
-                        value: lesson.id,
-                        child: Text(lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedLessonId = value;
-                      });
-                    },
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Выберите урок';
-                      }
-                      return null;
-                    },
-                  ),
-            const SizedBox(height: 16),
-
-            // Question text
-            TextFormField(
-              controller: _questionController,
-              decoration: const InputDecoration(
-                labelText: 'Текст вопроса *',
-                border: OutlineInputBorder(),
-                helperText: 'Обязательное поле',
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(widget.question == null
+              ? 'Новый вопрос'
+              : 'Редактировать вопрос'),
+          actions: [
+            if (!_isLoading)
+              TextButton(
+                onPressed: _saveQuestion,
+                child: const Text('Сохранить'),
               ),
-              maxLines: 3,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Введите текст вопроса';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: CircularProgressIndicator(),
+              ),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              // Lesson selector
+              _isLoadingLessons
+                  ? const LinearProgressIndicator()
+                  : GlassCard(
+                      padding: EdgeInsets.zero,
+                      child: DropdownButtonFormField<int>(
+                        value: _selectedLessonId,
+                        decoration: const InputDecoration(
+                          labelText: 'Урок *',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(16),
+                          helperText: 'Обязательное поле',
+                        ),
+                        items: _lessons.map((lesson) {
+                          return DropdownMenuItem<int>(
+                            value: lesson.id,
+                            child: Text(lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedLessonId = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Выберите урок';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+              const SizedBox(height: 16),
+
+              // Question text
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _questionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Текст вопроса *',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    helperText: 'Обязательное поле',
+                  ),
+                  maxLines: 3,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Введите текст вопроса';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
 
             // Options section
             Row(
@@ -323,24 +335,28 @@ class _TestQuestionFormScreenState
                     ),
                     // Option text field
                     Expanded(
-                      child: TextFormField(
-                        controller: _optionControllers[index],
-                        decoration: InputDecoration(
-                          labelText: 'Вариант ${index + 1}',
-                          border: const OutlineInputBorder(),
-                          filled: _correctAnswerIndex == index,
-                          fillColor: _correctAnswerIndex == index
-                              ? Colors.green.withAlpha(25)
-                              : null,
+                      child: GlassCard(
+                        padding: EdgeInsets.zero,
+                        child: TextFormField(
+                          controller: _optionControllers[index],
+                          decoration: InputDecoration(
+                            labelText: 'Вариант ${index + 1}',
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.all(16),
+                            filled: _correctAnswerIndex == index,
+                            fillColor: _correctAnswerIndex == index
+                                ? Colors.green.withAlpha(25)
+                                : null,
+                          ),
+                          validator: (value) {
+                            // At least first 2 options must be filled
+                            if (index < 2 &&
+                                (value == null || value.trim().isEmpty)) {
+                              return 'Обязательное поле';
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          // At least first 2 options must be filled
-                          if (index < 2 &&
-                              (value == null || value.trim().isEmpty)) {
-                            return 'Обязательное поле';
-                          }
-                          return null;
-                        },
                       ),
                     ),
                     // Delete button (disabled if less than 3 options)
@@ -367,42 +383,50 @@ class _TestQuestionFormScreenState
             const SizedBox(height: 24),
 
             // Explanation (optional)
-            TextFormField(
-              controller: _explanationController,
-              decoration: const InputDecoration(
-                labelText: 'Пояснение (необязательно)',
-                hintText:
-                    'Объяснение правильного ответа (показывается после теста)',
-                border: OutlineInputBorder(),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: TextFormField(
+                controller: _explanationController,
+                decoration: const InputDecoration(
+                  labelText: 'Пояснение (необязательно)',
+                  hintText:
+                      'Объяснение правильного ответа (показывается после теста)',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+                maxLines: 3,
               ),
-              maxLines: 3,
             ),
             const SizedBox(height: 16),
 
             // Points
-            TextFormField(
-              initialValue: _points.toString(),
-              decoration: const InputDecoration(
-                labelText: 'Баллы за вопрос',
-                border: OutlineInputBorder(),
+            GlassCard(
+              padding: EdgeInsets.zero,
+              child: TextFormField(
+                initialValue: _points.toString(),
+                decoration: const InputDecoration(
+                  labelText: 'Баллы за вопрос',
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  final points = int.tryParse(value);
+                  if (points != null && points > 0) {
+                    _points = points;
+                  }
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Введите количество баллов';
+                  }
+                  final points = int.tryParse(value);
+                  if (points == null || points < 1) {
+                    return 'Введите число больше 0';
+                  }
+                  return null;
+                },
               ),
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final points = int.tryParse(value);
-                if (points != null && points > 0) {
-                  _points = points;
-                }
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Введите количество баллов';
-                }
-                final points = int.tryParse(value);
-                if (points == null || points < 1) {
-                  return 'Введите число больше 0';
-                }
-                return null;
-              },
             ),
             const SizedBox(height: 24),
 
@@ -426,6 +450,7 @@ class _TestQuestionFormScreenState
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 }

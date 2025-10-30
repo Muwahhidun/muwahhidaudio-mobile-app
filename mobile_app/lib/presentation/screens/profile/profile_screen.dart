@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -149,11 +151,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider).user;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Профиль'),
-      ),
-      body: SingleChildScrollView(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Профиль'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
@@ -161,7 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // User Info Header
-              Card(
+              GlassCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -180,7 +186,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       Chip(
                         label: Text(user?.role.name ?? ''),
                         backgroundColor:
-                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                       ),
                     ],
                   ),
@@ -191,69 +197,108 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Email Field
               Text(
                 'Email',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  hintText: 'your@email.com',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    hintText: 'your@email.com',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: Icon(Icons.email),
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Введите корректный email';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Введите корректный email';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // Username Field
               Text(
                 'Имя пользователя',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  hintText: 'username',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    hintText: 'username',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: Icon(Icons.person),
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите имя пользователя';
+                    }
+                    if (value.length < 3 || value.length > 20) {
+                      return 'Имя пользователя должно быть от 3 до 20 символов';
+                    }
+                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+                      return 'Только латинские буквы, цифры и подчеркивание';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите имя пользователя';
-                  }
-                  if (value.length < 3 || value.length > 20) {
-                    return 'Имя пользователя должно быть от 3 до 20 символов';
-                  }
-                  if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                    return 'Только латинские буквы, цифры и подчеркивание';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // First Name Field
               Text(
                 'Имя',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(
-                  hintText: 'Имя (необязательно)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _firstNameController,
+                  decoration: const InputDecoration(
+                    hintText: 'Имя (необязательно)',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: Icon(Icons.badge),
+                    contentPadding: EdgeInsets.all(16),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -261,34 +306,63 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Last Name Field
               Text(
                 'Фамилия',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(
-                  hintText: 'Фамилия (необязательно)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _lastNameController,
+                  decoration: const InputDecoration(
+                    hintText: 'Фамилия (необязательно)',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: Icon(Icons.badge),
+                    contentPadding: EdgeInsets.all(16),
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
 
               // Password Section
               Divider(
-                color: Theme.of(context).colorScheme.outline,
+                color: Colors.white.withValues(alpha: 0.3),
                 thickness: 1,
               ),
               const SizedBox(height: 16),
               Text(
                 'Изменить пароль',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Оставьте поля пустыми, если не хотите менять пароль',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: Colors.white.withValues(alpha: 0.8),
+                      shadows: [
+                        const Shadow(
+                          color: Colors.black26,
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
               ),
               const SizedBox(height: 16),
@@ -296,90 +370,132 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // New Password Field
               Text(
                 'Новый пароль',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _newPasswordController,
-                decoration: InputDecoration(
-                  hintText: 'Новый пароль (необязательно)',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureNewPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _newPasswordController,
+                  decoration: InputDecoration(
+                    hintText: 'Новый пароль (необязательно)',
+                    border: const OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: const Icon(Icons.lock),
+                    contentPadding: const EdgeInsets.all(16),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureNewPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureNewPassword = !_obscureNewPassword;
+                        });
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureNewPassword = !_obscureNewPassword;
-                      });
-                    },
                   ),
+                  obscureText: _obscureNewPassword,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      if (value.length < 8) {
+                        return 'Пароль должен быть минимум 8 символов';
+                      }
+                      if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
+                        return 'Пароль должен содержать хотя бы одну букву';
+                      }
+                      if (!RegExp(r'\d').hasMatch(value)) {
+                        return 'Пароль должен содержать хотя бы одну цифру';
+                      }
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: _obscureNewPassword,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    if (value.length < 8) {
-                      return 'Пароль должен быть минимум 8 символов';
-                    }
-                    if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
-                      return 'Пароль должен содержать хотя бы одну букву';
-                    }
-                    if (!RegExp(r'\d').hasMatch(value)) {
-                      return 'Пароль должен содержать хотя бы одну цифру';
-                    }
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // Confirm Password Field
               Text(
                 'Подтвердите новый пароль',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _confirmPasswordController,
-                decoration: InputDecoration(
-                  hintText: 'Подтвердите новый пароль',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _confirmPasswordController,
+                  decoration: InputDecoration(
+                    hintText: 'Подтвердите новый пароль',
+                    border: const OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    contentPadding: const EdgeInsets.all(16),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirmPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirmPassword = !_obscureConfirmPassword;
+                        });
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
                   ),
+                  obscureText: _obscureConfirmPassword,
                 ),
-                obscureText: _obscureConfirmPassword,
               ),
               const SizedBox(height: 24),
 
               // Current Password Required
               Divider(
-                color: Theme.of(context).colorScheme.outline,
+                color: Colors.white.withValues(alpha: 0.3),
                 thickness: 1,
               ),
               const SizedBox(height: 16),
               Text(
                 'Подтверждение',
-                style: Theme.of(context).textTheme.titleLarge,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Введите текущий пароль для подтверждения изменений',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey[600],
+                      color: Colors.white.withValues(alpha: 0.8),
+                      shadows: [
+                        const Shadow(
+                          color: Colors.black26,
+                          offset: Offset(1, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
                     ),
               ),
               const SizedBox(height: 16),
@@ -387,35 +503,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               // Current Password Field
               Text(
                 'Текущий пароль *',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  shadows: [
+                    const Shadow(
+                      color: Colors.black26,
+                      offset: Offset(1, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
-              TextFormField(
-                controller: _currentPasswordController,
-                decoration: InputDecoration(
-                  hintText: 'Введите текущий пароль',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.security),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureCurrentPassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _currentPasswordController,
+                  decoration: InputDecoration(
+                    hintText: 'Введите текущий пароль',
+                    border: const OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: const Icon(Icons.security),
+                    contentPadding: const EdgeInsets.all(16),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureCurrentPassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureCurrentPassword = !_obscureCurrentPassword;
+                        });
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureCurrentPassword = !_obscureCurrentPassword;
-                      });
-                    },
                   ),
+                  obscureText: _obscureCurrentPassword,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите текущий пароль';
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: _obscureCurrentPassword,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите текущий пароль';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 24),
 
@@ -441,6 +570,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
       bottomNavigationBar: const MiniPlayer(),
+      ),
     );
   }
 }

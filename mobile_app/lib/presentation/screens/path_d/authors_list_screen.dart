@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../providers/book_authors_provider.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import 'books_by_author_screen.dart';
 
 class AuthorsListScreen extends ConsumerStatefulWidget {
@@ -25,12 +27,15 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
   Widget build(BuildContext context) {
     final authorsState = ref.watch(bookAuthorsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Авторы'),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Авторы'),
+        ),
+        body: _buildBody(context, authorsState),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: _buildBody(context, authorsState),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -40,29 +45,30 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
         // Search field
         Padding(
           padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Поиск авторов...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {});
-                        ref.read(bookAuthorsProvider.notifier).clearSearch();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Поиск авторов...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                          ref.read(bookAuthorsProvider.notifier).clearSearch();
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
               ),
+              onChanged: (value) {
+                setState(() {}); // Rebuild to show/hide clear button
+                ref.read(bookAuthorsProvider.notifier).search(value);
+              },
             ),
-            onChanged: (value) {
-              setState(() {}); // Rebuild to show/hide clear button
-              ref.read(bookAuthorsProvider.notifier).search(value);
-            },
           ),
         ),
         // List
@@ -109,13 +115,21 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
         itemCount: state.authors.length,
         itemBuilder: (context, index) {
           final author = state.authors[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => BooksByAuthorScreen(author: author),
+                ),
+              );
+            },
             child: ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppIcons.bookAuthorColor.withValues(alpha: 0.1),
+                  color: AppIcons.bookAuthorColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -126,7 +140,7 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
               ),
               title: Text(
                 author.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,13 +160,6 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
               ),
               isThreeLine: author.biography != null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => BooksByAuthorScreen(author: author),
-                  ),
-                );
-              },
             ),
           );
         },

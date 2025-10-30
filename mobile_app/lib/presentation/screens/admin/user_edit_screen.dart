@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/user.dart';
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class UserEditScreen extends ConsumerStatefulWidget {
   final User user;
@@ -120,42 +122,44 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Редактирование пользователя'),
-        actions: [
-          if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Редактирование пользователя'),
+          actions: [
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
                   ),
                 ),
+              )
+            else
+              IconButton(
+                icon: const Icon(Icons.save),
+                onPressed: _saveUser,
+                tooltip: 'Сохранить',
               ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.save),
-              onPressed: _saveUser,
-              tooltip: 'Сохранить',
-            ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // User basic info
-              Card(
-                child: Padding(
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // User basic info
+                GlassCard(
+                  child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,108 +189,128 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
               const SizedBox(height: 16),
 
               // Email Field
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Введите корректный email';
+                    }
+                    return null;
+                  },
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Введите корректный email';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // Username Field
-              TextFormField(
-                controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Логин (username)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Логин (username)',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Введите логин';
+                    }
+                    if (value.length < 3 || value.length > 20) {
+                      return 'Логин должен быть от 3 до 20 символов';
+                    }
+                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+                      return 'Только латинские буквы, цифры и подчеркивание';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите логин';
-                  }
-                  if (value.length < 3 || value.length > 20) {
-                    return 'Логин должен быть от 3 до 20 символов';
-                  }
-                  if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                    return 'Только латинские буквы, цифры и подчеркивание';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // First Name Field
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Имя',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _firstNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Имя',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    prefixIcon: Icon(Icons.badge),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Last Name Field
-              TextFormField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Фамилия',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.badge),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _lastNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Фамилия',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    prefixIcon: Icon(Icons.badge),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Password Field
-              TextFormField(
-                controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Новый пароль (необязательно)',
-                  border: const OutlineInputBorder(),
-                  prefixIcon: const Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    labelText: 'Новый пароль (необязательно)',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
+                    helperText:
+                        'Оставьте пустым, если не хотите менять пароль',
                   ),
-                  helperText:
-                      'Оставьте пустым, если не хотите менять пароль',
+                  obscureText: _obscurePassword,
+                  validator: (value) {
+                    if (value != null && value.isNotEmpty) {
+                      if (value.length < 8) {
+                        return 'Пароль должен быть минимум 8 символов';
+                      }
+                      if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
+                        return 'Пароль должен содержать хотя бы одну букву';
+                      }
+                      if (!RegExp(r'\d').hasMatch(value)) {
+                        return 'Пароль должен содержать хотя бы одну цифру';
+                      }
+                    }
+                    return null;
+                  },
                 ),
-                obscureText: _obscurePassword,
-                validator: (value) {
-                  if (value != null && value.isNotEmpty) {
-                    if (value.length < 8) {
-                      return 'Пароль должен быть минимум 8 символов';
-                    }
-                    if (!RegExp(r'[A-Za-z]').hasMatch(value)) {
-                      return 'Пароль должен содержать хотя бы одну букву';
-                    }
-                    if (!RegExp(r'\d').hasMatch(value)) {
-                      return 'Пароль должен содержать хотя бы одну цифру';
-                    }
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 24),
 
@@ -298,30 +322,34 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
               const SizedBox(height: 16),
 
               // Role dropdown
-              DropdownButtonFormField<int>(
-                value: _selectedRoleId,
-                decoration: const InputDecoration(
-                  labelText: 'Роль',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.admin_panel_settings),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: DropdownButtonFormField<int>(
+                  value: _selectedRoleId,
+                  decoration: const InputDecoration(
+                    labelText: 'Роль',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    prefixIcon: Icon(Icons.admin_panel_settings),
+                  ),
+                  items: const [
+                    DropdownMenuItem<int>(
+                      value: 1,
+                      child: Text('User (обычный пользователь)'),
+                    ),
+                    DropdownMenuItem<int>(
+                      value: 2,
+                      child: Text('Admin (администратор)'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedRoleId = value;
+                      });
+                    }
+                  },
                 ),
-                items: const [
-                  DropdownMenuItem<int>(
-                    value: 1,
-                    child: Text('User (обычный пользователь)'),
-                  ),
-                  DropdownMenuItem<int>(
-                    value: 2,
-                    child: Text('Admin (администратор)'),
-                  ),
-                ],
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedRoleId = value;
-                    });
-                  }
-                },
               ),
               const SizedBox(height: 16),
 
@@ -403,6 +431,7 @@ class _UserEditScreenState extends ConsumerState<UserEditScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

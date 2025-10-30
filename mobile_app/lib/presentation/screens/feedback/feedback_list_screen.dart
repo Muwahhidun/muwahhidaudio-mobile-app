@@ -5,6 +5,8 @@ import '../../../data/models/feedback.dart' as model;
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import 'feedback_create_screen.dart';
 import 'feedback_detail_screen.dart';
 
@@ -107,24 +109,29 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Обратная связь'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadFeedbacks,
-            tooltip: 'Обновить',
-          ),
-        ],
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Обратная связь'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadFeedbacks,
+              tooltip: 'Обновить',
+            ),
+          ],
+        ),
+        body: _buildBody(),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _navigateToCreate,
+          icon: const Icon(Icons.add),
+          label: const Text('Новое обращение'),
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToCreate,
-        icon: const Icon(Icons.add),
-        label: const Text('Новое обращение'),
-      ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -193,59 +200,57 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
   Widget _buildFeedbackCard(model.Feedback feedback) {
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
 
-    return Card(
+    return GlassCard(
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _navigateToDetail(feedback),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      feedback.subject,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+      padding: EdgeInsets.zero,
+      onTap: () => _navigateToDetail(feedback),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    feedback.subject,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  _buildStatusChip(feedback),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                feedback.messageText,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey[700]),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                ),
+                _buildStatusChip(feedback),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              feedback.messageText,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 14, color: Theme.of(context).textTheme.bodySmall?.color),
+                const SizedBox(width: 4),
+                Text(
+                  dateFormat.format(feedback.createdAt),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                if (feedback.hasReply) ...[
+                  const SizedBox(width: 16),
+                  Icon(Icons.reply, size: 14, color: Colors.green[600]),
                   const SizedBox(width: 4),
                   Text(
-                    dateFormat.format(feedback.createdAt),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    'Получен ответ',
+                    style: TextStyle(fontSize: 12, color: Colors.green[600]),
                   ),
-                  if (feedback.hasReply) ...[
-                    const SizedBox(width: 16),
-                    Icon(Icons.reply, size: 14, color: Colors.green[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Получен ответ',
-                      style: TextStyle(fontSize: 12, color: Colors.green[600]),
-                    ),
-                  ],
                 ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -255,7 +260,7 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Color(feedback.statusColor).withOpacity(0.1),
+        color: Color(feedback.statusColor).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Color(feedback.statusColor)),
       ),
@@ -271,12 +276,8 @@ class _FeedbackListScreenState extends ConsumerState<FeedbackListScreen> {
   }
 
   Widget _buildPagination() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
-      ),
+    return GlassCard(
+      margin: EdgeInsets.zero,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

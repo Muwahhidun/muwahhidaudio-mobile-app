@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/theme.dart';
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class ThemesManagementScreen extends ConsumerStatefulWidget {
   const ThemesManagementScreen({super.key});
@@ -99,43 +101,49 @@ class _ThemesManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Управление темами'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showThemeDialog(context),
-          ),
-        ],
-      ),
-      body: Column(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Управление темами'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showThemeDialog(context),
+            ),
+          ],
+        ),
+        body: Column(
         children: [
           // Search field
           Padding(
             padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Поиск по названию или описанию',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _loadThemes(resetPage: true);
-                        },
-                      )
-                    : null,
-                border: const OutlineInputBorder(),
+            child: GlassCard(
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  labelText: 'Поиск по названию или описанию',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            _loadThemes(resetPage: true);
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  setState(() {}); // Update to show/hide clear button
+                },
+                onSubmitted: (_) {
+                  _loadThemes(resetPage: true);
+                },
               ),
-              onChanged: (value) {
-                setState(() {}); // Update to show/hide clear button
-              },
-              onSubmitted: (_) {
-                _loadThemes(resetPage: true);
-              },
             ),
           ),
           // List
@@ -163,8 +171,9 @@ class _ThemesManagementScreenState
                             itemCount: _themes.length,
                             itemBuilder: (context, index) {
                               final theme = _themes[index];
-                              return Card(
+                              return GlassCard(
                                 margin: const EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.zero,
                                 child: ListTile(
                                   title: Text(
                                     theme.name,
@@ -212,12 +221,9 @@ class _ThemesManagementScreenState
           ),
           // Pagination controls
           if (_totalItems > 0)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border(top: BorderSide(color: Colors.grey[300]!)),
-              ),
+            GlassCard(
+              margin: const EdgeInsets.all(16),
+              borderRadius: BorderRadius.circular(12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -252,6 +258,7 @@ class _ThemesManagementScreenState
               ),
             ),
         ],
+      ),
       ),
     );
   }

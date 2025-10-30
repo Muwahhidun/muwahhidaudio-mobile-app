@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:just_audio/just_audio.dart';
@@ -9,6 +8,8 @@ import '../../../data/api/dio_provider.dart';
 import '../../../main.dart' as app;
 import '../../../core/audio/audio_handler.dart';
 import '../../../core/audio/audio_service_web.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 /// Enhanced Audio Player Screen with modern UI and animations
 class PlayerScreen extends StatefulWidget {
@@ -275,45 +276,28 @@ class _PlayerScreenState extends State<PlayerScreen>
         return PopupMenuItem<double>(
           value: speed,
           padding: EdgeInsets.zero,
-          child: ClipRRect(
+          child: GlassCard(
+            width: 80,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            margin: EdgeInsets.zero,
             borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                width: 80,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withValues(alpha: 0.35),
-                      Colors.white.withValues(alpha: 0.15),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
-                    width: 1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${speed}x',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.green.shade800,
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${speed}x',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.green.shade800,
-                      ),
-                    ),
-                    if (_playbackSpeed == speed)
-                      Icon(
-                        Icons.check,
-                        size: 16,
-                        color: Colors.green.shade700,
-                      ),
-                  ],
-                ),
-              ),
+                if (_playbackSpeed == speed)
+                  Icon(
+                    Icons.check,
+                    size: 16,
+                    color: Colors.green.shade700,
+                  ),
+              ],
             ),
           ),
         );
@@ -378,20 +362,10 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.green.shade100,
-              Colors.green.shade200,
-              Colors.teal.shade100,
-            ],
-          ),
-        ),
-        child: SafeArea(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
           child: Column(
             children: [
               // App bar with back button
@@ -495,35 +469,15 @@ class _PlayerScreenState extends State<PlayerScreen>
       width: 300,
       height: 300,
       child: Center(
-        child: ClipRRect(
+        child: GlassCard(
+          width: 260,
+          height: 260,
           borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withValues(alpha: 0.3),
-                    Colors.white.withValues(alpha: 0.1),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: Icon(
-                  Icons.headset,
-                  size: 100,
-                  color: Colors.green.shade800,
-                ),
-              ),
+          child: Center(
+            child: Icon(
+              Icons.headset,
+              size: 100,
+              color: Colors.green.shade800,
             ),
           ),
         ),
@@ -604,118 +558,83 @@ class _PlayerScreenState extends State<PlayerScreen>
         final position = isCurrentLesson ? (snapshot.data ?? Duration.zero) : Duration.zero;
         final duration = isCurrentLesson ? (_audioPlayer!.duration ?? Duration.zero) : (widget.lesson.durationSeconds != null ? Duration(seconds: widget.lesson.durationSeconds!) : Duration.zero);
 
-        return ClipRRect(
+        return GlassCard(
           borderRadius: BorderRadius.circular(15),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.white.withValues(alpha: 0.3),
-                    Colors.white.withValues(alpha: 0.1),
-                  ],
+          child: Column(
+            children: [
+              SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 4,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 8,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 16,
+                  ),
+                  activeTrackColor: Colors.green.shade600,
+                  inactiveTrackColor: Colors.black.withValues(alpha: 0.3),
+                  thumbColor: Colors.green.shade700,
+                  overlayColor: Colors.green.withValues(alpha: 0.2),
                 ),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  width: 1.5,
+                child: Slider(
+                  min: 0.0,
+                  max: duration.inSeconds.toDouble(),
+                  value: position.inSeconds
+                      .toDouble()
+                      .clamp(0.0, duration.inSeconds.toDouble()),
+                  onChanged: (value) {
+                    _audioPlayer!.seek(Duration(seconds: value.toInt()));
+                  },
                 ),
               ),
-              child: Column(
-                children: [
-                  SliderTheme(
-                    data: SliderThemeData(
-                      trackHeight: 4,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 8,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _formatDuration(position),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade800,
                       ),
-                      overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 16,
+                    ),
+                    Text(
+                      _formatDuration(duration),
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green.shade800,
                       ),
-                      activeTrackColor: Colors.green.shade600,
-                      inactiveTrackColor: Colors.black.withValues(alpha: 0.3),
-                      thumbColor: Colors.green.shade700,
-                      overlayColor: Colors.green.withValues(alpha: 0.2),
                     ),
-                    child: Slider(
-                      min: 0.0,
-                      max: duration.inSeconds.toDouble(),
-                      value: position.inSeconds
-                          .toDouble()
-                          .clamp(0.0, duration.inSeconds.toDouble()),
-                      onChanged: (value) {
-                        _audioPlayer!.seek(Duration(seconds: value.toInt()));
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _formatDuration(position),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green.shade800,
-                          ),
-                        ),
-                        Text(
-                          _formatDuration(duration),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green.shade800,
-                          ),
-                        ),
-                        // Speed control button with glassmorphism
-                        GestureDetector(
-                          onTap: () => _showSpeedMenu(context),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white.withValues(alpha: 0.4),
-                                      Colors.white.withValues(alpha: 0.2),
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.speed, size: 14, color: Colors.green.shade800),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '${_playbackSpeed}x',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 11,
-                                        color: Colors.green.shade800,
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                    // Speed control button with glassmorphism
+                    GestureDetector(
+                      onTap: () => _showSpeedMenu(context),
+                      child: GlassCard(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        margin: EdgeInsets.zero,
+                        borderRadius: BorderRadius.circular(10),
+                        blur: 5,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.speed, size: 14, color: Colors.green.shade800),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${_playbackSpeed}x',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                                color: Colors.green.shade800,
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         );
       },

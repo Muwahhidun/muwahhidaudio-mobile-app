@@ -7,6 +7,7 @@ import '../../core/audio/audio_service_web.dart';
 import '../../main.dart' as app;
 import '../../core/audio/audio_handler.dart';
 import '../screens/player/player_screen.dart';
+import 'glass_card.dart';
 
 /// Floating mini player that appears at the bottom of all screens
 /// Shows current playing lesson with controls
@@ -165,23 +166,18 @@ class _MiniPlayerUI extends StatelessWidget {
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 600;
 
-    return Container(
+    return GlassCard(
       height: 80,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.green.shade800,
-            Colors.green.shade700,
-          ],
+      padding: EdgeInsets.zero,
+      margin: EdgeInsets.zero,
+      borderRadius: BorderRadius.zero,
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
+          blurRadius: 8,
+          offset: const Offset(0, -2),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
+      ],
       child: Column(
         children: [
           // Progress bar
@@ -197,7 +193,7 @@ class _MiniPlayerUI extends StatelessWidget {
               return LinearProgressIndicator(
                 value: progress,
                 backgroundColor: Colors.white.withValues(alpha: 0.2),
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade700),
                 minHeight: 2,
               );
             },
@@ -225,7 +221,7 @@ class _MiniPlayerUI extends StatelessWidget {
                             ),
                             child: Icon(
                               Icons.headset,
-                              color: Colors.white,
+                              color: Colors.green.shade800,
                               size: 32,
                             ),
                           ),
@@ -241,8 +237,8 @@ class _MiniPlayerUI extends StatelessWidget {
                                   lesson.book != null
                                       ? '${lesson.book!.name} - Урок ${lesson.lessonNumber}'
                                       : 'Урок ${lesson.lessonNumber}',
-                                  style: const TextStyle(
-                                    color: Colors.white,
+                                  style: TextStyle(
+                                    color: Colors.green.shade900,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -253,7 +249,7 @@ class _MiniPlayerUI extends StatelessWidget {
                                 Text(
                                   lesson.teacher?.name ?? '',
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                    color: Colors.green.shade700,
                                     fontSize: 14,
                                   ),
                                   maxLines: 1,
@@ -272,14 +268,14 @@ class _MiniPlayerUI extends StatelessWidget {
                   if (isWide) ...[
                     // Previous
                     IconButton(
-                      icon: const Icon(Icons.skip_previous, color: Colors.white),
+                      icon: Icon(Icons.skip_previous, color: Colors.green.shade800),
                       onPressed: onPrevious,
                       iconSize: 32,
                     ),
 
                     // Rewind 10s
                     IconButton(
-                      icon: const Icon(Icons.replay_10, color: Colors.white),
+                      icon: Icon(Icons.replay_10, color: Colors.green.shade800),
                       onPressed: () {
                         final newPosition = player.position - const Duration(seconds: 10);
                         player.seek(newPosition < Duration.zero ? Duration.zero : newPosition);
@@ -293,13 +289,13 @@ class _MiniPlayerUI extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Colors.green.shade700,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
                       icon: Icon(
                         isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.green.shade800,
+                        color: Colors.white,
                       ),
                       onPressed: onPlayPause,
                       iconSize: 28,
@@ -310,7 +306,7 @@ class _MiniPlayerUI extends StatelessWidget {
                   if (isWide) ...[
                     // Forward 10s
                     IconButton(
-                      icon: const Icon(Icons.forward_10, color: Colors.white),
+                      icon: Icon(Icons.forward_10, color: Colors.green.shade800),
                       onPressed: () {
                         final duration = player.duration ?? Duration.zero;
                         final newPosition = player.position + const Duration(seconds: 10);
@@ -321,7 +317,7 @@ class _MiniPlayerUI extends StatelessWidget {
 
                     // Next
                     IconButton(
-                      icon: const Icon(Icons.skip_next, color: Colors.white),
+                      icon: Icon(Icons.skip_next, color: Colors.green.shade800),
                       onPressed: onNext,
                       iconSize: 32,
                     ),
@@ -329,7 +325,7 @@ class _MiniPlayerUI extends StatelessWidget {
 
                   // Close button - always visible
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: Icon(Icons.close, color: Colors.green.shade800),
                     onPressed: () {
                       if (kIsWeb) {
                         AudioServiceWeb().stop();

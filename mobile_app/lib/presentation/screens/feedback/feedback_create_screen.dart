@@ -4,6 +4,8 @@ import '../../../data/models/feedback.dart';
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class FeedbackCreateScreen extends ConsumerStatefulWidget {
   const FeedbackCreateScreen({super.key});
@@ -73,18 +75,20 @@ class _FeedbackCreateScreenState extends ConsumerState<FeedbackCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Новое обращение'),
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Новое обращение'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              GlassCard(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -111,74 +115,82 @@ class _FeedbackCreateScreenState extends ConsumerState<FeedbackCreateScreen> {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _subjectController,
-              decoration: const InputDecoration(
-                labelText: 'Тема обращения',
-                hintText: 'Краткое описание проблемы',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.subject),
-              ),
-              maxLength: 255,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Введите тему обращения';
-                }
-                if (value.trim().length < 3) {
-                  return 'Тема должна содержать минимум 3 символа';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                labelText: 'Сообщение',
-                hintText: 'Подробно опишите вашу проблему или вопрос',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-              maxLines: 10,
-              minLines: 5,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Введите текст сообщения';
-                }
-                if (value.trim().length < 10) {
-                  return 'Сообщение должно содержать минимум 10 символов';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 50,
-              child: ElevatedButton.icon(
-                onPressed: _isSubmitting ? null : _submit,
-                icon: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.send),
-                label: Text(_isSubmitting ? 'Отправка...' : 'Отправить'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+              const SizedBox(height: 16),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _subjectController,
+                  decoration: const InputDecoration(
+                    labelText: 'Тема обращения',
+                    hintText: 'Краткое описание проблемы',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    prefixIcon: Icon(Icons.subject),
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  maxLength: 255,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Введите тему обращения';
+                    }
+                    if (value.trim().length < 3) {
+                      return 'Тема должна содержать минимум 3 символа';
+                    }
+                    return null;
+                  },
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _messageController,
+                  decoration: const InputDecoration(
+                    labelText: 'Сообщение',
+                    hintText: 'Подробно опишите вашу проблему или вопрос',
+                    border: OutlineInputBorder(borderSide: BorderSide.none),
+                    alignLabelWithHint: true,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  maxLines: 10,
+                  minLines: 5,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Введите текст сообщения';
+                    }
+                    if (value.trim().length < 10) {
+                      return 'Сообщение должно содержать минимум 10 символов';
+                    }
+                    return null;
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
+                  onPressed: _isSubmitting ? null : _submit,
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.send),
+                  label: Text(_isSubmitting ? 'Отправка...' : 'Отправить'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 }

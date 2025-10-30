@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_icons.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class AdminPanelScreen extends StatelessWidget {
   const AdminPanelScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Администрирование'),
-      ),
-      body: ListView(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Администрирование'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           // Блок: Управление контентом
@@ -153,6 +159,7 @@ class AdminPanelScreen extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -174,13 +181,14 @@ class _AdminMenuItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      onTap: onTap,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withAlpha((0.15 * 255).toInt()),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 28),
@@ -194,7 +202,6 @@ class _AdminMenuItem extends StatelessWidget {
         ),
         subtitle: Text(subtitle),
         trailing: const Icon(AppIcons.chevronRight),
-        onTap: onTap,
       ),
     );
   }

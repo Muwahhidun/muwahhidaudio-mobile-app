@@ -7,7 +7,10 @@ import '../../../core/audio/audio_service_web.dart';
 import '../../providers/lessons_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../player/player_screen.dart';
+import '../tests/test_screen.dart';
 import '../../../main.dart';
 
 /// Universal screen for showing lessons in a series
@@ -128,29 +131,33 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
   Widget build(BuildContext context) {
     final lessonsState = ref.watch(lessonsProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Уроки'),
-      ),
-      body: Column(
-        children: [
-          // Breadcrumbs
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Breadcrumbs(
-              path: widget.breadcrumbs,
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Уроки'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            // Breadcrumbs
+            GlassCard(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              child: Breadcrumbs(
+                path: widget.breadcrumbs,
+              ),
             ),
-          ),
 
-          // Lessons list
-          Expanded(
-            child: _buildLessonsList(lessonsState),
-          ),
-        ],
+            // Lessons list
+            Expanded(
+              child: _buildLessonsList(lessonsState),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -191,17 +198,94 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
         await _loadBookmarks();
       },
       child: ListView.builder(
-        itemCount: state.lessons.length,
+        itemCount: state.lessons.length + 1, // +1 for series test button
         itemBuilder: (context, index) {
+          // Show series test button as last item
+          if (index == state.lessons.length) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: GlassCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const Icon(
+                      Icons.school,
+                      size: 48,
+                      color: Colors.deepPurple,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Итоговый тест по серии',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Проверьте свои знания по всем урокам',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        // Navigate to series test screen
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => TestScreen(
+                              seriesId: widget.seriesId,
+                              lessonId: null, // null for series test
+                              breadcrumbs: widget.breadcrumbs,
+                              testTitle: 'Итоговый тест',
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.quiz),
+                      label: const Text('Начать тест'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
           final lesson = state.lessons[index];
           final isBookmarked = _bookmarksMap.containsKey(lesson.id);
           final bookmark = _bookmarksMap[lesson.id];
 
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              // Navigate to player with full playlist
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => PlayerScreen(
+                    lesson: lesson,
+                    playlist: state.lessons, // Pass all lessons as playlist
+                    breadcrumbs: [...widget.breadcrumbs, lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'],
+                  ),
+                ),
+              ).then((_) {
+                // Reload bookmarks when returning
+                _loadBookmarks();
+              });
+            },
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.green.withOpacity(0.8),
                 child: Text(
                   '${lesson.lessonNumber}',
                   style: const TextStyle(
@@ -215,7 +299,10 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                 children: [
                   Text(
                     lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                   // Show custom note if exists
                   if (bookmark?.customName != null && bookmark!.customName!.isNotEmpty)
@@ -226,7 +313,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                         style: TextStyle(
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
-                          color: Colors.grey[600],
+                          color: Colors.white.withOpacity(0.6),
                         ),
                       ),
                     ),
@@ -235,20 +322,48 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
               subtitle: lesson.formattedDuration != null
                   ? Row(
                       children: [
-                        const Icon(Icons.access_time, size: 16),
+                        Icon(
+                          Icons.access_time,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.7),
+                        ),
                         const SizedBox(width: 4),
-                        Text(lesson.formattedDuration!),
+                        Text(
+                          lesson.formattedDuration!,
+                          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                        ),
                       ],
                     )
                   : null,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Test button (graduation cap)
+                  IconButton(
+                    icon: const Icon(
+                      Icons.school,
+                      color: Colors.deepPurple,
+                      size: 28,
+                    ),
+                    onPressed: () {
+                      // Navigate to lesson test screen
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => TestScreen(
+                            seriesId: widget.seriesId,
+                            lessonId: lesson.id, // specific lesson test
+                            breadcrumbs: [...widget.breadcrumbs, lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'],
+                            testTitle: 'Тест по уроку',
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   // Bookmark star button
                   IconButton(
                     icon: Icon(
                       isBookmarked ? Icons.star : Icons.star_border,
-                      color: isBookmarked ? Colors.amber : Colors.grey,
+                      color: isBookmarked ? Colors.amber : Colors.white.withValues(alpha: 0.5),
                       size: 28,
                     ),
                     onPressed: () => _toggleBookmark(lesson),
@@ -292,21 +407,6 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                     const Icon(Icons.play_arrow, size: 32, color: Colors.green),
                 ],
               ),
-              onTap: () {
-                // Navigate to player with full playlist
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => PlayerScreen(
-                      lesson: lesson,
-                      playlist: state.lessons, // Pass all lessons as playlist
-                      breadcrumbs: [...widget.breadcrumbs, lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}'],
-                    ),
-                  ),
-                ).then((_) {
-                  // Reload bookmarks when returning
-                  _loadBookmarks();
-                });
-              },
             ),
           );
         },

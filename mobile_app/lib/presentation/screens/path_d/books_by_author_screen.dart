@@ -5,6 +5,8 @@ import '../../../data/models/book_author.dart';
 import '../../providers/books_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import 'teachers_by_author_book_screen.dart';
 
 class BooksByAuthorScreen extends ConsumerStatefulWidget {
@@ -29,22 +31,26 @@ class _BooksByAuthorScreenState extends ConsumerState<BooksByAuthorScreen> {
   Widget build(BuildContext context) {
     final booksState = ref.watch(booksProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Книги'),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Книги'),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Breadcrumbs(path: ['Авторы', widget.author.name]),
+              ),
+            ),
+            Expanded(child: _buildBody(context, ref, booksState)),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            child: Breadcrumbs(path: ['Авторы', widget.author.name]),
-          ),
-          Expanded(child: _buildBody(context, ref, booksState)),
-        ],
-      ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -84,13 +90,24 @@ class _BooksByAuthorScreenState extends ConsumerState<BooksByAuthorScreen> {
         itemCount: state.books.length,
         itemBuilder: (context, index) {
           final book = state.books[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TeachersByAuthorBookScreen(
+                    author: widget.author,
+                    book: book,
+                  ),
+                ),
+              );
+            },
             child: ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppIcons.bookColor.withValues(alpha: 0.1),
+                  color: AppIcons.bookColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -101,7 +118,7 @@ class _BooksByAuthorScreenState extends ConsumerState<BooksByAuthorScreen> {
               ),
               title: Text(
                 book.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,16 +135,6 @@ class _BooksByAuthorScreenState extends ConsumerState<BooksByAuthorScreen> {
               ),
               isThreeLine: book.description != null && book.theme != null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => TeachersByAuthorBookScreen(
-                      author: widget.author,
-                      book: book,
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },

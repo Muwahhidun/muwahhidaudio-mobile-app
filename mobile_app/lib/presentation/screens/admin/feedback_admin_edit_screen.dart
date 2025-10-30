@@ -6,6 +6,8 @@ import '../../../data/models/user.dart';
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class FeedbackAdminEditScreen extends ConsumerStatefulWidget {
   final model.Feedback feedback;
@@ -247,32 +249,35 @@ class _FeedbackAdminEditScreenState
     final authState = ref.watch(authProvider);
     final currentUser = authState.user;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Обработка обращения'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _refreshFeedback,
-            tooltip: 'Обновить',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildStatusHeader(),
-          _buildSubjectHeader(),
-          if (_feedback.user != null) _buildUserInfo(),
-          const Divider(height: 1),
-          Expanded(
-            child: _isLoading && _feedback == widget.feedback
-                ? const Center(child: CircularProgressIndicator())
-                : _error != null
-                    ? _buildError()
-                    : _buildMessagesList(currentUser),
-          ),
-          if (!_feedback.isClosed) _buildMessageInput(),
-        ],
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Обработка обращения'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _refreshFeedback,
+              tooltip: 'Обновить',
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            _buildStatusHeader(),
+            _buildSubjectHeader(),
+            if (_feedback.user != null) _buildUserInfo(),
+            const Divider(height: 1),
+            Expanded(
+              child: _isLoading && _feedback == widget.feedback
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? _buildError()
+                      : _buildMessagesList(currentUser),
+            ),
+            if (!_feedback.isClosed) _buildMessageInput(),
+          ],
+        ),
       ),
     );
   }
@@ -743,22 +748,23 @@ class _FeedbackAdminEditScreenState
         child: Row(
           children: [
             Expanded(
-              child: TextField(
-                controller: _messageController,
-                decoration: InputDecoration(
-                  hintText: 'Напишите ответ пользователю...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
+              child: GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: 'Напишите ответ пользователю...',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  enabled: !_isSending,
                 ),
-                maxLines: null,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
-                enabled: !_isSending,
               ),
             ),
             const SizedBox(width: 8),

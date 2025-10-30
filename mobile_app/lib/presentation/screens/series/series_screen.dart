@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/series_provider.dart';
+import '../../providers/statistics_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../lessons/lessons_screen.dart';
 
 /// Universal screen for showing lesson series
@@ -45,23 +48,29 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
   Widget build(BuildContext context) {
     final seriesState = ref.watch(seriesProvider);
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Серии уроков')),
-      body: Column(
-        children: [
-          // Breadcrumbs
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Breadcrumbs(path: widget.breadcrumbs),
-          ),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Серии уроков'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            // Breadcrumbs
+            GlassCard(
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              child: Breadcrumbs(path: widget.breadcrumbs),
+            ),
 
-          // Series list
-          Expanded(child: _buildSeriesList(seriesState)),
-        ],
+            // Series list
+            Expanded(child: _buildSeriesList(seriesState)),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -102,42 +111,138 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
         itemCount: state.series.length,
         itemBuilder: (context, index) {
           final series = state.series[index];
-          return Card(
+
+          return GlassCard(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: ListTile(
-              leading: Icon(Icons.library_books, color: Colors.blue, size: 32),
-              title: Text(
-                series.displayName ?? series.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (series.teacher != null)
-                    Text('Лектор: ${series.teacher!.name}'),
-                  if (series.book != null) Text('Книга: ${series.book!.name}'),
-                ],
-              ),
-              isThreeLine: true,
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Navigate to lessons
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => LessonsScreen(
-                      breadcrumbs: [
-                        ...widget.breadcrumbs,
-                        series.displayName ?? series.name,
-                      ],
-                      seriesId: series.id,
+            padding: EdgeInsets.zero,
+            onTap: () {
+              // Navigate to lessons
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => LessonsScreen(
+                    breadcrumbs: [
+                      ...widget.breadcrumbs,
+                      series.displayName ?? series.name,
+                    ],
+                    seriesId: series.id,
+                  ),
+                ),
+              );
+            },
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.library_books, color: Colors.blue, size: 32),
+                  ),
+                  title: Text(
+                    series.displayName ?? series.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                );
-              },
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (series.teacher != null)
+                        Text(
+                          'Лектор: ${series.teacher!.name}',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                        ),
+                      if (series.book != null)
+                        Text(
+                          'Книга: ${series.book!.name}',
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                        ),
+                    ],
+                  ),
+                  isThreeLine: true,
+                  trailing: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: Colors.white.withValues(alpha: 0.7),
+                  ),
+                ),
+
+                // Statistics row
+                Consumer(
+                  builder: (context, ref, child) {
+                    final statsAsync = ref.watch(seriesStatisticsProvider(series.id));
+
+                    return statsAsync.when(
+                      data: (stats) => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildStatItem(
+                              Icons.access_time,
+                              stats.formattedDuration,
+                              Colors.blue,
+                            ),
+                            _buildStatItem(
+                              Icons.quiz,
+                              '${stats.totalQuestions} вопр.',
+                              Colors.orange,
+                            ),
+                            if (stats.hasAttempts) ...[
+                              _buildStatItem(
+                                Icons.star,
+                                '${stats.bestScorePercent?.toStringAsFixed(0) ?? 0}%',
+                                Colors.amber,
+                              ),
+                              Icon(
+                                stats.hasPassed ? Icons.check_circle : Icons.cancel,
+                                color: stats.hasPassed ? Colors.green : Colors.red,
+                                size: 20,
+                              ),
+                            ] else
+                              _buildStatItem(
+                                Icons.pending,
+                                'Не пройдено',
+                                Colors.grey,
+                              ),
+                          ],
+                        ),
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ],
             ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: 12,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -11,6 +11,9 @@ import '../models/paginated_response.dart';
 import '../models/system_settings.dart';
 import '../models/feedback.dart';
 import '../models/bookmark.dart';
+import '../models/test.dart';
+import '../models/test_attempt.dart';
+import '../models/series_statistics.dart';
 
 part 'api_client.g.dart';
 
@@ -304,4 +307,36 @@ abstract class ApiClient {
 
   @POST('/bookmarks/toggle')
   Future<BookmarkToggleResponse> toggleBookmark(@Body() BookmarkCreateRequest request);
+
+  // Tests endpoints
+  @GET('/tests/series/{seriesId}/test')
+  Future<Test> getSeriesTest(@Path('seriesId') int seriesId);
+
+  @GET('/tests/lesson/{lessonId}/test')
+  Future<Test> getLessonTest(@Path('lessonId') int lessonId);
+
+  @POST('/tests/{testId}/start')
+  Future<TestAttempt> startTest(
+    @Path('testId') int testId,
+    @Query('lesson_id') int? lessonId,
+  );
+
+  @POST('/tests/attempts/{attemptId}/submit')
+  Future<TestAttempt> submitTestAttempt(
+    @Path('attemptId') int attemptId,
+    @Body() TestAttemptSubmit submission,
+  );
+
+  @GET('/tests/attempts/my')
+  Future<List<TestAttempt>> getMyAttempts({
+    @Query('series_id') int? seriesId,
+    @Query('skip') int? skip,
+    @Query('limit') int? limit,
+  });
+
+  @GET('/tests/series/{seriesId}/statistics')
+  Future<SeriesStatistics> getSeriesStatistics(@Path('seriesId') int seriesId);
+
+  @GET('/tests/statistics/all')
+  Future<List<SeriesStatisticsDetailed>> getAllStatistics();
 }

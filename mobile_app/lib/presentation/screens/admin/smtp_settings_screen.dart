@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/system_settings_provider.dart';
 import '../../../data/models/system_settings.dart';
 import '../../../core/utils/validators.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class SmtpSettingsScreen extends ConsumerStatefulWidget {
   const SmtpSettingsScreen({super.key});
@@ -146,47 +148,55 @@ class _SmtpSettingsScreenState extends ConsumerState<SmtpSettingsScreen> {
     }
 
     if (settingsState.isLoading && settingsState.smtpSettings == null) {
-      return const Scaffold(
-        appBar: null,
-        body: Center(child: CircularProgressIndicator()),
+      return GradientBackground(
+        child: const Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: null,
+          body: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     if (settingsState.error != null && settingsState.smtpSettings == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Настройка SMTP')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(settingsState.error!),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(systemSettingsProvider.notifier).loadSMTPSettings();
-                },
-                child: const Text('Повторить'),
-              ),
-            ],
+      return GradientBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(title: const Text('Настройка SMTP')),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(settingsState.error!),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    ref.read(systemSettingsProvider.notifier).loadSMTPSettings();
+                  },
+                  child: const Text('Повторить'),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Настройка SMTP'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: settingsState.isSaving ? null : _handleSave,
-            tooltip: 'Сохранить',
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Настройка SMTP'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: settingsState.isSaving ? null : _handleSave,
+              tooltip: 'Сохранить',
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
@@ -194,22 +204,19 @@ class _SmtpSettingsScreenState extends ConsumerState<SmtpSettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Info card
-              Card(
-                color: Colors.blue.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.blue.shade700),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Настройки SMTP для отправки email-уведомлений (верификация, восстановление пароля)',
-                          style: TextStyle(color: Colors.blue.shade900),
-                        ),
+              GlassCard(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Настройки SMTP для отправки email-уведомлений (верификация, восстановление пароля)',
+                        style: TextStyle(color: Colors.blue.shade900),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -223,77 +230,83 @@ class _SmtpSettingsScreenState extends ConsumerState<SmtpSettingsScreen> {
               ),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _smtpHostController,
-                decoration: const InputDecoration(
-                  labelText: 'SMTP хост *',
-                  hintText: 'smtp.mail.ru',
-                  prefixIcon: Icon(Icons.dns),
-                  border: OutlineInputBorder(),
-                ),
-                validator: Validators.validateSMTPHost,
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _smtpPortController,
-                decoration: const InputDecoration(
-                  labelText: 'SMTP порт *',
-                  hintText: '465',
-                  prefixIcon: Icon(Icons.settings_ethernet),
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                validator: Validators.validateSMTPPort,
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _smtpUsernameController,
-                decoration: const InputDecoration(
-                  labelText: 'SMTP пользователь *',
-                  hintText: 'user@mail.ru',
-                  prefixIcon: Icon(Icons.person),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    Validators.validateRequired(value, 'SMTP пользователь'),
-              ),
-              const SizedBox(height: 16),
-
-              TextFormField(
-                controller: _smtpPasswordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'SMTP пароль *',
-                  hintText: 'Пароль приложения',
-                  prefixIcon: const Icon(Icons.lock),
-                  border: const OutlineInputBorder(),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+              GlassCard(
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _smtpHostController,
+                      decoration: const InputDecoration(
+                        labelText: 'SMTP хост *',
+                        hintText: 'smtp.mail.ru',
+                        prefixIcon: Icon(Icons.dns),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: Validators.validateSMTPHost,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-                validator: (value) =>
-                    Validators.validateRequired(value, 'SMTP пароль'),
-              ),
-              const SizedBox(height: 16),
+                    const SizedBox(height: 16),
 
-              SwitchListTile(
-                title: const Text('Использовать SSL'),
-                subtitle: const Text('Рекомендуется для безопасного соединения'),
-                value: _smtpUseSsl,
-                onChanged: (value) {
-                  setState(() {
-                    _smtpUseSsl = value;
-                  });
-                },
+                    TextFormField(
+                      controller: _smtpPortController,
+                      decoration: const InputDecoration(
+                        labelText: 'SMTP порт *',
+                        hintText: '465',
+                        prefixIcon: Icon(Icons.settings_ethernet),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: Validators.validateSMTPPort,
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: _smtpUsernameController,
+                      decoration: const InputDecoration(
+                        labelText: 'SMTP пользователь *',
+                        hintText: 'user@mail.ru',
+                        prefixIcon: Icon(Icons.person),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'SMTP пользователь'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    TextFormField(
+                      controller: _smtpPasswordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'SMTP пароль *',
+                        hintText: 'Пароль приложения',
+                        prefixIcon: const Icon(Icons.lock),
+                        border: const OutlineInputBorder(),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'SMTP пароль'),
+                    ),
+                    const SizedBox(height: 16),
+
+                    SwitchListTile(
+                      title: const Text('Использовать SSL'),
+                      subtitle: const Text('Рекомендуется для безопасного соединения'),
+                      value: _smtpUseSsl,
+                      onChanged: (value) {
+                        setState(() {
+                          _smtpUseSsl = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
 
@@ -306,40 +319,42 @@ class _SmtpSettingsScreenState extends ConsumerState<SmtpSettingsScreen> {
               ),
               const SizedBox(height: 16),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _testEmailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Тестовый email',
-                        hintText: 'test@example.com',
-                        prefixIcon: Icon(Icons.mail_outline),
-                        border: OutlineInputBorder(),
+              GlassCard(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _testEmailController,
+                        decoration: const InputDecoration(
+                          labelText: 'Тестовый email',
+                          hintText: 'test@example.com',
+                          prefixIcon: Icon(Icons.mail_outline),
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: settingsState.isTesting ? null : _handleTestEmail,
-                    icon: settingsState.isTesting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send),
-                    label: Text(
-                      settingsState.isTesting ? 'Отправка...' : 'Тест',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 20,
+                    const SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: settingsState.isTesting ? null : _handleTestEmail,
+                      icon: settingsState.isTesting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send),
+                      label: Text(
+                        settingsState.isTesting ? 'Отправка...' : 'Тест',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 32),
 
@@ -372,6 +387,7 @@ class _SmtpSettingsScreenState extends ConsumerState<SmtpSettingsScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

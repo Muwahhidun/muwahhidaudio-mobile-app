@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/models/book_author.dart';
 import '../../../data/api/api_client.dart';
 import '../../../data/api/dio_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class BookAuthorsManagementScreen extends ConsumerStatefulWidget {
   const BookAuthorsManagementScreen({super.key});
@@ -142,17 +144,21 @@ class _BookAuthorsManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Управление авторами'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showAuthorDialog(context),
-          ),
-        ],
-      ),
-      body: Column(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Управление авторами'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showAuthorDialog(context),
+            ),
+          ],
+        ),
+        body: Column(
         children: [
           // Search field with clear filters button
           Padding(
@@ -160,30 +166,32 @@ class _BookAuthorsManagementScreenState
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      labelText: 'Поиск по имени или биографии',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                setState(() {
-                                  _searchController.clear();
-                                });
-                                _loadAuthors(resetPage: true);
-                              },
-                            )
-                          : null,
-                      border: const OutlineInputBorder(),
+                  child: GlassCard(
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        labelText: 'Поиск по имени или биографии',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () {
+                                  setState(() {
+                                    _searchController.clear();
+                                  });
+                                  _loadAuthors(resetPage: true);
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                      ),
+                      onChanged: (value) {
+                        setState(() {}); // Update to show/hide clear button
+                      },
+                      onSubmitted: (_) {
+                        _loadAuthors(resetPage: true);
+                      },
                     ),
-                    onChanged: (value) {
-                      setState(() {}); // Update to show/hide clear button
-                    },
-                    onSubmitted: (_) {
-                      _loadAuthors(resetPage: true);
-                    },
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -356,8 +364,9 @@ class _BookAuthorsManagementScreenState
                             itemCount: _authors.length,
                             itemBuilder: (context, index) {
                               final author = _authors[index];
-                              return Card(
+                              return GlassCard(
                                 margin: const EdgeInsets.only(bottom: 12),
+                                padding: EdgeInsets.zero,
                                 child: ListTile(
                                   title: Text(
                                     author.name,
@@ -419,12 +428,9 @@ class _BookAuthorsManagementScreenState
           ),
           // Pagination controls
           if (_totalItems > 0)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border(top: BorderSide(color: Colors.grey[300]!)),
-              ),
+            GlassCard(
+              margin: const EdgeInsets.all(16),
+              borderRadius: BorderRadius.circular(12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -459,6 +465,7 @@ class _BookAuthorsManagementScreenState
               ),
             ),
         ],
+        ),
       ),
     );
   }

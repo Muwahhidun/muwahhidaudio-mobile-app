@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../data/models/book.dart';
 import '../../providers/teachers_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
 import '../series/series_screen.dart';
@@ -29,22 +31,26 @@ class _TeachersByBookScreenState extends ConsumerState<TeachersByBookScreen> {
   Widget build(BuildContext context) {
     final teachersState = ref.watch(teachersProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Лекторы'),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Лекторы'),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Breadcrumbs(path: ['Книги', widget.book.name]),
+              ),
+            ),
+            Expanded(child: _buildBody(context, ref, teachersState)),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            child: Breadcrumbs(path: ['Книги', widget.book.name]),
-          ),
-          Expanded(child: _buildBody(context, ref, teachersState)),
-        ],
-      ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -84,13 +90,29 @@ class _TeachersByBookScreenState extends ConsumerState<TeachersByBookScreen> {
         itemCount: state.teachers.length,
         itemBuilder: (context, index) {
           final teacher = state.teachers[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SeriesScreen(
+                    breadcrumbs: [
+                      'Книги',
+                      widget.book.name,
+                      teacher.name,
+                    ],
+                    bookId: widget.book.id,
+                    teacherId: teacher.id,
+                  ),
+                ),
+              );
+            },
             child: ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppIcons.teacherColor.withValues(alpha: 0.1),
+                  color: AppIcons.teacherColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -101,7 +123,7 @@ class _TeachersByBookScreenState extends ConsumerState<TeachersByBookScreen> {
               ),
               title: Text(
                 teacher.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               subtitle: teacher.biography != null
                   ? Text(
@@ -111,21 +133,6 @@ class _TeachersByBookScreenState extends ConsumerState<TeachersByBookScreen> {
                     )
                   : null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => SeriesScreen(
-                      breadcrumbs: [
-                        'Книги',
-                        widget.book.name,
-                        teacher.name,
-                      ],
-                      bookId: widget.book.id,
-                      teacherId: teacher.id,
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },

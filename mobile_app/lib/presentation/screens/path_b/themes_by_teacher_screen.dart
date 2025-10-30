@@ -5,6 +5,8 @@ import '../../../data/models/teacher.dart';
 import '../../providers/themes_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import 'books_by_teacher_theme_screen.dart';
 
 class ThemesByTeacherScreen extends ConsumerStatefulWidget {
@@ -29,22 +31,26 @@ class _ThemesByTeacherScreenState extends ConsumerState<ThemesByTeacherScreen> {
   Widget build(BuildContext context) {
     final themesState = ref.watch(themesProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Темы'),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Темы'),
+        ),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Breadcrumbs(path: ['Лекторы', widget.teacher.name]),
+              ),
+            ),
+            Expanded(child: _buildBody(context, ref, themesState)),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            child: Breadcrumbs(path: ['Лекторы', widget.teacher.name]),
-          ),
-          Expanded(child: _buildBody(context, ref, themesState)),
-        ],
-      ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -84,13 +90,24 @@ class _ThemesByTeacherScreenState extends ConsumerState<ThemesByTeacherScreen> {
         itemCount: state.themes.length,
         itemBuilder: (context, index) {
           final theme = state.themes[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => BooksByTeacherThemeScreen(
+                    teacher: widget.teacher,
+                    theme: theme,
+                  ),
+                ),
+              );
+            },
             child: ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppIcons.themeColor.withValues(alpha: 0.1),
+                  color: AppIcons.themeColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -101,7 +118,7 @@ class _ThemesByTeacherScreenState extends ConsumerState<ThemesByTeacherScreen> {
               ),
               title: Text(
                 theme.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               subtitle: theme.description != null
                   ? Text(
@@ -111,16 +128,6 @@ class _ThemesByTeacherScreenState extends ConsumerState<ThemesByTeacherScreen> {
                     )
                   : null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => BooksByTeacherThemeScreen(
-                      teacher: widget.teacher,
-                      theme: theme,
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },

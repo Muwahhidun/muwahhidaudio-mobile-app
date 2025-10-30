@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../providers/books_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../../widgets/mini_player.dart';
 import 'teachers_by_book_screen.dart';
 
@@ -25,12 +27,15 @@ class _BooksListScreenState extends ConsumerState<BooksListScreen> {
   Widget build(BuildContext context) {
     final booksState = ref.watch(booksProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Книги'),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Книги'),
+        ),
+        body: _buildBody(context, booksState),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: _buildBody(context, booksState),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -40,29 +45,30 @@ class _BooksListScreenState extends ConsumerState<BooksListScreen> {
         // Search field
         Padding(
           padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Поиск книг...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {});
-                        ref.read(booksProvider.notifier).clearSearch();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Поиск книг...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {});
+                          ref.read(booksProvider.notifier).clearSearch();
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
               ),
+              onChanged: (value) {
+                setState(() {}); // Rebuild to show/hide clear button
+                ref.read(booksProvider.notifier).search(value);
+              },
             ),
-            onChanged: (value) {
-              setState(() {}); // Rebuild to show/hide clear button
-              ref.read(booksProvider.notifier).search(value);
-            },
           ),
         ),
         // List
@@ -109,13 +115,21 @@ class _BooksListScreenState extends ConsumerState<BooksListScreen> {
         itemCount: state.books.length,
         itemBuilder: (context, index) {
           final book = state.books[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TeachersByBookScreen(book: book),
+                ),
+              );
+            },
             child: ListTile(
               leading: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppIcons.bookColor.withValues(alpha: 0.1),
+                  color: AppIcons.bookColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -126,7 +140,7 @@ class _BooksListScreenState extends ConsumerState<BooksListScreen> {
               ),
               title: Text(
                 book.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,13 +159,6 @@ class _BooksListScreenState extends ConsumerState<BooksListScreen> {
               ),
               isThreeLine: true,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => TeachersByBookScreen(book: book),
-                  ),
-                );
-              },
             ),
           );
         },

@@ -4,6 +4,8 @@ import '../../../data/models/test.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../core/constants/app_icons.dart';
 import 'test_question_form_screen.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class TestQuestionsScreen extends ConsumerStatefulWidget {
   final Test test;
@@ -91,41 +93,43 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
     final groupedQuestions = _groupedQuestions;
     final lessonIds = groupedQuestions.keys.toList()..sort();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Вопросы теста'),
-            Text(
-              widget.test.title,
-              style: const TextStyle(fontSize: 14),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Вопросы теста'),
+              Text(
+                widget.test.title,
+                style: const TextStyle(fontSize: 14),
+              ),
+            ],
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: 'Добавить вопрос',
+              onPressed: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TestQuestionFormScreen(
+                      testId: widget.test.id,
+                      seriesId: widget.test.seriesId,
+                    ),
+                  ),
+                );
+                if (result == true) {
+                  _loadQuestions();
+                }
+              },
             ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Добавить вопрос',
-            onPressed: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TestQuestionFormScreen(
-                    testId: widget.test.id,
-                    seriesId: widget.test.seriesId,
-                  ),
-                ),
-              );
-              if (result == true) {
-                _loadQuestions();
-              }
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
+        body: Column(
+          children: [
           // Test info header
           Container(
             padding: const EdgeInsets.all(16),
@@ -230,8 +234,9 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
                               final questions = groupedQuestions[lessonId]!;
                               final lesson = questions.first.lesson;
 
-                              return Card(
+                              return GlassCard(
                                 margin: const EdgeInsets.only(bottom: 16),
+                                padding: EdgeInsets.zero,
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -387,6 +392,7 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
                           ),
           ),
         ],
+      ),
       ),
     );
   }

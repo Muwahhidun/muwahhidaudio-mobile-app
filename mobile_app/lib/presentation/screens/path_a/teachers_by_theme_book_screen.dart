@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/teachers_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../../data/models/theme.dart';
 import '../../../data/models/book.dart';
@@ -40,29 +42,33 @@ class _TeachersByThemeBookScreenState extends ConsumerState<TeachersByThemeBookS
   Widget build(BuildContext context) {
     final teachersState = ref.watch(teachersProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Лекторы'),
-      ),
-      body: Column(
-        children: [
-          // Breadcrumbs
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Breadcrumbs(
-              path: ['Темы', widget.theme.name, widget.book.name],
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Лекторы'),
+        ),
+        body: Column(
+          children: [
+            // Breadcrumbs
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GlassCard(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Breadcrumbs(
+                  path: ['Темы', widget.theme.name, widget.book.name],
+                ),
+              ),
             ),
-          ),
 
-          // Teachers list
-          Expanded(
-            child: _buildTeachersList(teachersState),
-          ),
-        ],
+            // Teachers list
+            Expanded(
+              child: _buildTeachersList(teachersState),
+            ),
+          ],
+        ),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -111,17 +117,40 @@ class _TeachersByThemeBookScreenState extends ConsumerState<TeachersByThemeBookS
         itemCount: state.teachers.length,
         itemBuilder: (context, index) {
           final teacher = state.teachers[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              // Navigate to series
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SeriesScreen(
+                    breadcrumbs: ['Темы', widget.theme.name, widget.book.name, teacher.name],
+                    themeId: widget.theme.id,
+                    bookId: widget.book.id,
+                    teacherId: teacher.id,
+                  ),
+                ),
+              );
+            },
             child: ListTile(
-              leading: Icon(
-                AppIcons.teacher,
-                color: AppIcons.teacherColor,
-                size: 32,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppIcons.teacherColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  AppIcons.teacher,
+                  color: AppIcons.teacherColor,
+                  size: 24,
+                ),
               ),
               title: Text(
                 teacher.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               subtitle: teacher.biography != null
                   ? Text(
@@ -131,19 +160,6 @@ class _TeachersByThemeBookScreenState extends ConsumerState<TeachersByThemeBookS
                     )
                   : null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Navigate to series
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => SeriesScreen(
-                      breadcrumbs: ['Темы', widget.theme.name, widget.book.name, teacher.name],
-                      themeId: widget.theme.id,
-                      bookId: widget.book.id,
-                      teacherId: teacher.id,
-                    ),
-                  ),
-                );
-              },
             ),
           );
         },

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/themes_provider.dart';
 import '../../../core/constants/app_icons.dart';
 import '../../widgets/mini_player.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 import 'books_by_theme_screen.dart';
 
 /// Path A: Step 1 - List of themes
@@ -26,12 +28,15 @@ class _ThemesListScreenState extends ConsumerState<ThemesListScreen> {
   Widget build(BuildContext context) {
     final themesState = ref.watch(themesProvider);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Темы'),
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Темы'),
+        ),
+        body: _buildBody(context, themesState),
+        bottomNavigationBar: const MiniPlayer(),
       ),
-      body: _buildBody(context, themesState),
-      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
@@ -41,28 +46,29 @@ class _ThemesListScreenState extends ConsumerState<ThemesListScreen> {
         // Search field
         Padding(
           padding: const EdgeInsets.all(16),
-          child: TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Поиск тем...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        ref.read(themesProvider.notifier).clearSearch();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Поиск тем...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          ref.read(themesProvider.notifier).clearSearch();
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
               ),
+              onChanged: (value) {
+                setState(() {}); // Rebuild to show/hide clear button
+                ref.read(themesProvider.notifier).search(value);
+              },
             ),
-            onChanged: (value) {
-              setState(() {}); // Rebuild to show/hide clear button
-              ref.read(themesProvider.notifier).search(value);
-            },
           ),
         ),
         // List
@@ -111,17 +117,35 @@ class _ThemesListScreenState extends ConsumerState<ThemesListScreen> {
         itemCount: state.themes.length,
         itemBuilder: (context, index) {
           final theme = state.themes[index];
-          return Card(
+          return GlassCard(
             margin: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.zero,
+            onTap: () {
+              // Navigate to books by theme
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => BooksByThemeScreen(theme: theme),
+                ),
+              );
+            },
             child: ListTile(
-              leading: Icon(
-                AppIcons.theme,
-                color: AppIcons.themeColor,
-                size: 32,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppIcons.themeColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  AppIcons.theme,
+                  color: AppIcons.themeColor,
+                  size: 24,
+                ),
               ),
               title: Text(
                 theme.name,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               subtitle: theme.description != null
                   ? Text(
@@ -131,14 +155,6 @@ class _ThemesListScreenState extends ConsumerState<ThemesListScreen> {
                     )
                   : null,
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                // Navigate to books by theme
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => BooksByThemeScreen(theme: theme),
-                  ),
-                );
-              },
             ),
           );
         },

@@ -10,6 +10,8 @@ import '../../providers/series_provider.dart';
 import '../../providers/teachers_provider.dart';
 import '../../providers/books_provider.dart';
 import '../../providers/themes_provider.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class LessonFormScreen extends ConsumerStatefulWidget {
   final Lesson? lesson; // If null, create mode; if not null, edit mode
@@ -544,261 +546,299 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
           Navigator.of(context).pop();
         }
       },
-      child: Scaffold(
-      appBar: AppBar(
-        title: Text(widget.lesson == null ? 'Создать урок' : 'Редактировать урок'),
-        actions: [
-          if (!_isLoading && !_isUploadingAudio)
-            TextButton(
-              onPressed: _saveLesson,
-              child: const Text(
-                'Сохранить',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-            ),
-          if (_isLoading || _isUploadingAudio)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+      child: GradientBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text(widget.lesson == null ? 'Создать урок' : 'Редактировать урок'),
+            actions: [
+              if (!_isLoading && !_isUploadingAudio)
+                TextButton(
+                  onPressed: _saveLesson,
+                  child: const Text(
+                    'Сохранить',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
-              ),
-            ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+              if (_isLoading || _isUploadingAudio)
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          body: Form(
+            key: _formKey,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Title field (auto-generated with manual edit option)
-              TextFormField(
-                controller: _titleController,
-                readOnly: !_isTitleManuallyEdited,
-                decoration: InputDecoration(
-                  labelText: 'Название * (авто)',
-                  border: const OutlineInputBorder(),
-                  filled: true,
-                  fillColor: _isTitleManuallyEdited ? null : Colors.grey[200],
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isTitleManuallyEdited ? Icons.lock_open : Icons.edit,
-                      size: 20,
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _titleController,
+                  readOnly: !_isTitleManuallyEdited,
+                  decoration: InputDecoration(
+                    labelText: 'Название * (авто)',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    filled: true,
+                    fillColor: _isTitleManuallyEdited ? Colors.transparent : Colors.grey.withValues(alpha: 0.1),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isTitleManuallyEdited ? Icons.lock_open : Icons.edit,
+                        size: 20,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isTitleManuallyEdited = !_isTitleManuallyEdited;
+                          // Regenerate title when switching back to auto mode
+                          if (!_isTitleManuallyEdited && _selectedSeriesId != null) {
+                            _generateTitle();
+                          }
+                        });
+                      },
+                      tooltip: _isTitleManuallyEdited
+                          ? 'Использовать автогенерацию'
+                          : 'Редактировать вручную',
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _isTitleManuallyEdited = !_isTitleManuallyEdited;
-                        // Regenerate title when switching back to auto mode
-                        if (!_isTitleManuallyEdited && _selectedSeriesId != null) {
-                          _generateTitle();
-                        }
-                      });
-                    },
-                    tooltip: _isTitleManuallyEdited
-                        ? 'Использовать автогенерацию'
-                        : 'Редактировать вручную',
                   ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Пожалуйста, введите название';
+                    }
+                    return null;
+                  },
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Пожалуйста, введите название';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // Lesson number field
-              TextFormField(
-                controller: _lessonNumberController,
-                decoration: const InputDecoration(
-                  labelText: 'Номер урока',
-                  border: OutlineInputBorder(),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _lessonNumberController,
+                  decoration: const InputDecoration(
+                    labelText: 'Номер урока',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
-                keyboardType: TextInputType.number,
-                maxLength: 4,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 16),
 
               // Duration field (seconds) - auto-detected from audio
-              TextFormField(
-                controller: _durationController,
-                enabled: _isDurationManuallyEdited,
-                decoration: InputDecoration(
-                  labelText: 'Длительность (секунды)',
-                  hintText: _isDurationManuallyEdited ? 'Введите длительность' : 'Авто-определение из аудио',
-                  border: const OutlineInputBorder(),
-                  filled: !_isDurationManuallyEdited,
-                  fillColor: !_isDurationManuallyEdited ? Colors.grey[100] : null,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isDurationManuallyEdited ? Icons.lock_open : Icons.edit,
-                      color: _isDurationManuallyEdited ? Colors.green : Colors.grey,
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _durationController,
+                  enabled: _isDurationManuallyEdited,
+                  decoration: InputDecoration(
+                    labelText: 'Длительность (секунды)',
+                    hintText: _isDurationManuallyEdited ? 'Введите длительность' : 'Авто-определение из аудио',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    filled: !_isDurationManuallyEdited,
+                    fillColor: !_isDurationManuallyEdited ? Colors.grey.withValues(alpha: 0.1) : Colors.transparent,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isDurationManuallyEdited ? Icons.lock_open : Icons.edit,
+                        color: _isDurationManuallyEdited ? Colors.green : Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isDurationManuallyEdited = !_isDurationManuallyEdited;
+                        });
+                      },
+                      tooltip: _isDurationManuallyEdited
+                          ? 'Вернуться к авто-определению'
+                          : 'Редактировать вручную',
                     ),
-                    onPressed: () {
-                      setState(() {
-                        _isDurationManuallyEdited = !_isDurationManuallyEdited;
-                      });
-                    },
-                    tooltip: _isDurationManuallyEdited
-                        ? 'Вернуться к авто-определению'
-                        : 'Редактировать вручную',
                   ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
               ),
               const SizedBox(height: 16),
 
               // Description field
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Описание',
-                  border: OutlineInputBorder(),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Описание',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  maxLines: 5,
                 ),
-                maxLines: 5,
               ),
               const SizedBox(height: 16),
 
               // Tags field
-              TextFormField(
-                controller: _tagsController,
-                decoration: const InputDecoration(
-                  labelText: 'Теги (через запятую)',
-                  border: OutlineInputBorder(),
-                  helperText: 'Пример: акыда, таухид, основы',
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: TextFormField(
+                  controller: _tagsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Теги (через запятую)',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                    helperText: 'Пример: акыда, таухид, основы',
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Series dropdown (required)
-              DropdownButtonFormField<int>(
-                value: _selectedSeriesId,
-                decoration: const InputDecoration(
-                  labelText: 'Серия *',
-                  border: OutlineInputBorder(),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: DropdownButtonFormField<int>(
+                  value: _selectedSeriesId,
+                  decoration: const InputDecoration(
+                    labelText: 'Серия *',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  items: seriesState.series.map((series) {
+                    return DropdownMenuItem<int>(
+                      value: series.id,
+                      child: Text(series.displayName ?? series.name),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    _updateFieldsFromSeries(value);
+                  },
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Пожалуйста, выберите серию';
+                    }
+                    return null;
+                  },
                 ),
-                items: seriesState.series.map((series) {
-                  return DropdownMenuItem<int>(
-                    value: series.id,
-                    child: Text(series.displayName ?? series.name),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  _updateFieldsFromSeries(value);
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Пожалуйста, выберите серию';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 16),
 
               // Teacher dropdown (read-only, inherited from Series)
-              DropdownButtonFormField<int>(
-                value: _selectedTeacherId,
-                decoration: InputDecoration(
-                  labelText: 'Преподаватель (из серии)',
-                  border: const OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                ),
-                items: [
-                  const DropdownMenuItem<int>(
-                    value: null,
-                    child: Text('Не выбрано'),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: DropdownButtonFormField<int>(
+                  value: _selectedTeacherId,
+                  decoration: InputDecoration(
+                    labelText: 'Преподаватель (из серии)',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    filled: true,
+                    fillColor: Colors.grey.withValues(alpha: 0.1),
                   ),
-                  ...teachersState.teachers.map((teacher) {
-                    return DropdownMenuItem<int>(
-                      value: teacher.id,
-                      child: Text(teacher.name),
-                    );
-                  }),
-                ],
-                onChanged: null, // Disabled
-                disabledHint: Text(
-                  _selectedTeacherId != null
-                      ? teachersState.teachers
-                          .firstWhere((t) => t.id == _selectedTeacherId,
-                              orElse: () => teachersState.teachers.first)
-                          .name
-                      : 'Не выбрано',
+                  items: [
+                    const DropdownMenuItem<int>(
+                      value: null,
+                      child: Text('Не выбрано'),
+                    ),
+                    ...teachersState.teachers.map((teacher) {
+                      return DropdownMenuItem<int>(
+                        value: teacher.id,
+                        child: Text(teacher.name),
+                      );
+                    }),
+                  ],
+                  onChanged: null, // Disabled
+                  disabledHint: Text(
+                    _selectedTeacherId != null
+                        ? teachersState.teachers
+                            .firstWhere((t) => t.id == _selectedTeacherId,
+                                orElse: () => teachersState.teachers.first)
+                            .name
+                        : 'Не выбрано',
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Book dropdown (read-only, inherited from Series)
-              DropdownButtonFormField<int>(
-                value: _selectedBookId,
-                decoration: InputDecoration(
-                  labelText: 'Книга (из серии)',
-                  border: const OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                ),
-                items: [
-                  const DropdownMenuItem<int>(
-                    value: null,
-                    child: Text('Не выбрано'),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: DropdownButtonFormField<int>(
+                  value: _selectedBookId,
+                  decoration: InputDecoration(
+                    labelText: 'Книга (из серии)',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    filled: true,
+                    fillColor: Colors.grey.withValues(alpha: 0.1),
                   ),
-                  ...booksState.books.map((book) {
-                    return DropdownMenuItem<int>(
-                      value: book.id,
-                      child: Text(book.name),
-                    );
-                  }),
-                ],
-                onChanged: null, // Disabled
-                disabledHint: Text(
-                  _selectedBookId != null
-                      ? booksState.books
-                          .firstWhere((b) => b.id == _selectedBookId,
-                              orElse: () => booksState.books.first)
-                          .name
-                      : 'Не выбрано',
+                  items: [
+                    const DropdownMenuItem<int>(
+                      value: null,
+                      child: Text('Не выбрано'),
+                    ),
+                    ...booksState.books.map((book) {
+                      return DropdownMenuItem<int>(
+                        value: book.id,
+                        child: Text(book.name),
+                      );
+                    }),
+                  ],
+                  onChanged: null, // Disabled
+                  disabledHint: Text(
+                    _selectedBookId != null
+                        ? booksState.books
+                            .firstWhere((b) => b.id == _selectedBookId,
+                                orElse: () => booksState.books.first)
+                            .name
+                        : 'Не выбрано',
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
 
               // Theme dropdown (read-only, inherited from Series)
-              DropdownButtonFormField<int>(
-                value: _selectedThemeId,
-                decoration: InputDecoration(
-                  labelText: 'Тема (из серии)',
-                  border: const OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                ),
-                items: [
-                  const DropdownMenuItem<int>(
-                    value: null,
-                    child: Text('Не выбрано'),
+              GlassCard(
+                padding: EdgeInsets.zero,
+                child: DropdownButtonFormField<int>(
+                  value: _selectedThemeId,
+                  decoration: InputDecoration(
+                    labelText: 'Тема (из серии)',
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(16),
+                    filled: true,
+                    fillColor: Colors.grey.withValues(alpha: 0.1),
                   ),
-                  ...themesState.themes.map((theme) {
-                    return DropdownMenuItem<int>(
-                      value: theme.id,
-                      child: Text(theme.name),
-                    );
-                  }),
-                ],
-                onChanged: null, // Disabled
-                disabledHint: Text(
-                  _selectedThemeId != null
-                      ? themesState.themes
-                          .firstWhere((t) => t.id == _selectedThemeId,
-                              orElse: () => themesState.themes.first)
-                          .name
-                      : 'Не выбрано',
+                  items: [
+                    const DropdownMenuItem<int>(
+                      value: null,
+                      child: Text('Не выбрано'),
+                    ),
+                    ...themesState.themes.map((theme) {
+                      return DropdownMenuItem<int>(
+                        value: theme.id,
+                        child: Text(theme.name),
+                      );
+                    }),
+                  ],
+                  onChanged: null, // Disabled
+                  disabledHint: Text(
+                    _selectedThemeId != null
+                        ? themesState.themes
+                            .firstWhere((t) => t.id == _selectedThemeId,
+                                orElse: () => themesState.themes.first)
+                            .name
+                        : 'Не выбрано',
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -817,8 +857,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
               const SizedBox(height: 32),
 
               // Audio Upload Section
-              Card(
-                elevation: 2,
+              GlassCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -969,6 +1008,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
           ),
         ),
       ),
+        ),
       ),
     );
   }

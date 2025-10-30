@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/system_settings_provider.dart';
 import '../../../data/models/system_settings.dart';
 import '../../../core/utils/validators.dart';
+import '../../widgets/glass_card.dart';
 
 class NotificationsSettingsTab extends ConsumerStatefulWidget {
   const NotificationsSettingsTab({super.key});
@@ -187,22 +188,19 @@ class _NotificationsSettingsTabState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Info card
-            Card(
-              color: Colors.blue.shade50,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue.shade700),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Настройки SMTP для отправки email-уведомлений (верификация, восстановление пароля)',
-                        style: TextStyle(color: Colors.blue.shade900),
-                      ),
+            GlassCard(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.blue.shade700),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Настройки SMTP для отправки email-уведомлений (верификация, восстановление пароля)',
+                      style: TextStyle(color: Colors.blue.shade900),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 24),
@@ -216,73 +214,79 @@ class _NotificationsSettingsTabState
             ),
             const SizedBox(height: 16),
 
-            TextFormField(
-              controller: _smtpHostController,
-              decoration: const InputDecoration(
-                labelText: 'SMTP хост *',
-                hintText: 'smtp.mail.ru',
-                prefixIcon: Icon(Icons.dns),
-              ),
-              validator: Validators.validateSMTPHost,
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _smtpPortController,
-              decoration: const InputDecoration(
-                labelText: 'SMTP порт *',
-                hintText: '465',
-                prefixIcon: Icon(Icons.settings_ethernet),
-              ),
-              keyboardType: TextInputType.number,
-              validator: Validators.validateSMTPPort,
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _smtpUsernameController,
-              decoration: const InputDecoration(
-                labelText: 'SMTP пользователь *',
-                hintText: 'user@mail.ru',
-                prefixIcon: Icon(Icons.person),
-              ),
-              validator: (value) =>
-                  Validators.validateRequired(value, 'SMTP пользователь'),
-            ),
-            const SizedBox(height: 16),
-
-            TextFormField(
-              controller: _smtpPasswordController,
-              obscureText: _obscurePassword,
-              decoration: InputDecoration(
-                labelText: 'SMTP пароль *',
-                hintText: 'Пароль приложения',
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+            GlassCard(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _smtpHostController,
+                    decoration: const InputDecoration(
+                      labelText: 'SMTP хост *',
+                      hintText: 'smtp.mail.ru',
+                      prefixIcon: Icon(Icons.dns),
+                    ),
+                    validator: Validators.validateSMTPHost,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
-                ),
-              ),
-              validator: (value) =>
-                  Validators.validateRequired(value, 'SMTP пароль'),
-            ),
-            const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-            SwitchListTile(
-              title: const Text('Использовать SSL'),
-              subtitle: const Text('Рекомендуется для безопасного соединения'),
-              value: _smtpUseSsl,
-              onChanged: (value) {
-                setState(() {
-                  _smtpUseSsl = value;
-                });
-              },
+                  TextFormField(
+                    controller: _smtpPortController,
+                    decoration: const InputDecoration(
+                      labelText: 'SMTP порт *',
+                      hintText: '465',
+                      prefixIcon: Icon(Icons.settings_ethernet),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: Validators.validateSMTPPort,
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _smtpUsernameController,
+                    decoration: const InputDecoration(
+                      labelText: 'SMTP пользователь *',
+                      hintText: 'user@mail.ru',
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                    validator: (value) =>
+                        Validators.validateRequired(value, 'SMTP пользователь'),
+                  ),
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _smtpPasswordController,
+                    obscureText: _obscurePassword,
+                    decoration: InputDecoration(
+                      labelText: 'SMTP пароль *',
+                      hintText: 'Пароль приложения',
+                      prefixIcon: const Icon(Icons.lock),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (value) =>
+                        Validators.validateRequired(value, 'SMTP пароль'),
+                  ),
+                  const SizedBox(height: 16),
+
+                  SwitchListTile(
+                    title: const Text('Использовать SSL'),
+                    subtitle: const Text('Рекомендуется для безопасного соединения'),
+                    value: _smtpUseSsl,
+                    onChanged: (value) {
+                      setState(() {
+                        _smtpUseSsl = value;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
 
@@ -295,26 +299,32 @@ class _NotificationsSettingsTabState
             ),
             const SizedBox(height: 16),
 
-            TextFormField(
-              controller: _emailFromNameController,
-              decoration: const InputDecoration(
-                labelText: 'Имя отправителя *',
-                hintText: 'Muwahhid',
-                prefixIcon: Icon(Icons.badge),
-              ),
-              validator: (value) =>
-                  Validators.validateRequired(value, 'Имя отправителя'),
-            ),
-            const SizedBox(height: 16),
+            GlassCard(
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _emailFromNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Имя отправителя *',
+                      hintText: 'Muwahhid',
+                      prefixIcon: Icon(Icons.badge),
+                    ),
+                    validator: (value) =>
+                        Validators.validateRequired(value, 'Имя отправителя'),
+                  ),
+                  const SizedBox(height: 16),
 
-            TextFormField(
-              controller: _emailFromAddressController,
-              decoration: const InputDecoration(
-                labelText: 'Email отправителя *',
-                hintText: 'noreply@muwahhid.ru',
-                prefixIcon: Icon(Icons.email),
+                  TextFormField(
+                    controller: _emailFromAddressController,
+                    decoration: const InputDecoration(
+                      labelText: 'Email отправителя *',
+                      hintText: 'noreply@muwahhid.ru',
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    validator: Validators.validateEmail,
+                  ),
+                ],
               ),
-              validator: Validators.validateEmail,
             ),
             const SizedBox(height: 32),
 
@@ -327,15 +337,17 @@ class _NotificationsSettingsTabState
             ),
             const SizedBox(height: 16),
 
-            TextFormField(
-              controller: _frontendUrlController,
-              decoration: const InputDecoration(
-                labelText: 'URL фронтенда *',
-                hintText: 'http://localhost:3065',
-                helperText: 'Используется в ссылках для верификации email',
-                prefixIcon: Icon(Icons.link),
+            GlassCard(
+              child: TextFormField(
+                controller: _frontendUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'URL фронтенда *',
+                  hintText: 'http://localhost:3065',
+                  helperText: 'Используется в ссылках для верификации email',
+                  prefixIcon: Icon(Icons.link),
+                ),
+                validator: Validators.validateURL,
               ),
-              validator: Validators.validateURL,
             ),
             const SizedBox(height: 32),
 
@@ -348,33 +360,35 @@ class _NotificationsSettingsTabState
             ),
             const SizedBox(height: 16),
 
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _testEmailController,
-                    decoration: const InputDecoration(
-                      labelText: 'Тестовый email',
-                      hintText: 'test@example.com',
-                      prefixIcon: Icon(Icons.mail_outline),
+            GlassCard(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _testEmailController,
+                      decoration: const InputDecoration(
+                        labelText: 'Тестовый email',
+                        hintText: 'test@example.com',
+                        prefixIcon: Icon(Icons.mail_outline),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: settingsState.isTesting ? null : _handleTestEmail,
-                  icon: settingsState.isTesting
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send),
-                  label: Text(
-                    settingsState.isTesting ? 'Отправка...' : 'Тест',
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: settingsState.isTesting ? null : _handleTestEmail,
+                    icon: settingsState.isTesting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.send),
+                    label: Text(
+                      settingsState.isTesting ? 'Отправка...' : 'Тест',
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 32),
 

@@ -13,14 +13,21 @@ from app.schemas.test import (
     TestCreate,
     TestUpdate,
     TestWithQuestions,
+    TestWithQuestionsUser,
     TestQuestionAdminResponse,
     TestQuestionCreate,
     TestQuestionUpdate,
+    TestAttemptCreate,
+    TestAttemptSubmit,
+    TestAttemptResponse,
+    SeriesStatistics,
+    SeriesStatisticsDetailed,
     LessonSeriesNested,
     TeacherNested,
     LessonNested
 )
 from app.crud import test as test_crud
+from app.crud import test_attempt as attempt_crud
 
 router = APIRouter(prefix="/tests", tags=["Tests"])
 
@@ -482,3 +489,304 @@ async def delete_test_question(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Question with ID {question_id} not found"
         )
+
+
+# ============================================================
+# PUBLIC USER ENDPOINTS
+# ============================================================
+
+@router.get("/series/{series_id}/test", response_model=TestWithQuestionsUser)
+async def get_series_test(
+    series_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get test for a series (all questions from lessons).
+    Returns test without correct answers for user.
+
+    Args:
+        series_id: Series ID
+
+    Returns:
+        Test with questions (no correct answers shown)
+    """
+    # Find test for this series
+    tests = await test_crud.get_all_tests(db, series_id=series_id, include_inactive=False)
+
+    if not tests:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No active test found for series {series_id}"
+        )
+
+    test = tests[0]  # Should be only one test per series
+
+    # Get all questions
+    questions = await test_crud.get_all_test_questions(db, test.id)
+
+    # Build response with relations
+    test_dict = build_test_with_relations(test).model_dump()
+
+    # Build questions without correct answers (for users)
+    from app.schemas.test import TestQuestionUserResponse
+    questions_list = []
+    for q in questions:
+        lesson_nested = None
+        if q.lesson:
+            lesson_nested = LessonNested(
+                id=q.lesson.id,
+                title=q.lesson.title,
+                lesson_number=q.lesson.lesson_number,
+                display_title=f"Урок {q.lesson.lesson_number}" if q.lesson.lesson_number else q.lesson.title
+            )
+
+        questions_list.append(TestQuestionUserResponse(
+            id=q.id,
+            test_id=q.test_id,
+            lesson_id=q.lesson_id,
+            question_text=q.question_text,
+            options=q.options,
+            order=q.order,
+            points=q.points,
+            lesson=lesson_nested
+        ))
+
+    return TestWithQuestionsUser(
+        **test_dict,
+        questions=questions_list
+    )
+
+
+@router.get("/lesson/{lesson_id}/test", response_model=TestWithQuestionsUser)
+async def get_lesson_test(
+    lesson_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get test questions for a specific lesson.
+    Returns questions without correct answers.
+
+    Args:
+        lesson_id: Lesson ID
+
+    Returns:
+        Test with questions from this lesson only
+    """
+    # Get lesson to find its series
+    from app.models import Lesson
+    lesson = await db.get(Lesson, lesson_id)
+    if not lesson:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Lesson with ID {lesson_id} not found"
+        )
+
+    # Find test for this series
+    tests = await test_crud.get_all_tests(db, series_id=lesson.series_id, include_inactive=False)
+
+    if not tests:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No active test found for lesson {lesson_id}"
+        )
+
+    test = tests[0]
+
+    # Get questions only for this lesson
+    questions = await test_crud.get_all_test_questions(db, test.id, lesson_id=lesson_id)
+
+    if not questions:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No questions found for lesson {lesson_id}"
+        )
+
+    # Build response
+    test_dict = build_test_with_relations(test).model_dump()
+
+    from app.schemas.test import TestQuestionUserResponse
+    questions_list = []
+    for q in questions:
+        lesson_nested = LessonNested(
+            id=lesson.id,
+            title=lesson.title,
+            lesson_number=lesson.lesson_number,
+            display_title=f"Урок {lesson.lesson_number}" if lesson.lesson_number else lesson.title
+        )
+
+        questions_list.append(TestQuestionUserResponse(
+            id=q.id,
+            test_id=q.test_id,
+            lesson_id=q.lesson_id,
+            question_text=q.question_text,
+            options=q.options,
+            order=q.order,
+            points=q.points,
+            lesson=lesson_nested
+        ))
+
+    return TestWithQuestionsUser(
+        **test_dict,
+        questions=questions_list
+    )
+
+
+@router.post("/{test_id}/start", response_model=TestAttemptResponse)
+async def start_test(
+    test_id: int,
+    lesson_id: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Start a new test attempt.
+
+    Args:
+        test_id: Test ID
+        lesson_id: Optional lesson ID (for lesson-specific tests)
+
+    Returns:
+        Created test attempt
+    """
+    try:
+        attempt = await attempt_crud.create_test_attempt(
+            db=db,
+            user_id=current_user.id,
+            test_id=test_id,
+            lesson_id=lesson_id
+        )
+        return attempt
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+
+@router.post("/attempts/{attempt_id}/submit", response_model=TestAttemptResponse)
+async def submit_test_attempt(
+    attempt_id: int,
+    submission: TestAttemptSubmit,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Submit a test attempt with answers.
+
+    Args:
+        attempt_id: Attempt ID
+        submission: Answers and time spent
+
+    Returns:
+        Updated attempt with score and results
+    """
+    # Verify attempt belongs to current user
+    attempt = await attempt_crud.get_attempt_by_id(db, attempt_id)
+
+    if not attempt:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Attempt with ID {attempt_id} not found"
+        )
+
+    if attempt.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only submit your own attempts"
+        )
+
+    try:
+        # Convert string keys to int for answers dict
+        answers = {int(k): v for k, v in submission.answers.items()}
+
+        updated_attempt = await attempt_crud.submit_test_attempt(
+            db=db,
+            attempt_id=attempt_id,
+            answers=answers,
+            time_spent_seconds=submission.time_spent_seconds
+        )
+        return updated_attempt
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+
+@router.get("/attempts/my", response_model=List[TestAttemptResponse])
+async def get_my_attempts(
+    series_id: Optional[int] = Query(None, description="Filter by series ID"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current user's test attempts history.
+
+    Args:
+        series_id: Optional series ID filter
+        skip: Number of records to skip
+        limit: Maximum number of records
+
+    Returns:
+        List of user's test attempts
+    """
+    attempts = await attempt_crud.get_user_attempts(
+        db=db,
+        user_id=current_user.id,
+        series_id=series_id,
+        completed_only=True,
+        skip=skip,
+        limit=limit
+    )
+    return attempts
+
+
+@router.get("/series/{series_id}/statistics", response_model=SeriesStatistics)
+async def get_series_statistics(
+    series_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get statistics for a series for current user.
+
+    Args:
+        series_id: Series ID
+
+    Returns:
+        Statistics including best score, attempts, etc.
+    """
+    try:
+        stats = await attempt_crud.get_series_statistics(
+            db=db,
+            user_id=current_user.id,
+            series_id=series_id
+        )
+        return SeriesStatistics(**stats)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+
+@router.get("/statistics/all", response_model=List[SeriesStatisticsDetailed])
+async def get_all_statistics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get statistics for all series for current user.
+
+    Returns:
+        List of statistics for all series with tests
+    """
+    stats_list = await attempt_crud.get_all_series_statistics(
+        db=db,
+        user_id=current_user.id
+    )
+    return [SeriesStatisticsDetailed(**stats) for stats in stats_list]

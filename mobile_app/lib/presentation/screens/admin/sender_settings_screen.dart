@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/system_settings_provider.dart';
 import '../../../data/models/system_settings.dart';
 import '../../../core/utils/validators.dart';
+import '../../widgets/gradient_background.dart';
+import '../../widgets/glass_card.dart';
 
 class SenderSettingsScreen extends ConsumerStatefulWidget {
   const SenderSettingsScreen({super.key});
@@ -94,47 +96,55 @@ class _SenderSettingsScreenState extends ConsumerState<SenderSettingsScreen> {
     }
 
     if (settingsState.isLoading && settingsState.smtpSettings == null) {
-      return const Scaffold(
-        appBar: null,
-        body: Center(child: CircularProgressIndicator()),
+      return GradientBackground(
+        child: const Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: null,
+          body: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
     if (settingsState.error != null && settingsState.smtpSettings == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Настройка отправителя')),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text(settingsState.error!),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(systemSettingsProvider.notifier).loadSMTPSettings();
-                },
-                child: const Text('Повторить'),
-              ),
-            ],
+      return GradientBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(title: const Text('Настройка отправителя')),
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(settingsState.error!),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    ref.read(systemSettingsProvider.notifier).loadSMTPSettings();
+                  },
+                  child: const Text('Повторить'),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Настройка отправителя'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: settingsState.isSaving ? null : _handleSave,
-            tooltip: 'Сохранить',
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
+    return GradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Настройка отправителя'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: settingsState.isSaving ? null : _handleSave,
+              tooltip: 'Сохранить',
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
@@ -142,22 +152,19 @@ class _SenderSettingsScreenState extends ConsumerState<SenderSettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Info card
-              Card(
-                color: Colors.green.shade50,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Icon(Icons.info_outline, color: Colors.green.shade700),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Эти данные будут отображаться как отправитель в email-уведомлениях',
-                          style: TextStyle(color: Colors.green.shade900),
-                        ),
+              GlassCard(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.green.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Эти данные будут отображаться как отправитель в email-уведомлениях',
+                        style: TextStyle(color: Colors.green.shade900),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -171,31 +178,37 @@ class _SenderSettingsScreenState extends ConsumerState<SenderSettingsScreen> {
               ),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _emailFromNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Имя отправителя *',
-                  hintText: 'Muwahhid',
-                  helperText: 'Будет показано в поле "От кого" в письме',
-                  prefixIcon: Icon(Icons.badge),
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) =>
-                    Validators.validateRequired(value, 'Имя отправителя'),
-              ),
-              const SizedBox(height: 16),
+              GlassCard(
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _emailFromNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Имя отправителя *',
+                        hintText: 'Muwahhid',
+                        helperText: 'Будет показано в поле "От кого" в письме',
+                        prefixIcon: Icon(Icons.badge),
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) =>
+                          Validators.validateRequired(value, 'Имя отправителя'),
+                    ),
+                    const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _emailFromAddressController,
-                decoration: const InputDecoration(
-                  labelText: 'Email отправителя *',
-                  hintText: 'noreply@muwahhid.ru',
-                  helperText: 'Email адрес отправителя (обычно должен совпадать с SMTP пользователем)',
-                  prefixIcon: Icon(Icons.email),
-                  border: OutlineInputBorder(),
+                    TextFormField(
+                      controller: _emailFromAddressController,
+                      decoration: const InputDecoration(
+                        labelText: 'Email отправителя *',
+                        hintText: 'noreply@muwahhid.ru',
+                        helperText: 'Email адрес отправителя (обычно должен совпадать с SMTP пользователем)',
+                        prefixIcon: Icon(Icons.email),
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: Validators.validateEmail,
+                    ),
+                  ],
                 ),
-                keyboardType: TextInputType.emailAddress,
-                validator: Validators.validateEmail,
               ),
               const SizedBox(height: 32),
 
@@ -208,16 +221,18 @@ class _SenderSettingsScreenState extends ConsumerState<SenderSettingsScreen> {
               ),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _frontendUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'URL фронтенда *',
-                  hintText: 'http://localhost:3065',
-                  helperText: 'Используется в ссылках для верификации email и восстановления пароля',
-                  prefixIcon: Icon(Icons.link),
-                  border: OutlineInputBorder(),
+              GlassCard(
+                child: TextFormField(
+                  controller: _frontendUrlController,
+                  decoration: const InputDecoration(
+                    labelText: 'URL фронтенда *',
+                    hintText: 'http://localhost:3065',
+                    helperText: 'Используется в ссылках для верификации email и восстановления пароля',
+                    prefixIcon: Icon(Icons.link),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: Validators.validateURL,
                 ),
-                validator: Validators.validateURL,
               ),
               const SizedBox(height: 32),
 
@@ -250,6 +265,7 @@ class _SenderSettingsScreenState extends ConsumerState<SenderSettingsScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
