@@ -40,6 +40,8 @@ class _PlayerScreenState extends State<PlayerScreen>
   Bookmark? _bookmark;
   bool _loadingBookmark = false;
 
+  bool _isFirstBuild = true;
+
   @override
   void initState() {
     super.initState();
@@ -47,9 +49,6 @@ class _PlayerScreenState extends State<PlayerScreen>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
-
-    _initializePlayer();
-    _loadBookmark();
   }
 
   @override
@@ -57,6 +56,13 @@ class _PlayerScreenState extends State<PlayerScreen>
     super.didChangeDependencies();
     // Subscribe to route observer
     app.routeObserver.subscribe(this, ModalRoute.of(context)!);
+
+    // Initialize player after context is ready
+    if (_isFirstBuild) {
+      _isFirstBuild = false;
+      _initializePlayer();
+      _loadBookmark();
+    }
   }
 
   @override
@@ -179,9 +185,9 @@ class _PlayerScreenState extends State<PlayerScreen>
         // Mobile: Use AudioHandler for background playback
         if (app.audioHandler == null) {
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Audio service not initialized')),
-            );
+            setState(() {
+              _error = 'Audio service not initialized';
+            });
           }
           return;
         }
