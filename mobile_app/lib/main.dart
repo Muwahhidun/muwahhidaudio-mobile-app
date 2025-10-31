@@ -27,7 +27,7 @@ import 'presentation/screens/admin/feedbacks_management_screen.dart';
 import 'presentation/screens/themes/themes_screen.dart';
 
 // Global audio handler instance
-late AudioHandler audioHandler;
+AudioHandler? audioHandler;
 
 // Global route observer for tracking navigation
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();

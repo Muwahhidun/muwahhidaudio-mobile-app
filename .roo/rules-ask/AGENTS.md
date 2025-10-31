@@ -15,6 +15,7 @@ This file provides guidance to agents when working with code in this repository.
 - Database sessions auto-commit via get_db() dependency - never manual commit/rollback
 - Critical cascade rules: lesson_series deletion RESTRICTED, user deletion CASCADES
 - Redis uses separate databases: DB 0 for API cache, DB 1 for JWT sessions
+- Audio files stored in filesystem with database references (not in database)
 
 ### Authentication Flow
 - JWT tokens include "type" field (access/refresh) - verification checks this
@@ -27,9 +28,24 @@ This file provides guidance to agents when working with code in this repository.
 - Lessons API includes nested relationship data to minimize round-trips
 - Audio streaming endpoints support Range requests for mobile seeking
 - CORS uses regex pattern in debug mode to allow any localhost port
+- Pagination pattern: `{"items": [...], "total": X, "skip": Y, "limit": Z}`
 
 ### Mobile App Specifics
 - Code generation required after model changes (build_runner)
 - API client uses Retrofit with code generation
 - Admin routes hardcoded in main.dart but protected by auth state
 - Generated files (.g.dart) should never be manually edited
+- Platform-specific API URLs: localhost for web/iOS, hardcoded IP for Android
+
+### Content Organization
+- Audio files in backend/audio_files/ with original/ and processed/ subdirectories
+- Content hierarchy: Theme → BookAuthor → Book → LessonSeries → Lesson
+- Tests table has UNIQUE constraint on series_id (one test per series)
+- Lesson model uses `audio_path` field (NOT `audio_file_path`)
+
+### Authentication Field Mismatch
+- Backend login endpoint expects `login_or_email` field (defined in UserLogin schema)
+- However, actual API implementation may expect `email` field instead
+- Mobile app correctly sends `login_or_email` field (LoginRequest model)
+- This mismatch causes 422 Unprocessable Entity errors during login
+- Check both schema definition and actual endpoint implementation for consistency

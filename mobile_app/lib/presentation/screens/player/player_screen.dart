@@ -177,6 +177,15 @@ class _PlayerScreenState extends State<PlayerScreen>
         };
       } else {
         // Mobile: Use AudioHandler for background playback
+        if (app.audioHandler == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Audio service not initialized')),
+            );
+          }
+          return;
+        }
+
         final handler = app.audioHandler as LessonAudioHandler;
         await handler.playLesson(
           lesson: widget.lesson,
@@ -248,7 +257,7 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (kIsWeb) {
       // On web, use AudioServiceWeb
       await AudioServiceWeb().setSpeed(speed);
-    } else {
+    } else if (app.audioHandler != null) {
       // On mobile, use AudioHandler which updates both player and notification
       final handler = app.audioHandler as LessonAudioHandler;
       await handler.setSpeed(speed);

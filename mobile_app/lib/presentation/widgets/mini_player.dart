@@ -87,6 +87,11 @@ class _WebMiniPlayer extends StatelessWidget {
 class _MobileMiniPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Check if audioHandler is initialized
+    if (app.audioHandler == null) {
+      return const SizedBox.shrink();
+    }
+
     final handler = app.audioHandler as LessonAudioHandler;
 
     return StreamBuilder<MediaItem?>(
@@ -329,7 +334,7 @@ class _MiniPlayerUI extends StatelessWidget {
                     onPressed: () {
                       if (kIsWeb) {
                         AudioServiceWeb().stop();
-                      } else {
+                      } else if (app.audioHandler != null) {
                         (app.audioHandler as LessonAudioHandler).stop();
                       }
                     },
