@@ -107,7 +107,8 @@ class LessonAudioHandler extends BaseAudioHandler {
       duration: lesson.durationSeconds != null
           ? Duration(seconds: lesson.durationSeconds!)
           : null,
-      artUri: Uri.parse('asset:///assets/icons/app_icon.png'),
+      // Don't use artUri as it may cause initialization errors
+      artUri: null,
     );
   }
 

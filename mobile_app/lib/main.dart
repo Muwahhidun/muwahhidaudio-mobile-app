@@ -47,9 +47,11 @@ void main() async {
           androidNotificationIcon: 'mipmap/ic_launcher',
         ),
       );
-    } catch (e) {
+      debugPrint('AudioService initialized successfully');
+    } catch (e, stackTrace) {
       // If audio service fails to initialize, print error but continue
       debugPrint('Failed to initialize AudioService: $e');
+      debugPrint('StackTrace: $stackTrace');
     }
   }
 
