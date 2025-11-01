@@ -3,6 +3,7 @@ import '../../../data/models/test_attempt.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 
 /// Screen showing test results after completion
 class TestResultScreen extends StatelessWidget {
@@ -191,6 +192,7 @@ class TestResultScreen extends StatelessWidget {
           ),
         ),
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../data/models/bookmark.dart';
 import '../../../core/audio/audio_service_web.dart';
+import '../../../core/audio/audio_handler_mobile.dart';
+import '../../../config/api_config.dart';
 import '../../providers/lessons_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
@@ -156,7 +158,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
             ),
           ],
         ),
-        bottomNavigationBar: const MiniPlayer(),
+        bottomNavigationBar: MiniPlayer(key: ValueKey(audioHandler != null ? (audioHandler as LessonAudioHandler).currentLesson?.id : null)),
       ),
     );
   }
@@ -396,6 +398,41 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                               await audioService.playLesson(
                                 lesson: lesson,
                                 playlist: state.lessons,
+                              );
+                            }
+                            setState(() {}); // Refresh UI
+                          },
+                        );
+                      },
+                    )
+                  else if (audioHandler != null)
+                    StreamBuilder<bool>(
+                      stream: (audioHandler as LessonAudioHandler).player.playingStream,
+                      builder: (context, playingSnapshot) {
+                        final isPlaying = playingSnapshot.data ?? false;
+                        final handler = audioHandler as LessonAudioHandler;
+                        final isCurrentLesson = handler.currentLesson?.id == lesson.id;
+                        final showPause = isCurrentLesson && isPlaying;
+
+                        return IconButton(
+                          icon: Icon(
+                            showPause ? Icons.pause : Icons.play_arrow,
+                            size: 32,
+                            color: Colors.green,
+                          ),
+                          onPressed: () async {
+                            if (isCurrentLesson && isPlaying) {
+                              // Pause current lesson
+                              await handler.pause();
+                            } else if (isCurrentLesson && !isPlaying) {
+                              // Resume current lesson
+                              await handler.play();
+                            } else {
+                              // Start new lesson
+                              await handler.playLesson(
+                                lesson: lesson,
+                                playlist: state.lessons,
+                                baseUrl: ApiConfig.baseUrl,
                               );
                             }
                             setState(() {}); // Refresh UI

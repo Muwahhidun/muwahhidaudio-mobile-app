@@ -6,6 +6,7 @@ import '../../widgets/glass_card.dart';
 import '../../widgets/circular_timer.dart';
 import '../../widgets/test_question_card.dart';
 import '../../widgets/breadcrumbs.dart';
+import '../../widgets/mini_player.dart';
 import 'test_result_screen.dart';
 
 /// Screen for taking a test
@@ -74,6 +75,7 @@ class _TestScreenState extends ConsumerState<TestScreen> {
           ),
         ),
       ),
+      bottomNavigationBar: const MiniPlayer(),
     );
   }
 
