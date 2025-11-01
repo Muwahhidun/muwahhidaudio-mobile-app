@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:audio_service/audio_service.dart';
 import 'core/theme/app_theme.dart';
-import 'core/audio/audio_handler.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
@@ -26,34 +23,14 @@ import 'presentation/screens/admin/users_management_screen.dart';
 import 'presentation/screens/admin/feedbacks_management_screen.dart';
 import 'presentation/screens/themes/themes_screen.dart';
 
-// Global audio handler instance
-AudioHandler? audioHandler;
-
 // Global route observer for tracking navigation
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize audio service on mobile platforms only
-  if (!kIsWeb) {
-    try {
-      audioHandler = await AudioService.init(
-        builder: () => LessonAudioHandler(),
-        config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.muwahhid.audio_app.channel.audio',
-          androidNotificationChannelName: 'Audio Lessons',
-          androidNotificationOngoing: true,
-          androidNotificationIcon: 'mipmap/ic_launcher',
-        ),
-      );
-      debugPrint('AudioService initialized successfully');
-    } catch (e, stackTrace) {
-      // If audio service fails to initialize, print error but continue
-      debugPrint('Failed to initialize AudioService: $e');
-      debugPrint('StackTrace: $stackTrace');
-    }
-  }
+  // Note: AudioService initialization moved to lazy initialization
+  // in PlayerScreen to avoid FlutterEngine initialization timing issues
 
   runApp(
     const ProviderScope(
