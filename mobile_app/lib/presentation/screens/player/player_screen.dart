@@ -8,7 +8,7 @@ import '../../../data/api/dio_provider.dart';
 import '../../../config/api_config.dart';
 import '../../../main.dart' as app;
 import '../../../core/audio/audio_service_web.dart';
-import '../../../core/audio/audio_service_mobile.dart';
+import '../../../core/audio/audio_handler_mobile.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
 
@@ -183,14 +183,26 @@ class _PlayerScreenState extends State<PlayerScreen>
           }
         };
       } else {
-        // Mobile: Use singleton AudioServiceMobile for persistent playback
-        final audioService = AudioServiceMobile();
+        // Mobile: Use AudioHandler for background playback with notifications
+        // Initialize AudioService lazily on first use
+        await app.initializeAudioServiceIfNeeded();
+
+        if (app.audioHandler == null) {
+          if (mounted) {
+            setState(() {
+              _error = 'Audio service not initialized';
+            });
+          }
+          return;
+        }
+
+        final handler = app.audioHandler as LessonAudioHandler;
 
         // Just connect to the player, don't start playing automatically
-        _audioPlayer = audioService.player;
+        _audioPlayer = handler.player;
 
         // Update playlist reference in case user navigates to different series
-        audioService.updatePlaylist(widget.playlist);
+        handler.updatePlaylist(widget.playlist);
 
         if (mounted) {
           setState(() {
@@ -198,13 +210,12 @@ class _PlayerScreenState extends State<PlayerScreen>
           });
         }
 
-        // Set callback for auto-play next when lesson completes
-        audioService.onLessonCompleted = () {
-          // Navigate to next lesson screen
-          if (mounted) {
+        // Listen for completion to play next
+        _audioPlayer!.playerStateStream.listen((state) {
+          if (mounted && state.processingState == ProcessingState.completed) {
             _playNextLesson();
           }
-        };
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -255,9 +266,10 @@ class _PlayerScreenState extends State<PlayerScreen>
     if (kIsWeb) {
       // On web, use AudioServiceWeb
       await AudioServiceWeb().setSpeed(speed);
-    } else {
-      // On mobile, use AudioServiceMobile
-      await AudioServiceMobile().setSpeed(speed);
+    } else if (app.audioHandler != null) {
+      // On mobile, use AudioHandler which updates both player and notification
+      final handler = app.audioHandler as LessonAudioHandler;
+      await handler.setSpeed(speed);
     }
   }
 
@@ -327,11 +339,9 @@ class _PlayerScreenState extends State<PlayerScreen>
       // Don't dispose the player - AudioServiceWeb keeps it alive for background playback
       // Only clear the callback
       AudioServiceWeb().onLessonCompleted = null;
-    } else {
-      // Don't dispose the player - AudioServiceMobile keeps it alive for background playback
-      // Only clear the callback
-      AudioServiceMobile().onLessonCompleted = null;
     }
+    // On mobile, AudioHandler manages the player lifecycle
+    // Don't dispose the player as it's owned by AudioHandler
 
     super.dispose();
   }
@@ -560,7 +570,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         // Check INSIDE StreamBuilder so it updates on rebuild!
         final isCurrentLesson = kIsWeb
             ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
-            : AudioServiceMobile().currentLesson?.id == widget.lesson.id;
+            : (app.audioHandler != null ? (app.audioHandler as LessonAudioHandler).currentLesson?.id == widget.lesson.id : true);
 
         // If not current lesson, show static UI
         final position = isCurrentLesson ? (snapshot.data ?? Duration.zero) : Duration.zero;
@@ -656,7 +666,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         // Check INSIDE StreamBuilder so it updates on rebuild!
         final isCurrentLesson = kIsWeb
             ? AudioServiceWeb().currentLesson?.id == widget.lesson.id
-            : AudioServiceMobile().currentLesson?.id == widget.lesson.id;
+            : (app.audioHandler != null ? (app.audioHandler as LessonAudioHandler).currentLesson?.id == widget.lesson.id : true);
 
         final playerState = snapshot.data;
         // If not current lesson, show paused state
@@ -784,13 +794,15 @@ class _PlayerScreenState extends State<PlayerScreen>
                                       // StreamBuilder will automatically update UI - no setState needed
                                     }
                                   } else {
-                                    // Mobile: Use singleton AudioServiceMobile
-                                    final audioService = AudioServiceMobile();
+                                    // Mobile: Use AudioHandler for notification support
+                                    if (app.audioHandler == null) return;
+
+                                    final handler = app.audioHandler as LessonAudioHandler;
 
                                     // Check if we need to switch to a different lesson
-                                    if (audioService.currentLesson?.id != widget.lesson.id) {
+                                    if (handler.currentLesson?.id != widget.lesson.id) {
                                       // Different lesson - start playing it
-                                      await audioService.playLesson(
+                                      await handler.playLesson(
                                         lesson: widget.lesson,
                                         playlist: widget.playlist,
                                         baseUrl: ApiConfig.baseUrl,
@@ -802,9 +814,9 @@ class _PlayerScreenState extends State<PlayerScreen>
                                     } else {
                                       // Same lesson - just toggle play/pause
                                       if (isPlaying) {
-                                        await _audioPlayer!.pause();
+                                        await handler.pause();
                                       } else {
-                                        await _audioPlayer!.play();
+                                        await handler.play();
                                       }
                                       // StreamBuilder will automatically update UI - no setState needed
                                     }

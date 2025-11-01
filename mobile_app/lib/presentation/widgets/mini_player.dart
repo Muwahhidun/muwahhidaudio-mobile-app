@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
 import '../../data/models/lesson.dart';
 import '../../core/audio/audio_service_web.dart';
-import '../../core/audio/audio_service_mobile.dart';
-import '../../config/api_config.dart';
+import '../../core/audio/audio_handler_mobile.dart';
+import '../../main.dart' as app;
 import '../screens/player/player_screen.dart';
 import 'glass_card.dart';
 
@@ -86,38 +87,46 @@ class _WebMiniPlayer extends StatelessWidget {
 class _MobileMiniPlayer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final audioService = AudioServiceMobile();
+    // Check if audioHandler is initialized
+    if (app.audioHandler == null) {
+      return const SizedBox.shrink();
+    }
 
-    // Listen to current lesson changes (like web version)
-    return StreamBuilder<Lesson?>(
-      stream: audioService.currentLessonStream,
-      initialData: audioService.currentLesson,
-      builder: (context, lessonSnapshot) {
-        final currentLesson = lessonSnapshot.data;
+    final handler = app.audioHandler as LessonAudioHandler;
+
+    return StreamBuilder<MediaItem?>(
+      stream: handler.mediaItem,
+      builder: (context, mediaItemSnapshot) {
+        final mediaItem = mediaItemSnapshot.data;
 
         // Don't show if no lesson is playing
+        if (mediaItem == null || handler.playlist.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final currentLesson = handler.currentLesson;
         if (currentLesson == null) {
           return const SizedBox.shrink();
         }
 
         return StreamBuilder<PlayerState>(
-          stream: audioService.player.playerStateStream,
-          builder: (context, playerSnapshot) {
-            final playerState = playerSnapshot.data;
+          stream: handler.player.playerStateStream,
+          builder: (context, playerStateSnapshot) {
+            final playerState = playerStateSnapshot.data;
             final isPlaying = playerState?.playing ?? false;
 
-            final currentIndex = audioService.playlist.indexOf(currentLesson);
+            final currentIndex = handler.playlist.indexOf(currentLesson);
 
             return _MiniPlayerUI(
               lesson: currentLesson,
               isPlaying: isPlaying,
-              player: audioService.player,
+              player: handler.player,
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (context) => PlayerScreen(
                       lesson: currentLesson,
-                      playlist: audioService.playlist,
+                      playlist: handler.playlist,
                       breadcrumbs: ['Лекторы', currentLesson.teacher?.name ?? '', 'Плеер'],
                     ),
                   ),
@@ -125,30 +134,16 @@ class _MobileMiniPlayer extends StatelessWidget {
               },
               onPlayPause: () {
                 if (isPlaying) {
-                  audioService.player.pause();
+                  handler.pause();
                 } else {
-                  audioService.player.play();
+                  handler.play();
                 }
               },
               onPrevious: currentIndex > 0
-                  ? () {
-                      final prevLesson = audioService.playlist[currentIndex - 1];
-                      audioService.playLesson(
-                        lesson: prevLesson,
-                        playlist: audioService.playlist,
-                        baseUrl: ApiConfig.baseUrl,
-                      );
-                    }
+                  ? () => handler.skipToPrevious()
                   : null,
-              onNext: currentIndex >= 0 && currentIndex < audioService.playlist.length - 1
-                  ? () {
-                      final nextLesson = audioService.playlist[currentIndex + 1];
-                      audioService.playLesson(
-                        lesson: nextLesson,
-                        playlist: audioService.playlist,
-                        baseUrl: ApiConfig.baseUrl,
-                      );
-                    }
+              onNext: currentIndex < handler.playlist.length - 1
+                  ? () => handler.skipToNext()
                   : null,
             );
           },
@@ -344,9 +339,8 @@ class _MiniPlayerUI extends StatelessWidget {
                     onPressed: () {
                       if (kIsWeb) {
                         AudioServiceWeb().stop();
-                      } else {
-                        // Stop playback and clear current lesson
-                        AudioServiceMobile().stop();
+                      } else if (app.audioHandler != null) {
+                        (app.audioHandler as LessonAudioHandler).stop();
                       }
                     },
                     iconSize: 24,
