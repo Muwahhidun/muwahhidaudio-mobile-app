@@ -3,12 +3,14 @@ import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../data/models/lesson.dart';
+import '../download/download_manager.dart';
 import '../logger.dart';
 
 /// Audio handler for mobile background playback
 /// Integrates just_audio with audio_service for background playback
 class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
   final AudioPlayer _player = AudioPlayer();
+  final DownloadManager _downloadManager = DownloadManager();
 
   Lesson? _currentLesson;
   List<Lesson> _playlist = [];
@@ -113,12 +115,21 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
     // Notify listeners
     _currentLessonController.add(lesson);
 
-    // Build audio URL
-    final audioUrl = lesson.audioUrl!.startsWith('http')
-        ? lesson.audioUrl!
-        : '$baseUrl${lesson.audioUrl}';
+    // Check if lesson is downloaded locally
+    final localFilePath = await _downloadManager.getLocalFilePath(lesson.id);
 
-    logger.i('AudioHandler: Loading audio from $audioUrl');
+    String audioUrl;
+    if (localFilePath != null) {
+      // Play from local file
+      audioUrl = localFilePath;
+      logger.i('AudioHandler: Loading audio from local file: $audioUrl');
+    } else {
+      // Stream from server
+      audioUrl = lesson.audioUrl!.startsWith('http')
+          ? lesson.audioUrl!
+          : '$baseUrl${lesson.audioUrl}';
+      logger.i('AudioHandler: Streaming audio from server: $audioUrl');
+    }
 
     // Update media item for notification
     final mediaItemData = MediaItem(

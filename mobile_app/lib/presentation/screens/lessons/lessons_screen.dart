@@ -7,6 +7,7 @@ import '../../../core/audio/audio_service_web.dart';
 import '../../../core/audio/audio_handler_mobile.dart';
 import '../../../config/api_config.dart';
 import '../../providers/lessons_provider.dart';
+import '../../providers/download_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
 import '../../widgets/gradient_background.dart';
@@ -362,6 +363,83 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                       size: 28,
                     ),
                     onPressed: () => _toggleBookmark(lesson),
+                  ),
+                  // Download button
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isDownloaded = ref.watch(isLessonDownloadedProvider(lesson.id));
+                      final isDownloading = ref.watch(isLessonDownloadingProvider(lesson.id));
+                      final downloadProgress = ref.watch(downloadProgressProvider(lesson.id));
+
+                      if (isDownloading && downloadProgress != null) {
+                        // Показываем прогресс скачивания
+                        return Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            SizedBox(
+                              width: 32,
+                              height: 32,
+                              child: CircularProgressIndicator(
+                                value: downloadProgress.progress,
+                                strokeWidth: 2,
+                                valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => ref.read(downloadProvider.notifier).cancelDownload(lesson.id),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.blue,
+                              ),
+                            ),
+                          ],
+                        );
+                      } else if (isDownloaded) {
+                        // Скачано - показываем иконку удаления
+                        return IconButton(
+                          icon: const Icon(
+                            Icons.download_done,
+                            color: Colors.green,
+                            size: 28,
+                          ),
+                          onPressed: () {
+                            // Показываем диалог подтверждения удаления
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Удалить загрузку?'),
+                                content: const Text('Файл будет удален с устройства. Вы сможете скачать его снова позже.'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Отмена'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      ref.read(downloadProvider.notifier).deleteDownload(lesson.id);
+                                      Navigator.of(context).pop();
+                                    },
+                                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    child: const Text('Удалить'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        // Не скачано - показываем кнопку скачивания
+                        return IconButton(
+                          icon: Icon(
+                            Icons.download,
+                            color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
+                            size: 28,
+                          ),
+                          onPressed: () => ref.read(downloadProvider.notifier).downloadLesson(lesson),
+                        );
+                      }
+                    },
                   ),
                   // Play/Pause button with StreamBuilder
                   if (kIsWeb)
