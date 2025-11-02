@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audio_service/audio_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'core/theme/app_theme.dart';
 import 'core/audio/audio_handler_mobile.dart';
 import 'presentation/providers/auth_provider.dart';
@@ -35,6 +36,20 @@ final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<v
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Request notification permission BEFORE initializing AudioService (Android 13+)
+  if (!kIsWeb) {
+    try {
+      // Import permission_handler at the top if not already
+      final permission = await Permission.notification.status;
+      if (!permission.isGranted) {
+        debugPrint('Requesting notification permission...');
+        await Permission.notification.request();
+      }
+    } catch (e) {
+      debugPrint('Error requesting notification permission: $e');
+    }
+  }
 
   // Initialize AudioService on mobile platforms immediately (like web singleton)
   if (!kIsWeb) {
