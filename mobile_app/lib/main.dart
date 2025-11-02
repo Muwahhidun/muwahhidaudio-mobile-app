@@ -40,11 +40,22 @@ void main() async {
   // Request notification permission BEFORE initializing AudioService (Android 13+)
   if (!kIsWeb) {
     try {
-      // Import permission_handler at the top if not already
+      debugPrint('Checking notification permission...');
       final permission = await Permission.notification.status;
+      debugPrint('Notification permission status: $permission');
+
       if (!permission.isGranted) {
         debugPrint('Requesting notification permission...');
-        await Permission.notification.request();
+        final result = await Permission.notification.request();
+        debugPrint('Notification permission request result: $result');
+
+        if (!result.isGranted) {
+          debugPrint('WARNING: Notification permission denied. Audio notifications may not work.');
+        } else {
+          debugPrint('Notification permission granted successfully!');
+        }
+      } else {
+        debugPrint('Notification permission already granted.');
       }
     } catch (e) {
       debugPrint('Error requesting notification permission: $e');
@@ -54,6 +65,7 @@ void main() async {
   // Initialize AudioService on mobile platforms immediately (like web singleton)
   if (!kIsWeb) {
     try {
+      debugPrint('Initializing AudioService...');
       audioHandler = await AudioService.init(
         builder: () => LessonAudioHandler(),
         config: const AudioServiceConfig(
@@ -61,9 +73,11 @@ void main() async {
           androidNotificationChannelName: 'Islamic Audio Lessons',
           androidNotificationIcon: 'drawable/ic_stat_music_note',
           androidStopForegroundOnPause: false,
+          androidShowNotificationBadge: true,
         ),
       );
-      debugPrint('AudioService initialized in main()');
+      debugPrint('AudioService initialized successfully in main()');
+      debugPrint('AudioHandler type: ${audioHandler.runtimeType}');
     } catch (e, stackTrace) {
       debugPrint('Failed to initialize AudioService in main(): $e');
       debugPrint('StackTrace: $stackTrace');

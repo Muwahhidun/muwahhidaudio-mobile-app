@@ -121,7 +121,7 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
     logger.i('AudioHandler: Loading audio from $audioUrl');
 
     // Update media item for notification
-    mediaItem.add(MediaItem(
+    final mediaItemData = MediaItem(
       id: lesson.id.toString(),
       title: lesson.book != null
           ? '${lesson.book!.name} - Урок ${lesson.lessonNumber}'
@@ -130,7 +130,9 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
       duration: lesson.durationSeconds != null
           ? Duration(seconds: lesson.durationSeconds!)
           : null,
-    ));
+    );
+    logger.i('AudioHandler: Setting MediaItem - title: ${mediaItemData.title}, artist: ${mediaItemData.artist}');
+    mediaItem.add(mediaItemData);
 
     // Load audio
     await _player.setUrl(audioUrl);
@@ -174,8 +176,13 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> play() async {
+    logger.i('AudioHandler: play() called');
+    logger.i('AudioHandler: Current MediaItem: ${mediaItem.value?.title}');
+    logger.i('AudioHandler: Current PlaybackState: playing=${playbackState.value.playing}, processingState=${playbackState.value.processingState}');
+
     // Ensure initial playback state is set
     if (playbackState.value.processingState == AudioProcessingState.idle) {
+      logger.i('AudioHandler: Setting initial playback state');
       playbackState.add(PlaybackState(
         playing: true,
         processingState: AudioProcessingState.ready,
@@ -196,7 +203,9 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
         },
       ));
     }
+    logger.i('AudioHandler: Starting player.play()');
     await _player.play();
+    logger.i('AudioHandler: player.play() completed');
   }
 
   @override

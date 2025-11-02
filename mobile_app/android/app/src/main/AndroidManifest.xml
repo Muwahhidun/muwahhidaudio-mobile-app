@@ -11,7 +11,8 @@
         android:label="Muwahhid Audio"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true">
         <activity
             android:name="com.ryanheise.audioservice.AudioServiceActivity"
             android:exported="true"
@@ -50,6 +51,17 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+
+        <!-- Notification metadata -->
+        <meta-data
+            android:name="com.ryanheise.audioservice.notificationChannelId"
+            android:value="com.muwahhid.audio_app.channel.audio" />
+        <meta-data
+            android:name="com.ryanheise.audioservice.notificationChannelName"
+            android:value="Islamic Audio Lessons" />
+        <meta-data
+            android:name="com.ryanheise.audioservice.notificationIcon"
+            android:resource="@drawable/ic_stat_music_note" />
 
         <!-- Media button receiver -->
         <receiver
