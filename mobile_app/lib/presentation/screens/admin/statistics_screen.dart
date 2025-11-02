@@ -86,7 +86,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           'Контент',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[700],
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                         ),
                         const SizedBox(height: 16),
@@ -96,7 +96,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                           'Детальная информация',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[700],
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                         ),
                         const SizedBox(height: 16),
@@ -208,7 +208,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 'Активных: $active',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
             ],

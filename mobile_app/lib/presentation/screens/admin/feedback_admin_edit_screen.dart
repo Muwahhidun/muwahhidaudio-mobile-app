@@ -324,7 +324,7 @@ class _FeedbackAdminEditScreenState
   Widget _buildStatusHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.grey[50],
+      color: Theme.of(context).colorScheme.surfaceContainerLowest,
       child: Row(
         children: [
           Icon(
@@ -414,7 +414,7 @@ class _FeedbackAdminEditScreenState
   Widget _buildSubjectHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.grey[100],
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Row(
         children: [
           const Icon(Icons.subject, size: 20, color: Colors.grey),
@@ -542,8 +542,8 @@ class _FeedbackAdminEditScreenState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

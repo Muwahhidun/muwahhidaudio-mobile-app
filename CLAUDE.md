@@ -205,7 +205,7 @@ cd mobile_app
 # Install dependencies
 flutter pub get
 
-# Generate code (for Riverpod, Retrofit, JSON serialization, Hive)
+# Generate code (for Riverpod, Retrofit, JSON serialization)
 flutter pub run build_runner build --delete-conflicting-outputs
 
 # Run on connected device/emulator
@@ -262,7 +262,7 @@ The app uses a cross-platform audio system with platform-specific implementation
 - **Mobile (Android/iOS)**: `audio_service` + `just_audio`
   - Background playback with system media controls
   - Global `audioHandler` instance in `main.dart`
-  - Lazy initialization via `initializeAudioServiceIfNeeded()` on first playback
+  - Eager initialization in `main()` with fallback lazy initialization via `initializeAudioServiceIfNeeded()`
   - `LessonAudioHandler` (extends `BaseAudioHandler`) in `lib/core/audio/audio_handler_mobile.dart`:
     - Manages playlist and current lesson index
     - Handles play/pause, seek, skip, rewind/forward (10s)
@@ -284,6 +284,7 @@ The app uses a cross-platform audio system with platform-specific implementation
 **Routing:**
 
 The app uses named routes defined in `lib/main.dart`:
+- `/` (root) - SplashScreen shown during authentication check, then redirects to HomeScreen or LoginScreen
 - `/admin` - Admin panel (requires admin role level >= 2)
 - `/admin/themes`, `/admin/books`, `/admin/authors` - Content management
 - `/admin/teachers`, `/admin/series`, `/admin/lessons` - Lesson management

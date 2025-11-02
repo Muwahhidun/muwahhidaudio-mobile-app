@@ -377,7 +377,7 @@ class _TestQuestionFormScreenState
               'Выберите правильный ответ, нажав на круг слева',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
             ),
             const SizedBox(height: 24),

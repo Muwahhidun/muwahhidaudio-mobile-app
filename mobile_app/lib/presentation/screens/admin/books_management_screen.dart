@@ -339,7 +339,7 @@ class _BooksManagementScreenState extends ConsumerState<BooksManagementScreen> {
                                           'Тема: ${book.theme!.name}',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.grey[600],
+                                            color: Theme.of(context).textTheme.bodyMedium?.color,
                                           ),
                                         ),
                                       ],
@@ -349,7 +349,7 @@ class _BooksManagementScreenState extends ConsumerState<BooksManagementScreen> {
                                           'Автор: ${book.author!.name}',
                                           style: TextStyle(
                                             fontSize: 12,
-                                            color: Colors.grey[600],
+                                            color: Theme.of(context).textTheme.bodyMedium?.color,
                                           ),
                                         ),
                                       ],
@@ -358,7 +358,7 @@ class _BooksManagementScreenState extends ConsumerState<BooksManagementScreen> {
                                         'Активна: ${(book.isActive ?? false) ? "Да" : "Нет"}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context).textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                     ],

@@ -6,6 +6,15 @@
         "mcp-server",
         "--force-roots-fallback"
       ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "ctx7sk-90e71a48-3281-417a-aca6-b416efd28f3f"
+      ]
     }
   }
 }

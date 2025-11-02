@@ -70,28 +70,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // Logo or app name
-                        const Icon(
+                        Icon(
                           Icons.headphones,
                           size: 80,
-                          color: Colors.white,
+                          color: Theme.of(context).iconTheme.color,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
+                        Text(
                           'Исламские аудио уроки',
-                          style: TextStyle(
-                            fontSize: 28,
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
                           ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Войдите в свой аккаунт',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
+                          style: Theme.of(context).textTheme.titleMedium,
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 48),
@@ -100,26 +95,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         TextFormField(
                           controller: _loginController,
                           keyboardType: TextInputType.emailAddress,
-                          style: const TextStyle(color: Colors.white),
+                          style: Theme.of(context).textTheme.bodyLarge,
                           decoration: InputDecoration(
                             labelText: 'Логин или Email',
-                            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                            labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                            ),
                             hintText: 'username или email@example.com',
-                            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-                            prefixIcon: const Icon(Icons.person, color: Colors.white),
+                            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                            ),
+                            prefixIcon: Icon(Icons.person, color: Theme.of(context).iconTheme.color),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
+                            fillColor: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.3)),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.3)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
+                              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -138,24 +137,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
-                          style: const TextStyle(color: Colors.white),
+                          style: Theme.of(context).textTheme.bodyLarge,
                           decoration: InputDecoration(
                             labelText: 'Пароль',
-                            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
-                            prefixIcon: const Icon(Icons.lock, color: Colors.white),
+                            labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+                            ),
+                            prefixIcon: Icon(Icons.lock, color: Theme.of(context).iconTheme.color),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
+                            fillColor: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.1),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.3)),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.3)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
+                              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -170,7 +171,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 _obscurePassword
                                     ? Icons.visibility
                                     : Icons.visibility_off,
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
                               ),
                               onPressed: () {
                                 setState(() {
@@ -226,7 +227,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             Text(
                               "Нет аккаунта? ",
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                              style: Theme.of(context).textTheme.bodyMedium,
                             ),
                             TextButton(
                               onPressed: () {
@@ -236,10 +237,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ),
                                 );
                               },
-                              child: const Text(
+                              child: Text(
                                 'Зарегистрироваться',
-                                style: TextStyle(
-                                  color: Colors.white,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                   decoration: TextDecoration.underline,
                                 ),

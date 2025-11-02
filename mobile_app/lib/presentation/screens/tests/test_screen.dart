@@ -80,16 +80,19 @@ class _TestScreenState extends ConsumerState<TestScreen> {
   }
 
   Widget _buildContent(TestState state) {
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
+
     if (state.isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 16),
+            CircularProgressIndicator(color: textColor),
+            const SizedBox(height: 16),
             Text(
               'Загрузка теста...',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+              style: TextStyle(color: textColor, fontSize: 16),
             ),
           ],
         ),
@@ -107,16 +110,16 @@ class _TestScreenState extends ConsumerState<TestScreen> {
               const SizedBox(height: 16),
               Text(
                 'Ошибка',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: textColor,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 state.error!,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                style: TextStyle(color: textColor.withValues(alpha: 0.8)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -135,10 +138,10 @@ class _TestScreenState extends ConsumerState<TestScreen> {
     }
 
     if (state.test == null || state.currentQuestion == null) {
-      return const Center(
+      return Center(
         child: Text(
           'Тест не найден',
-          style: TextStyle(color: Colors.white, fontSize: 16),
+          style: TextStyle(color: textColor, fontSize: 16),
         ),
       );
     }
@@ -164,8 +167,8 @@ class _TestScreenState extends ConsumerState<TestScreen> {
               children: [
                 Text(
                   'Вопрос ${state.currentQuestionIndex + 1} из ${state.totalQuestions}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: textColor,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -173,7 +176,7 @@ class _TestScreenState extends ConsumerState<TestScreen> {
                 Text(
                   '${((state.currentQuestionIndex + 1) / state.totalQuestions * 100).toStringAsFixed(0)}%',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: textColor.withValues(alpha: 0.8),
                     fontSize: 14,
                   ),
                 ),
@@ -188,7 +191,7 @@ class _TestScreenState extends ConsumerState<TestScreen> {
             child: LinearProgressIndicator(
               value: (state.currentQuestionIndex + 1) / state.totalQuestions,
               minHeight: 8,
-              backgroundColor: Colors.white.withValues(alpha: 0.2),
+              backgroundColor: textColor.withValues(alpha: 0.2),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
             ),
           ),
@@ -240,7 +243,7 @@ class _TestScreenState extends ConsumerState<TestScreen> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                disabledBackgroundColor: Colors.grey.withValues(alpha: 0.3),
+                disabledBackgroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
               ),
               child: state.isSubmitting
                   ? const SizedBox(

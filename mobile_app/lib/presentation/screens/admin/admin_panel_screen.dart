@@ -24,7 +24,7 @@ class AdminPanelScreen extends StatelessWidget {
             'Управление контентом',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 12),
@@ -104,7 +104,7 @@ class AdminPanelScreen extends StatelessWidget {
             'Общая информация',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           const SizedBox(height: 12),

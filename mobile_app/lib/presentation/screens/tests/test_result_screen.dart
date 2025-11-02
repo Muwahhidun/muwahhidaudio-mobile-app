@@ -18,6 +18,8 @@ class TestResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textColor = theme.colorScheme.onSurface;
     final isPassed = result.passed;
     final scorePercent = result.scorePercent;
 
@@ -52,10 +54,10 @@ class TestResultScreen extends StatelessWidget {
                             // Result text
                             Text(
                               isPassed ? 'Поздравляем!' : 'Попробуйте еще раз',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: textColor,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -66,7 +68,7 @@ class TestResultScreen extends StatelessWidget {
                                   : 'К сожалению, тест не пройден',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: textColor.withValues(alpha: 0.8),
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -102,7 +104,7 @@ class TestResultScreen extends StatelessWidget {
                                     'Ваш результат',
                                     style: TextStyle(
                                       fontSize: 18,
-                                      color: Colors.white.withValues(alpha: 0.9),
+                                      color: textColor.withValues(alpha: 0.9),
                                     ),
                                   ),
                                 ],
@@ -112,6 +114,7 @@ class TestResultScreen extends StatelessWidget {
 
                             // Details
                             _buildDetailRow(
+                              context,
                               Icons.check_circle_outline,
                               'Правильных ответов',
                               '${result.score} из ${result.maxScore}',
@@ -119,6 +122,7 @@ class TestResultScreen extends StatelessWidget {
                             const SizedBox(height: 16),
                             if (result.timeSpentSeconds != null)
                               _buildDetailRow(
+                                context,
                                 Icons.access_time,
                                 'Затрачено времени',
                                 _formatDuration(result.timeSpentSeconds!),
@@ -163,8 +167,8 @@ class TestResultScreen extends StatelessWidget {
                                     Navigator.of(context).pop();
                                   },
                                   style: OutlinedButton.styleFrom(
-                                    foregroundColor: Colors.white,
-                                    side: const BorderSide(color: Colors.white, width: 2),
+                                    foregroundColor: textColor,
+                                    side: BorderSide(color: textColor, width: 2),
                                     padding: const EdgeInsets.symmetric(vertical: 16),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -196,26 +200,28 @@ class TestResultScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
+  Widget _buildDetailRow(BuildContext context, IconData icon, String label, String value) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return Row(
       children: [
-        Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 24),
+        Icon(icon, color: textColor.withValues(alpha: 0.8), size: 24),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             label,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: textColor.withValues(alpha: 0.8),
             ),
           ),
         ),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: textColor,
           ),
         ),
       ],

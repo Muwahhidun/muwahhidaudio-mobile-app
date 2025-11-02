@@ -46,7 +46,7 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: EdgeInsets.zero,
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -63,6 +63,8 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
                       )
                     : null,
                 border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                isDense: true,
               ),
               onChanged: (value) {
                 setState(() {}); // Rebuild to show/hide clear button
@@ -154,7 +156,7 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
                   if (author.birthYear != null || author.deathYear != null)
                     Text(
                       '${author.birthYear ?? "?"} - ${author.deathYear ?? "?"}',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: Theme.of(context).textTheme.bodyMedium?.color),
                     ),
                 ],
               ),

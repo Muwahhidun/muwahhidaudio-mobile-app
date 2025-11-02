@@ -9,6 +9,7 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/email_verified_screen.dart';
 import 'presentation/screens/home/home_screen.dart';
+import 'presentation/screens/splash/splash_screen.dart';
 import 'presentation/screens/admin/admin_panel_screen.dart';
 import 'presentation/screens/admin/themes_management_screen.dart';
 import 'presentation/screens/admin/books_management_screen.dart';
@@ -91,6 +92,19 @@ class MyApp extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeProvider);
 
+    // Determine which screen to show
+    Widget homeScreen;
+    if (authState.isLoading) {
+      // Show splash screen while checking authentication
+      homeScreen = const SplashScreen();
+    } else if (authState.isAuthenticated) {
+      // Show home screen if authenticated
+      homeScreen = const HomeScreen();
+    } else {
+      // Show login screen if not authenticated
+      homeScreen = const LoginScreen();
+    }
+
     return MaterialApp(
       title: 'Islamic Audio Lessons',
       theme: AppTheme.lightTheme,
@@ -98,7 +112,7 @@ class MyApp extends ConsumerWidget {
       themeMode: themeMode,
       debugShowCheckedModeBanner: false,
       navigatorObservers: [routeObserver],
-      home: authState.isAuthenticated ? const HomeScreen() : const LoginScreen(),
+      home: homeScreen,
       onGenerateRoute: (settings) {
         // Handle /email-verified?token=xxx route
         if (settings.name?.startsWith('/email-verified') == true) {

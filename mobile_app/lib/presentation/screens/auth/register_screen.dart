@@ -95,29 +95,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ),
                       const SizedBox(height: 8),
 
                       // Title
-                      const Text(
+                      Text(
                         'Регистрация',
-                        style: TextStyle(
-                          fontSize: 32,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Создайте новый аккаунт',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 24),
@@ -137,10 +132,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             Expanded(
                               child: Text(
                                 'Все поля заполняются английскими символами',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
                           ],
@@ -181,7 +173,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
                           ),
                           onPressed: () {
                             setState(() {
@@ -205,7 +197,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
                           ),
                           onPressed: () {
                             setState(() {
@@ -268,8 +260,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         onPressed: () => Navigator.of(context).pop(),
                         child: Text(
                           'Уже есть аккаунт? Войти',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -300,29 +291,35 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
+      style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+        labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+        ),
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+        ),
         helperText: helperText,
-        helperStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 11),
-        prefixIcon: Icon(icon, color: Colors.white),
+        helperStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+        ),
+        prefixIcon: Icon(icon, color: Theme.of(context).iconTheme.color),
         suffixIcon: suffixIcon,
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
+        fillColor: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.1),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.3)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white, width: 2),
+          borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

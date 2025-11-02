@@ -142,9 +142,8 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                   ),
                   title: Text(
                     series.displayName ?? series.name,
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
                     ),
                   ),
                   subtitle: Column(
@@ -153,12 +152,12 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                       if (series.teacher != null)
                         Text(
                           'Лектор: ${series.teacher!.name}',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       if (series.book != null)
                         Text(
                           'Книга: ${series.book!.name}',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                     ],
                   ),
@@ -166,7 +165,7 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                   trailing: Icon(
                     Icons.arrow_forward_ios,
                     size: 16,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
                   ),
                 ),
 
@@ -180,7 +179,7 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
                           border: Border(
-                            top: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                            top: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.1)),
                           ),
                         ),
                         child: Row(
@@ -237,10 +236,7 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 12,
-          ),
+          style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
     );

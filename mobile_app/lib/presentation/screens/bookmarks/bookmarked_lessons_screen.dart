@@ -183,7 +183,7 @@ class _BookmarkedLessonsScreenState
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                    Icon(Icons.info_outline, size: 16, color: Theme.of(context).iconTheme.color),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

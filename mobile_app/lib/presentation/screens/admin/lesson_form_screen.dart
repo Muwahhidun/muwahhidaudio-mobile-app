@@ -908,7 +908,7 @@ class _LessonFormScreenState extends ConsumerState<LessonFormScreen> {
                               'Обработка: MP3, Mono, 64 kbps, нормализация громкости',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
                               ),
                               textAlign: TextAlign.center,
                             ),

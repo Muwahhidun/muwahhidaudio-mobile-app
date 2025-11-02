@@ -301,14 +301,14 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                                               user.email,
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.grey[600],
+                                                color: Theme.of(context).textTheme.bodyMedium?.color,
                                               ),
                                             ),
                                             Text(
                                               'Роль: ${user.role.name} | ${user.isActive ? "Активен" : "Заблокирован"} | Email: ${user.emailVerified ? "✓" : "✗"}',
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.grey[600],
+                                                color: Theme.of(context).textTheme.bodyMedium?.color,
                                               ),
                                             ),
                                           ],
@@ -373,8 +373,8 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

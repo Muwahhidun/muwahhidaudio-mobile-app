@@ -19,6 +19,8 @@ class TestQuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return GlassCard(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -27,10 +29,10 @@ class TestQuestionCard extends StatelessWidget {
           // Question text
           Text(
             question.questionText,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: textColor,
               height: 1.4,
             ),
           ),
@@ -42,6 +44,7 @@ class TestQuestionCard extends StatelessWidget {
             (index) => Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: _buildAnswerOption(
+                context: context,
                 index: index,
                 text: question.options[index],
                 isSelected: selectedAnswer == index,
@@ -54,6 +57,7 @@ class TestQuestionCard extends StatelessWidget {
   }
 
   Widget _buildAnswerOption({
+    required BuildContext context,
     required int index,
     required String text,
     required bool isSelected,
@@ -68,12 +72,12 @@ class TestQuestionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? Colors.green.withValues(alpha: 0.3)
-                : Colors.white.withValues(alpha: 0.1),
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isSelected
                   ? Colors.green
-                  : Colors.white.withValues(alpha: 0.3),
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -86,7 +90,7 @@ class TestQuestionCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? Colors.green
-                      : Colors.white.withValues(alpha: 0.2),
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -97,7 +101,7 @@ class TestQuestionCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: isSelected
                           ? Colors.white
-                          : Colors.white.withValues(alpha: 0.9),
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -109,7 +113,7 @@ class TestQuestionCard extends StatelessWidget {
                   text,
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: Theme.of(context).colorScheme.onSurface,
                     height: 1.4,
                   ),
                 ),

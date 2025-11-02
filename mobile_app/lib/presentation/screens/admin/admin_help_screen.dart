@@ -404,7 +404,7 @@ class AdminHelpScreen extends StatelessWidget {
               item.content,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[700],
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 height: 1.5,
               ),
             ),

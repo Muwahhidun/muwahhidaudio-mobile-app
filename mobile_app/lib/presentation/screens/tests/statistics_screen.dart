@@ -12,6 +12,7 @@ class StatisticsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
     final statisticsAsync = ref.watch(allStatisticsProvider);
 
     return Scaffold(
@@ -25,9 +26,9 @@ class StatisticsScreen extends ConsumerWidget {
               // Statistics content
               Expanded(
                 child: statisticsAsync.when(
-                  data: (stats) => _buildStatisticsList(stats),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
+                  data: (stats) => _buildStatisticsList(context, stats),
+                  loading: () => Center(
+                    child: CircularProgressIndicator(color: textColor),
                   ),
                   error: (error, stack) => Center(
                     child: GlassCard(
@@ -37,18 +38,18 @@ class StatisticsScreen extends ConsumerWidget {
                         children: [
                           const Icon(Icons.error_outline, size: 64, color: Colors.red),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'Ошибка загрузки',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: textColor,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             error.toString(),
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                            style: TextStyle(color: textColor.withValues(alpha: 0.8)),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
@@ -60,7 +61,7 @@ class StatisticsScreen extends ConsumerWidget {
                             label: const Text('Повторить'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blue,
-                              foregroundColor: Colors.white,
+                              foregroundColor: textColor,
                             ),
                           ),
                         ],
@@ -77,7 +78,9 @@ class StatisticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatisticsList(List stats) {
+  Widget _buildStatisticsList(BuildContext context, List stats) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     if (stats.isEmpty) {
       return Center(
         child: GlassCard(
@@ -85,20 +88,20 @@ class StatisticsScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.assessment_outlined, size: 80, color: Colors.white),
+              Icon(Icons.assessment_outlined, size: 80, color: textColor),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Нет статистики',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: textColor,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 'Пройдите хотя бы один тест,\nчтобы увидеть статистику',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                style: TextStyle(color: textColor.withValues(alpha: 0.8)),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -132,10 +135,10 @@ class StatisticsScreen extends ConsumerWidget {
                         children: [
                           Text(
                             stat.seriesName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: textColor,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -144,7 +147,7 @@ class StatisticsScreen extends ConsumerWidget {
                               stat.bookName!,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withValues(alpha: 0.7),
+                                color: textColor.withValues(alpha: 0.7),
                               ),
                             ),
                           const SizedBox(height: 2),
@@ -152,7 +155,7 @@ class StatisticsScreen extends ConsumerWidget {
                             '${stat.seriesYear} г. • ${stat.teacherName ?? ""}',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withValues(alpha: 0.6),
+                              color: textColor.withValues(alpha: 0.6),
                             ),
                           ),
                         ],
@@ -173,6 +176,7 @@ class StatisticsScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: _buildStatItem(
+                        context,
                         Icons.access_time,
                         stat.formattedDuration,
                         'Длительность',
@@ -182,6 +186,7 @@ class StatisticsScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildStatItem(
+                        context,
                         Icons.quiz,
                         '${stat.totalQuestions}',
                         'Вопросов',
@@ -195,6 +200,7 @@ class StatisticsScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: _buildStatItem(
+                        context,
                         Icons.star,
                         stat.hasAttempts
                             ? '${stat.bestScorePercent?.toStringAsFixed(0) ?? 0}%'
@@ -206,6 +212,7 @@ class StatisticsScreen extends ConsumerWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _buildStatItem(
+                        context,
                         Icons.replay,
                         '${stat.totalAttempts}',
                         'Попыток',
@@ -218,21 +225,21 @@ class StatisticsScreen extends ConsumerWidget {
                 // Last attempt date
                 if (stat.lastAttemptDate != null) ...[
                   const SizedBox(height: 16),
-                  Divider(color: Colors.white.withValues(alpha: 0.2)),
+                  Divider(color: textColor.withValues(alpha: 0.2)),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(
                         Icons.calendar_today,
                         size: 14,
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: textColor.withValues(alpha: 0.6),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Последняя попытка: ${_formatDate(stat.lastAttemptDate!)}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: textColor.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -246,7 +253,9 @@ class StatisticsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatItem(IconData icon, String value, String label, Color color) {
+  Widget _buildStatItem(BuildContext context, IconData icon, String value, String label, Color color) {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -263,10 +272,10 @@ class StatisticsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 4),
@@ -274,7 +283,7 @@ class StatisticsScreen extends ConsumerWidget {
             label,
             style: TextStyle(
               fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: textColor.withValues(alpha: 0.7),
             ),
             textAlign: TextAlign.center,
           ),

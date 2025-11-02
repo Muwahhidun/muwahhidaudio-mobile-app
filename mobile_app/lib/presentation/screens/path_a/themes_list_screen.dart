@@ -44,31 +44,31 @@ class _ThemesListScreenState extends ConsumerState<ThemesListScreen> {
     return Column(
       children: [
         // Search field
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Поиск тем...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          ref.read(themesProvider.notifier).clearSearch();
-                        },
-                      )
-                    : null,
-                border: InputBorder.none,
-              ),
-              onChanged: (value) {
-                setState(() {}); // Rebuild to show/hide clear button
-                ref.read(themesProvider.notifier).search(value);
-              },
+        GlassCard(
+          margin: const EdgeInsets.all(16),
+          padding: EdgeInsets.zero,
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Поиск тем...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        ref.read(themesProvider.notifier).clearSearch();
+                      },
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              isDense: true,
             ),
+            onChanged: (value) {
+              setState(() {}); // Rebuild to show/hide clear button
+              ref.read(themesProvider.notifier).search(value);
+            },
           ),
         ),
         // List

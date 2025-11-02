@@ -234,7 +234,7 @@ class _FeedbacksManagementScreenState
                   icon: const Icon(Icons.filter_alt_off),
                   tooltip: 'Сброс фильтров',
                   style: IconButton.styleFrom(
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                   ),
                 ),
               ],
@@ -355,7 +355,7 @@ class _FeedbacksManagementScreenState
                             'От: ${feedback.user!.displayName} (${feedback.user!.email})',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -381,16 +381,16 @@ class _FeedbacksManagementScreenState
                 feedback.messageText,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey[700]),
+                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                  Icon(Icons.access_time, size: 14, color: Theme.of(context).textTheme.bodyMedium?.color),
                   const SizedBox(width: 4),
                   Text(
                     dateFormat.format(feedback.createdAt),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 12, color: Theme.of(context).textTheme.bodyMedium?.color),
                   ),
                   if (feedback.hasReply) ...[
                     const SizedBox(width: 16),
@@ -433,8 +433,8 @@ class _FeedbacksManagementScreenState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        border: Border(top: BorderSide(color: Colors.grey[300]!)),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

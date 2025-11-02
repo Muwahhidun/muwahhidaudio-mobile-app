@@ -407,7 +407,7 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                                                 'Серия: ${test.series!.displayName}',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.grey[600],
+                                                  color: Theme.of(context).textTheme.bodyMedium?.color,
                                                 ),
                                               ),
                                             if (test.teacher != null)
@@ -415,21 +415,21 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                                                 'Преподаватель: ${test.teacher!.name}',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.grey[600],
+                                                  color: Theme.of(context).textTheme.bodyMedium?.color,
                                                 ),
                                               ),
                                             Text(
                                               'Вопросов: ${test.questionsCount} | Проходной балл: ${test.passingScore}%',
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.grey[600],
+                                                color: Theme.of(context).textTheme.bodyMedium?.color,
                                               ),
                                             ),
                                             Text(
                                               'Время на вопрос: ${test.timePerQuestionSeconds} сек',
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.grey[600],
+                                                color: Theme.of(context).textTheme.bodyMedium?.color,
                                               ),
                                             ),
                                           ],
@@ -517,8 +517,8 @@ class _TestsManagementScreenState extends ConsumerState<TestsManagementScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

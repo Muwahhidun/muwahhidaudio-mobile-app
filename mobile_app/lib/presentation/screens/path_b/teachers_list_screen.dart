@@ -53,7 +53,7 @@ class _TeachersListScreenState extends ConsumerState<TeachersListScreen> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: GlassCard(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            padding: EdgeInsets.zero,
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
@@ -70,6 +70,8 @@ class _TeachersListScreenState extends ConsumerState<TeachersListScreen> {
                       )
                     : null,
                 border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                isDense: true,
               ),
               onChanged: (value) {
                 setState(() {}); // Rebuild to show/hide clear button

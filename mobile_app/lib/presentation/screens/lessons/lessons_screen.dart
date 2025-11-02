@@ -217,22 +217,17 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                       color: Colors.deepPurple,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'Итоговый тест по серии',
-                      style: TextStyle(
-                        fontSize: 18,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Проверьте свои знания по всем урокам',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
+                      style: Theme.of(context).textTheme.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -302,9 +297,8 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                 children: [
                   Text(
                     lesson.displayTitle ?? lesson.title ?? 'Урок ${lesson.lessonNumber}',
-                    style: const TextStyle(
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
                     ),
                   ),
                   // Show custom note if exists
@@ -313,10 +307,8 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
                         '"${bookmark.customName}"',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontStyle: FontStyle.italic,
-                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
@@ -328,12 +320,12 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                         Icon(
                           Icons.access_time,
                           size: 16,
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: Theme.of(context).iconTheme.color,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           lesson.formattedDuration!,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     )
@@ -366,7 +358,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                   IconButton(
                     icon: Icon(
                       isBookmarked ? Icons.star : Icons.star_border,
-                      color: isBookmarked ? Colors.amber : Colors.white.withValues(alpha: 0.5),
+                      color: isBookmarked ? Colors.amber : Theme.of(context).iconTheme.color?.withOpacity(0.5),
                       size: 28,
                     ),
                     onPressed: () => _toggleBookmark(lesson),

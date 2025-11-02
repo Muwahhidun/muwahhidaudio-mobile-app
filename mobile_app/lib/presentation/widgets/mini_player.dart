@@ -226,7 +226,7 @@ class _MiniPlayerUI extends StatelessWidget {
                             ),
                             child: Icon(
                               Icons.headset,
-                              color: Colors.green.shade800,
+                              color: Theme.of(context).iconTheme.color,
                               size: 32,
                             ),
                           ),
@@ -242,9 +242,7 @@ class _MiniPlayerUI extends StatelessWidget {
                                   lesson.book != null
                                       ? '${lesson.book!.name} - Урок ${lesson.lessonNumber}'
                                       : 'Урок ${lesson.lessonNumber}',
-                                  style: TextStyle(
-                                    color: Colors.green.shade900,
-                                    fontSize: 16,
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.bold,
                                   ),
                                   maxLines: 1,
@@ -253,10 +251,7 @@ class _MiniPlayerUI extends StatelessWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   lesson.teacher?.name ?? '',
-                                  style: TextStyle(
-                                    color: Colors.green.shade700,
-                                    fontSize: 14,
-                                  ),
+                                  style: Theme.of(context).textTheme.bodyMedium,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -273,14 +268,14 @@ class _MiniPlayerUI extends StatelessWidget {
                   if (isWide) ...[
                     // Previous
                     IconButton(
-                      icon: Icon(Icons.skip_previous, color: Colors.green.shade800),
+                      icon: Icon(Icons.skip_previous, color: Theme.of(context).iconTheme.color),
                       onPressed: onPrevious,
                       iconSize: 32,
                     ),
 
                     // Rewind 10s
                     IconButton(
-                      icon: Icon(Icons.replay_10, color: Colors.green.shade800),
+                      icon: Icon(Icons.replay_10, color: Theme.of(context).iconTheme.color),
                       onPressed: () {
                         final newPosition = player.position - const Duration(seconds: 10);
                         player.seek(newPosition < Duration.zero ? Duration.zero : newPosition);
@@ -311,7 +306,7 @@ class _MiniPlayerUI extends StatelessWidget {
                   if (isWide) ...[
                     // Forward 10s
                     IconButton(
-                      icon: Icon(Icons.forward_10, color: Colors.green.shade800),
+                      icon: Icon(Icons.forward_10, color: Theme.of(context).iconTheme.color),
                       onPressed: () {
                         final duration = player.duration ?? Duration.zero;
                         final newPosition = player.position + const Duration(seconds: 10);
@@ -322,7 +317,7 @@ class _MiniPlayerUI extends StatelessWidget {
 
                     // Next
                     IconButton(
-                      icon: Icon(Icons.skip_next, color: Colors.green.shade800),
+                      icon: Icon(Icons.skip_next, color: Theme.of(context).iconTheme.color),
                       onPressed: onNext,
                       iconSize: 32,
                     ),
@@ -330,7 +325,7 @@ class _MiniPlayerUI extends StatelessWidget {
 
                   // Close button - always visible
                   IconButton(
-                    icon: Icon(Icons.close, color: Colors.green.shade800),
+                    icon: Icon(Icons.close, color: Theme.of(context).iconTheme.color),
                     onPressed: () {
                       if (kIsWeb) {
                         AudioServiceWeb().stop();

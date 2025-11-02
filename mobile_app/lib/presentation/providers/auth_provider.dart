@@ -61,7 +61,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
   final FlutterSecureStorage _storage;
 
-  AuthNotifier(this._apiClient, this._storage) : super(AuthState()) {
+  AuthNotifier(this._apiClient, this._storage) : super(AuthState(isLoading: true)) {
     _checkAuth();
   }
 
@@ -70,13 +70,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final token = await _storage.read(key: AppConstants.accessTokenKey);
       if (token != null) {
-        state = state.copyWith(isLoading: true);
         final user = await _apiClient.getCurrentUser();
         state = state.copyWith(
           user: user,
           isAuthenticated: true,
           isLoading: false,
         );
+      } else {
+        // No token found, not authenticated
+        state = state.copyWith(isLoading: false);
       }
     } catch (e) {
       // Token might be expired, clear it

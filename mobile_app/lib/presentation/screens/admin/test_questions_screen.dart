@@ -150,14 +150,14 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
                         'Преподаватель: ${widget.test.teacher?.name ?? "N/A"}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                       Text(
                         'Всего вопросов: ${_questions.length} | Проходной балл: ${widget.test.passingScore}%',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                     ],
@@ -193,14 +193,14 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
                                 Icon(
                                   Icons.quiz_outlined,
                                   size: 64,
-                                  color: Colors.grey[400],
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
                                   'Вопросы не найдены',
                                   style: TextStyle(
                                     fontSize: 16,
-                                    color: Colors.grey[600],
+                                    color: Theme.of(context).textTheme.bodyMedium?.color,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -273,7 +273,7 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
                                             '${questions.length} вопр.',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.grey[600],
+                                              color: Theme.of(context).textTheme.bodyMedium?.color,
                                             ),
                                           ),
                                         ],
@@ -311,7 +311,7 @@ class _TestQuestionsScreenState extends ConsumerState<TestQuestionsScreen> {
                                             'Вариантов: ${question.options.length} | Баллов: ${question.points}',
                                             style: TextStyle(
                                               fontSize: 12,
-                                              color: Colors.grey[600],
+                                              color: Theme.of(context).textTheme.bodyMedium?.color,
                                             ),
                                           ),
                                           trailing: Row(

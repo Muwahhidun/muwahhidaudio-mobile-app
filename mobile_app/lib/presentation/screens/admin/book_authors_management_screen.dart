@@ -389,7 +389,7 @@ class _BookAuthorsManagementScreenState
                                         '${author.birthYear != null ? "${author.birthYear}" : "?"} - ${author.deathYear != null ? "${author.deathYear}" : "?"}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context).textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -397,7 +397,7 @@ class _BookAuthorsManagementScreenState
                                         'Активен: ${(author.isActive ?? false) ? "Да" : "Нет"}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context).textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                     ],

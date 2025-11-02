@@ -515,8 +515,8 @@ class _SeriesManagementScreenState extends State<SeriesManagementScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
-                border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                border: Border(top: BorderSide(color: Theme.of(context).dividerColor)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

@@ -195,7 +195,7 @@ class _TeachersManagementScreenState
                                         'Активен: ${(teacher.isActive ?? false) ? "Да" : "Нет"}',
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.grey[600],
+                                          color: Theme.of(context).textTheme.bodyMedium?.color,
                                         ),
                                       ),
                                     ],

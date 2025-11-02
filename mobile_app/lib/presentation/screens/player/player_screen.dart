@@ -305,16 +305,15 @@ class _PlayerScreenState extends State<PlayerScreen>
               children: [
                 Text(
                   '${speed}x',
-                  style: TextStyle(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: Colors.green.shade800,
                   ),
                 ),
                 if (_playbackSpeed == speed)
                   Icon(
                     Icons.check,
                     size: 16,
-                    color: Colors.green.shade700,
+                    color: Theme.of(context).iconTheme.color,
                   ),
               ],
             ),
@@ -410,12 +409,11 @@ class _PlayerScreenState extends State<PlayerScreen>
               ),
 
               // Breadcrumbs with lesson info
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              GlassCard(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 child: Breadcrumbs(
                   path: _getBreadcrumbsWithLesson(),
-                  textColor: Colors.green.shade800,
                 ),
               ),
 
@@ -496,7 +494,7 @@ class _PlayerScreenState extends State<PlayerScreen>
             child: Icon(
               Icons.headset,
               size: 100,
-              color: Colors.green.shade800,
+              color: Theme.of(context).iconTheme.color,
             ),
           ),
         ),
@@ -525,10 +523,8 @@ class _PlayerScreenState extends State<PlayerScreen>
               Flexible(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 24,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade900,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -538,7 +534,7 @@ class _PlayerScreenState extends State<PlayerScreen>
               IconButton(
                 icon: Icon(
                   isBookmarked ? Icons.star : Icons.star_border,
-                  color: isBookmarked ? Colors.amber : Colors.grey[600],
+                  color: isBookmarked ? Colors.amber : Theme.of(context).textTheme.bodyMedium?.color,
                   size: 32,
                 ),
                 onPressed: _loadingBookmark ? null : _toggleBookmark,
@@ -552,10 +548,8 @@ class _PlayerScreenState extends State<PlayerScreen>
           if (widget.lesson.teacher != null)
             Text(
               widget.lesson.teacher!.name,
-              style: TextStyle(
-                fontSize: 16,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w500,
-                color: Colors.green.shade800,
               ),
               textAlign: TextAlign.center,
             ),
@@ -613,16 +607,14 @@ class _PlayerScreenState extends State<PlayerScreen>
                   children: [
                     Text(
                       _formatDuration(position),
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.green.shade800,
                       ),
                     ),
                     Text(
                       _formatDuration(duration),
-                      style: TextStyle(
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: Colors.green.shade800,
                       ),
                     ),
                     // Speed control button with glassmorphism
@@ -636,14 +628,12 @@ class _PlayerScreenState extends State<PlayerScreen>
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.speed, size: 14, color: Colors.green.shade800),
+                            Icon(Icons.speed, size: 14, color: Theme.of(context).iconTheme.color),
                             const SizedBox(width: 4),
                             Text(
                               '${_playbackSpeed}x',
-                              style: TextStyle(
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 11,
-                                color: Colors.green.shade800,
                               ),
                             ),
                           ],
