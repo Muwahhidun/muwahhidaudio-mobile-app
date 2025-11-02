@@ -31,55 +31,56 @@ Map<String, dynamic> _$FeedbackMessageToJson(FeedbackMessage instance) =>
     };
 
 FeedbackMessageCreate _$FeedbackMessageCreateFromJson(
-        Map<String, dynamic> json) =>
-    FeedbackMessageCreate(
-      messageText: json['message_text'] as String,
-      sendAsAdmin: json['send_as_admin'] as bool?,
-    );
+  Map<String, dynamic> json,
+) => FeedbackMessageCreate(
+  messageText: json['message_text'] as String,
+  sendAsAdmin: json['send_as_admin'] as bool?,
+);
 
 Map<String, dynamic> _$FeedbackMessageCreateToJson(
-        FeedbackMessageCreate instance) =>
-    <String, dynamic>{
-      'message_text': instance.messageText,
-      'send_as_admin': instance.sendAsAdmin,
-    };
+  FeedbackMessageCreate instance,
+) => <String, dynamic>{
+  'message_text': instance.messageText,
+  'send_as_admin': instance.sendAsAdmin,
+};
 
 Feedback _$FeedbackFromJson(Map<String, dynamic> json) => Feedback(
-      id: (json['id'] as num).toInt(),
-      userId: (json['user_id'] as num).toInt(),
-      subject: json['subject'] as String,
-      messageText: json['message_text'] as String,
-      adminReply: json['admin_reply'] as String?,
-      status: json['status'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      repliedAt: json['replied_at'] == null
-          ? null
-          : DateTime.parse(json['replied_at'] as String),
-      closedAt: json['closed_at'] == null
-          ? null
-          : DateTime.parse(json['closed_at'] as String),
-      user: json['user'] == null
-          ? null
-          : User.fromJson(json['user'] as Map<String, dynamic>),
-      messages: (json['messages'] as List<dynamic>?)
-              ?.map((e) => FeedbackMessage.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          const [],
-    );
+  id: (json['id'] as num).toInt(),
+  userId: (json['user_id'] as num).toInt(),
+  subject: json['subject'] as String,
+  messageText: json['message_text'] as String,
+  adminReply: json['admin_reply'] as String?,
+  status: json['status'] as String,
+  createdAt: DateTime.parse(json['created_at'] as String),
+  repliedAt: json['replied_at'] == null
+      ? null
+      : DateTime.parse(json['replied_at'] as String),
+  closedAt: json['closed_at'] == null
+      ? null
+      : DateTime.parse(json['closed_at'] as String),
+  user: json['user'] == null
+      ? null
+      : User.fromJson(json['user'] as Map<String, dynamic>),
+  messages:
+      (json['messages'] as List<dynamic>?)
+          ?.map((e) => FeedbackMessage.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
+);
 
 Map<String, dynamic> _$FeedbackToJson(Feedback instance) => <String, dynamic>{
-      'id': instance.id,
-      'user_id': instance.userId,
-      'subject': instance.subject,
-      'message_text': instance.messageText,
-      'admin_reply': instance.adminReply,
-      'status': instance.status,
-      'created_at': instance.createdAt.toIso8601String(),
-      'replied_at': instance.repliedAt?.toIso8601String(),
-      'closed_at': instance.closedAt?.toIso8601String(),
-      'user': instance.user,
-      'messages': instance.messages,
-    };
+  'id': instance.id,
+  'user_id': instance.userId,
+  'subject': instance.subject,
+  'message_text': instance.messageText,
+  'admin_reply': instance.adminReply,
+  'status': instance.status,
+  'created_at': instance.createdAt.toIso8601String(),
+  'replied_at': instance.repliedAt?.toIso8601String(),
+  'closed_at': instance.closedAt?.toIso8601String(),
+  'user': instance.user,
+  'messages': instance.messages,
+};
 
 FeedbackCreate _$FeedbackCreateFromJson(Map<String, dynamic> json) =>
     FeedbackCreate(
@@ -100,28 +101,28 @@ FeedbackAdminUpdate _$FeedbackAdminUpdateFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$FeedbackAdminUpdateToJson(
-        FeedbackAdminUpdate instance) =>
-    <String, dynamic>{
-      'admin_reply': instance.adminReply,
-      'status': instance.status,
-    };
+  FeedbackAdminUpdate instance,
+) => <String, dynamic>{
+  'admin_reply': instance.adminReply,
+  'status': instance.status,
+};
 
 PaginatedFeedbacksResponse _$PaginatedFeedbacksResponseFromJson(
-        Map<String, dynamic> json) =>
-    PaginatedFeedbacksResponse(
-      items: (json['items'] as List<dynamic>)
-          .map((e) => Feedback.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      total: (json['total'] as num).toInt(),
-      skip: (json['skip'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-    );
+  Map<String, dynamic> json,
+) => PaginatedFeedbacksResponse(
+  items: (json['items'] as List<dynamic>)
+      .map((e) => Feedback.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  total: (json['total'] as num).toInt(),
+  skip: (json['skip'] as num).toInt(),
+  limit: (json['limit'] as num).toInt(),
+);
 
 Map<String, dynamic> _$PaginatedFeedbacksResponseToJson(
-        PaginatedFeedbacksResponse instance) =>
-    <String, dynamic>{
-      'items': instance.items,
-      'total': instance.total,
-      'skip': instance.skip,
-      'limit': instance.limit,
-    };
+  PaginatedFeedbacksResponse instance,
+) => <String, dynamic>{
+  'items': instance.items,
+  'total': instance.total,
+  'skip': instance.skip,
+  'limit': instance.limit,
+};

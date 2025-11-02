@@ -9,21 +9,19 @@ part of 'paginated_response.dart';
 PaginatedResponse<T> _$PaginatedResponseFromJson<T>(
   Map<String, dynamic> json,
   T Function(Object? json) fromJsonT,
-) =>
-    PaginatedResponse<T>(
-      items: (json['items'] as List<dynamic>).map(fromJsonT).toList(),
-      total: (json['total'] as num).toInt(),
-      skip: (json['skip'] as num).toInt(),
-      limit: (json['limit'] as num).toInt(),
-    );
+) => PaginatedResponse<T>(
+  items: (json['items'] as List<dynamic>).map(fromJsonT).toList(),
+  total: (json['total'] as num).toInt(),
+  skip: (json['skip'] as num).toInt(),
+  limit: (json['limit'] as num).toInt(),
+);
 
 Map<String, dynamic> _$PaginatedResponseToJson<T>(
   PaginatedResponse<T> instance,
   Object? Function(T value) toJsonT,
-) =>
-    <String, dynamic>{
-      'items': instance.items.map(toJsonT).toList(),
-      'total': instance.total,
-      'skip': instance.skip,
-      'limit': instance.limit,
-    };
+) => <String, dynamic>{
+  'items': instance.items.map(toJsonT).toList(),
+  'total': instance.total,
+  'skip': instance.skip,
+  'limit': instance.limit,
+};

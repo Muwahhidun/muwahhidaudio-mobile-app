@@ -7,13 +7,13 @@ part of 'teacher.dart';
 // **************************************************************************
 
 TeacherModel _$TeacherModelFromJson(Map<String, dynamic> json) => TeacherModel(
-      id: (json['id'] as num).toInt(),
-      name: json['name'] as String,
-      biography: json['biography'] as String?,
-      isActive: json['is_active'] as bool?,
-      createdAt: json['created_at'] as String?,
-      updatedAt: json['updated_at'] as String?,
-    );
+  id: (json['id'] as num).toInt(),
+  name: json['name'] as String,
+  biography: json['biography'] as String?,
+  isActive: json['is_active'] as bool?,
+  createdAt: json['created_at'] as String?,
+  updatedAt: json['updated_at'] as String?,
+);
 
 Map<String, dynamic> _$TeacherModelToJson(TeacherModel instance) =>
     <String, dynamic>{

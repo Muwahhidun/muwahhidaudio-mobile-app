@@ -39,11 +39,11 @@ class SeriesStatistics {
     final minutes = (totalAudioDuration % 3600) ~/ 60;
 
     if (hours > 0 && minutes > 0) {
-      return '${hours}ч ${minutes}м';
+      return '$hoursч $minutesм';
     } else if (hours > 0) {
-      return '${hours}ч';
+      return '$hoursч';
     } else {
-      return '${minutes}м';
+      return '$minutesм';
     }
   }
 
@@ -55,7 +55,6 @@ class SeriesStatistics {
 
   Map<String, dynamic> toJson() => _$SeriesStatisticsToJson(this);
 }
-
 
 /// Detailed statistics for a series with series info
 @JsonSerializable()
@@ -106,11 +105,11 @@ class SeriesStatisticsDetailed {
     final minutes = (totalAudioDuration % 3600) ~/ 60;
 
     if (hours > 0 && minutes > 0) {
-      return '${hours}ч ${minutes}м';
+      return '$hoursч $minutesм';
     } else if (hours > 0) {
-      return '${hours}ч';
+      return '$hoursч';
     } else {
-      return '${minutes}м';
+      return '$minutesм';
     }
   }
 
