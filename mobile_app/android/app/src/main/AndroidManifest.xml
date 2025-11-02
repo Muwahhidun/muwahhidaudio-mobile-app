@@ -14,7 +14,7 @@
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
         <activity
-            android:name="com.ryanheise.audioservice.AudioServiceActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
@@ -55,7 +55,7 @@
         <!-- Notification metadata -->
         <meta-data
             android:name="com.ryanheise.audioservice.notificationChannelId"
-            android:value="com.muwahhid.audio_app.channel.audio" />
+            android:value="com.islamiclessons.mobile_app.channel.audio" />
         <meta-data
             android:name="com.ryanheise.audioservice.notificationChannelName"
             android:value="Islamic Audio Lessons" />

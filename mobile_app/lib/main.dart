@@ -69,7 +69,7 @@ void main() async {
       audioHandler = await AudioService.init(
         builder: () => LessonAudioHandler(),
         config: const AudioServiceConfig(
-          androidNotificationChannelId: 'com.muwahhid.audio_app.channel.audio',
+          androidNotificationChannelId: 'com.islamiclessons.mobile_app.channel.audio',
           androidNotificationChannelName: 'Islamic Audio Lessons',
           androidNotificationIcon: 'drawable/ic_stat_music_note',
           androidStopForegroundOnPause: false,
@@ -100,7 +100,7 @@ Future<void> initializeAudioServiceIfNeeded() async {
     audioHandler = await AudioService.init(
       builder: () => LessonAudioHandler(),
       config: const AudioServiceConfig(
-        androidNotificationChannelId: 'com.muwahhid.audio_app.channel.audio',
+        androidNotificationChannelId: 'com.islamiclessons.mobile_app.channel.audio',
         androidNotificationChannelName: 'Islamic Audio Lessons',
         androidNotificationIcon: 'drawable/ic_stat_music_note',
         androidStopForegroundOnPause: false,
