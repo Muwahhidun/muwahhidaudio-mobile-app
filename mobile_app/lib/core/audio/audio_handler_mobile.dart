@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../data/models/lesson.dart';
 
 /// Audio handler for mobile background playback
@@ -24,7 +25,22 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
     _init();
   }
 
-  void _init() {
+  void _init() async {
+    // Request notification permission for Android 13+
+    await _requestNotificationPermission();
+
+    // Set initial playback state for Android 12+ notification
+    playbackState.add(PlaybackState(
+      playing: false,
+      processingState: AudioProcessingState.idle,
+      controls: [
+        MediaControl.play,
+      ],
+      systemActions: const {
+        MediaAction.seek,
+      },
+    ));
+
     // Listen to player state changes and update audio_service state
     _player.playerStateStream.listen((playerState) {
       final isPlaying = playerState.playing;
@@ -58,7 +74,11 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
           MediaControl.skipToPrevious,
           if (isPlaying) MediaControl.pause else MediaControl.play,
           MediaControl.skipToNext,
-          MediaControl.stop,
+          const MediaControl(
+            androidIcon: 'drawable/ic_action_cancel',
+            label: 'Закрыть',
+            action: MediaAction.stop,
+          ),
         ],
         systemActions: const {
           MediaAction.seek,
@@ -113,6 +133,28 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
 
     // Load audio
     await _player.setUrl(audioUrl);
+
+    // Set initial playback state with controls after loading media
+    playbackState.add(PlaybackState(
+      playing: false,
+      processingState: AudioProcessingState.ready,
+      controls: [
+        MediaControl.skipToPrevious,
+        MediaControl.play,
+        MediaControl.skipToNext,
+        const MediaControl(
+          androidIcon: 'drawable/ic_action_cancel',
+          label: 'Закрыть',
+          action: MediaAction.stop,
+        ),
+      ],
+      systemActions: const {
+        MediaAction.seek,
+        MediaAction.seekForward,
+        MediaAction.seekBackward,
+      },
+      androidCompactActionIndices: const [0, 1, 2],
+    ));
   }
 
   /// Play a lesson with playlist context
@@ -131,6 +173,28 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> play() async {
+    // Ensure initial playback state is set
+    if (playbackState.value.processingState == AudioProcessingState.idle) {
+      playbackState.add(PlaybackState(
+        playing: true,
+        processingState: AudioProcessingState.ready,
+        controls: [
+          MediaControl.skipToPrevious,
+          MediaControl.pause,
+          MediaControl.skipToNext,
+          const MediaControl(
+            androidIcon: 'drawable/ic_action_cancel',
+            label: 'Закрыть',
+            action: MediaAction.stop,
+          ),
+        ],
+        systemActions: const {
+          MediaAction.seek,
+          MediaAction.seekForward,
+          MediaAction.seekBackward,
+        },
+      ));
+    }
     await _player.play();
   }
 
@@ -205,6 +269,14 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
   /// Update playlist (for navigation)
   void updatePlaylist(List<Lesson> playlist) {
     _playlist = playlist;
+  }
+
+  /// Request notification permission for Android 13+
+  Future<void> _requestNotificationPermission() async {
+    final status = await Permission.notification.status;
+    if (!status.isGranted) {
+      await Permission.notification.request();
+    }
   }
 
   /// Dispose resources

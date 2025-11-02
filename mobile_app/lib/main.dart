@@ -55,8 +55,8 @@ Future<void> initializeAudioServiceIfNeeded() async {
       config: const AudioServiceConfig(
         androidNotificationChannelId: 'com.muwahhid.audio_app.channel.audio',
         androidNotificationChannelName: 'Islamic Audio Lessons',
-        androidNotificationOngoing: true,
-        androidNotificationIcon: 'mipmap/ic_launcher',
+        androidNotificationIcon: 'drawable/ic_stat_music_note',
+        androidStopForegroundOnPause: false,
       ),
     );
     debugPrint('AudioService initialized successfully');
