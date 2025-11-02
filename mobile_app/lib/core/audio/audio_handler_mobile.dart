@@ -215,6 +215,8 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> stop() async {
+    logger.i('AudioHandler: stop() called - stopping playback and closing notification');
+
     await _player.stop();
     _currentLesson = null;
     _currentLessonController.add(null);
@@ -222,11 +224,16 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
     // Clear media item
     mediaItem.add(null);
 
-    // Update state to stopped
+    // Update state to stopped with no controls
     playbackState.add(playbackState.value.copyWith(
       playing: false,
       processingState: AudioProcessingState.idle,
+      controls: [], // Remove all controls
     ));
+
+    // Close foreground service and notification
+    await super.stop();
+    logger.i('AudioHandler: Notification closed');
   }
 
   @override
