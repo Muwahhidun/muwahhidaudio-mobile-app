@@ -9,6 +9,7 @@ import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
 import '../player/player_screen.dart';
 import '../../../main.dart';
+import '../../../core/logger.dart';
 
 /// Screen showing all lessons in a series with bookmark indicators
 class BookmarkedLessonsScreen extends ConsumerStatefulWidget {
@@ -83,7 +84,7 @@ class _BookmarkedLessonsScreenState
         _loadingBookmarks = false;
       });
     } catch (e) {
-      print('Error loading bookmarks: $e');
+      logger.e('Error loading bookmarks: $e');
       setState(() {
         _loadingBookmarks = false;
       });

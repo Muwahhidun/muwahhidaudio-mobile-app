@@ -13,7 +13,8 @@ import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
 import '../player/player_screen.dart';
 import '../tests/test_screen.dart';
-import '../../../main.dart';
+import '../../../main.dart' as app;
+import '../../../core/logger.dart';
 
 /// Universal screen for showing lessons in a series
 class LessonsScreen extends ConsumerStatefulWidget {
@@ -48,13 +49,13 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Subscribe to route observer
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
+    app.routeObserver.subscribe(this, ModalRoute.of(context)!);
   }
 
   @override
   void dispose() {
     // Unsubscribe from route observer
-    routeObserver.unsubscribe(this);
+    app.routeObserver.unsubscribe(this);
     super.dispose();
   }
 
@@ -80,7 +81,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
         _bookmarksMap = {for (var b in bookmarks) b.lessonId: b};
       });
     } catch (e) {
-      print('Error loading bookmarks: $e');
+      logger.e('Error loading bookmarks: $e');
       // Silently fail - bookmarks are not critical
     }
   }
@@ -158,7 +159,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
             ),
           ],
         ),
-        bottomNavigationBar: MiniPlayer(key: ValueKey(audioHandler != null ? (audioHandler as LessonAudioHandler).currentLesson?.id : null)),
+        bottomNavigationBar: MiniPlayer(key: ValueKey(app.audioHandler != null ? (app.audioHandler as LessonAudioHandler).currentLesson?.id : null)),
       ),
     );
   }
@@ -287,7 +288,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
             },
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: Colors.green.withOpacity(0.8),
+                backgroundColor: Colors.green.withValues(alpha: 0.8),
                 child: Text(
                   '${lesson.lessonNumber}',
                   style: const TextStyle(
@@ -315,7 +316,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                         style: TextStyle(
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
-                          color: Colors.white.withOpacity(0.6),
+                          color: Colors.white.withValues(alpha: 0.6),
                         ),
                       ),
                     ),
@@ -327,12 +328,12 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                         Icon(
                           Icons.access_time,
                           size: 16,
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                         const SizedBox(width: 4),
                         Text(
                           lesson.formattedDuration!,
-                          style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                         ),
                       ],
                     )
@@ -405,12 +406,12 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                         );
                       },
                     )
-                  else if (audioHandler != null)
+                  else if (app.audioHandler != null)
                     StreamBuilder<bool>(
-                      stream: (audioHandler as LessonAudioHandler).player.playingStream,
+                      stream: (app.audioHandler as LessonAudioHandler).player.playingStream,
                       builder: (context, playingSnapshot) {
                         final isPlaying = playingSnapshot.data ?? false;
-                        final handler = audioHandler as LessonAudioHandler;
+                        final handler = app.audioHandler as LessonAudioHandler;
                         final isCurrentLesson = handler.currentLesson?.id == lesson.id;
                         final showPause = isCurrentLesson && isPlaying;
 
@@ -428,7 +429,8 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                               // Resume current lesson
                               await handler.play();
                             } else {
-                              // Start new lesson
+                              // Start new lesson - ensure AudioService is initialized first
+                              await app.initializeAudioServiceIfNeeded();
                               await handler.playLesson(
                                 lesson: lesson,
                                 playlist: state.lessons,

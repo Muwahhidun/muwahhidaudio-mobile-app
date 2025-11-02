@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../config/api_config.dart';
+import 'package:logger/logger.dart';
 import '../../config/app_constants.dart';
 
 /// Dio instance provider with auth interceptor
@@ -65,7 +66,7 @@ class DioProvider {
       requestBody: true,
       responseBody: true,
       error: true,
-      logPrint: (obj) => print(obj),
+      logPrint: (obj) => Logger().d(obj),
     ));
 
     return _dio!;

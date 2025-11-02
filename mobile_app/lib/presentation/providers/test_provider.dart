@@ -4,6 +4,7 @@ import '../../data/api/dio_provider.dart';
 import '../../data/api/api_client.dart';
 import '../../data/models/test.dart';
 import '../../data/models/test_attempt.dart';
+import '../../core/logger.dart';
 
 /// State for test taking
 class TestState {
@@ -89,28 +90,28 @@ class TestNotifier extends StateNotifier<TestState> {
 
   /// Load test for a specific lesson
   Future<void> loadLessonTest(int lessonId) async {
-    print('🔵 [TEST_PROVIDER] Loading test for lesson $lessonId');
+    logger.d('[TEST_PROVIDER] Loading test for lesson $lessonId');
     state = state.copyWith(isLoading: true, error: null);
     try {
-      print('🔵 [TEST_PROVIDER] Calling API...');
+      logger.d('[TEST_PROVIDER] Calling API...');
       final test = await _apiClient.getLessonTest(lessonId);
-      print('🔵 [TEST_PROVIDER] API response received');
-      print('🔵 [TEST_PROVIDER] Test ID: ${test.id}, Title: ${test.title}');
-      print('🔵 [TEST_PROVIDER] timePerQuestionSeconds: ${test.timePerQuestionSeconds}');
-      print('🔵 [TEST_PROVIDER] passingScore: ${test.passingScore}');
-      print('🔵 [TEST_PROVIDER] Questions count: ${test.questions?.length}');
+      logger.d('[TEST_PROVIDER] API response received');
+      logger.d('[TEST_PROVIDER] Test ID: ${test.id}, Title: ${test.title}');
+      logger.d('[TEST_PROVIDER] timePerQuestionSeconds: ${test.timePerQuestionSeconds}');
+      logger.d('[TEST_PROVIDER] passingScore: ${test.passingScore}');
+      logger.d('[TEST_PROVIDER] Questions count: ${test.questions?.length}');
 
-      print('🔵 [TEST_PROVIDER] Updating state...');
+      logger.d('[TEST_PROVIDER] Updating state...');
       state = state.copyWith(
         test: test,
         isLoading: false,
         currentQuestionIndex: 0,
         selectedAnswers: {},
       );
-      print('🔵 [TEST_PROVIDER] State updated successfully');
+      logger.d('[TEST_PROVIDER] State updated successfully');
     } catch (e, stackTrace) {
-      print('🔴 [TEST_PROVIDER] Error loading test: $e');
-      print('🔴 [TEST_PROVIDER] Stack trace: $stackTrace');
+      logger.e('[TEST_PROVIDER] Error loading test: $e');
+      logger.e('[TEST_PROVIDER] Stack trace: $stackTrace');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }

@@ -11,6 +11,7 @@ import '../../../core/audio/audio_service_web.dart';
 import '../../../core/audio/audio_handler_mobile.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
+import '../../../core/logger.dart';
 
 /// Enhanced Audio Player Screen with modern UI and animations
 class PlayerScreen extends StatefulWidget {
@@ -94,7 +95,7 @@ class _PlayerScreenState extends State<PlayerScreen>
             _loadingBookmark = false;
           });
         } catch (parseError) {
-          print('Error parsing bookmark: $parseError');
+          logger.e('Error parsing bookmark: $parseError');
           setState(() {
             _bookmark = null;
             _loadingBookmark = false;
@@ -107,7 +108,7 @@ class _PlayerScreenState extends State<PlayerScreen>
         });
       }
     } catch (e) {
-      print('Error loading bookmark: $e');
+      logger.e('Error loading bookmark: $e');
       setState(() {
         _loadingBookmark = false;
       });

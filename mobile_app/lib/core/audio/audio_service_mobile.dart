@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_session/audio_session.dart';
 import '../../data/models/lesson.dart';
+import '../logger.dart';
 
 /// Singleton audio service for mobile platforms (Android/iOS)
 /// Provides persistent audio playback with background support via audio_session
@@ -56,9 +57,9 @@ class AudioServiceMobile {
       });
 
       _isInitialized = true;
-      print('AudioServiceMobile: Initialized with audio_session');
+      logger.i('AudioServiceMobile: Initialized with audio_session');
     } catch (e) {
-      print('AudioServiceMobile: Failed to initialize audio_session: $e');
+      logger.e('AudioServiceMobile: Failed to initialize audio_session: $e');
       _isInitialized = false;
     }
   }
@@ -89,7 +90,7 @@ class AudioServiceMobile {
         ? lesson.audioUrl!
         : '$baseUrl${lesson.audioUrl}';
 
-    print('AudioServiceMobile: Loading audio from $audioUrl');
+    logger.i('AudioServiceMobile: Loading audio from $audioUrl');
 
     // Load but don't play
     await _player.setUrl(audioUrl);
@@ -114,7 +115,7 @@ class AudioServiceMobile {
         ? lesson.audioUrl!
         : '$baseUrl${lesson.audioUrl}';
 
-    print('AudioServiceMobile: Playing lesson ${lesson.id}');
+    logger.i('AudioServiceMobile: Playing lesson ${lesson.id}');
 
     // Load and play
     await _player.setUrl(audioUrl);

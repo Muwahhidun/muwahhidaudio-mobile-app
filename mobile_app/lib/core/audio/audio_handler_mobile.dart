@@ -3,6 +3,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../data/models/lesson.dart';
+import '../logger.dart';
 
 /// Audio handler for mobile background playback
 /// Integrates just_audio with audio_service for background playback
@@ -117,7 +118,7 @@ class LessonAudioHandler extends BaseAudioHandler with SeekHandler {
         ? lesson.audioUrl!
         : '$baseUrl${lesson.audioUrl}';
 
-    print('AudioHandler: Loading audio from $audioUrl');
+    logger.i('AudioHandler: Loading audio from $audioUrl');
 
     // Update media item for notification
     mediaItem.add(MediaItem(
