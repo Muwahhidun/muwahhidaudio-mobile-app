@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/series_provider.dart';
 import '../../providers/statistics_provider.dart';
+import '../../providers/lessons_provider.dart';
+import '../../providers/download_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
 import '../lessons/lessons_screen.dart';
+import '../../../core/logger.dart';
 
 /// Universal screen for showing lesson series
 /// Works for all navigation paths
@@ -29,6 +32,9 @@ class SeriesScreen extends ConsumerStatefulWidget {
 }
 
 class _SeriesScreenState extends ConsumerState<SeriesScreen> {
+  // Track download state for each series
+  final Map<int, bool> _downloadingSeriesMap = {};
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +48,85 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
             teacherId: widget.teacherId,
           );
     });
+  }
+
+  /// Download entire series
+  Future<void> _downloadSeries(int seriesId) async {
+    try {
+      setState(() {
+        _downloadingSeriesMap[seriesId] = true;
+      });
+
+      logger.i('Loading lessons for series $seriesId');
+
+      // First, load lessons for this series
+      await ref.read(lessonsProvider.notifier).loadLessons(seriesId);
+      final lessonsState = ref.read(lessonsProvider);
+
+      if (lessonsState.lessons.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Нет уроков для скачивания')),
+          );
+        }
+        return;
+      }
+
+      logger.i('Starting download for ${lessonsState.lessons.length} lessons');
+
+      // Download all lessons
+      await ref.read(downloadProvider.notifier).downloadSeries(lessonsState.lessons);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Серия скачана (${lessonsState.lessons.length} уроков)')),
+        );
+      }
+    } catch (e) {
+      logger.e('Failed to download series', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _downloadingSeriesMap[seriesId] = false;
+        });
+      }
+    }
+  }
+
+  /// Delete series downloads
+  Future<void> _deleteSeriesDownloads(int seriesId) async {
+    try {
+      logger.i('Deleting downloads for series $seriesId');
+
+      // Load lessons for this series
+      await ref.read(lessonsProvider.notifier).loadLessons(seriesId);
+      final lessonsState = ref.read(lessonsProvider);
+
+      if (lessonsState.lessons.isEmpty) {
+        return;
+      }
+
+      // Delete all lesson downloads
+      await ref.read(downloadProvider.notifier).deleteSeriesDownload(lessonsState.lessons);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Загрузки удалены')),
+        );
+      }
+    } catch (e) {
+      logger.e('Failed to delete series downloads', error: e);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -183,35 +268,44 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildStatItem(
-                              Icons.access_time,
-                              stats.formattedDuration,
-                              Colors.blue,
+                            Expanded(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                children: [
+                                  _buildStatItem(
+                                    Icons.access_time,
+                                    stats.formattedDuration,
+                                    Colors.blue,
+                                  ),
+                                  _buildStatItem(
+                                    Icons.quiz,
+                                    '${stats.totalQuestions} вопр.',
+                                    Colors.orange,
+                                  ),
+                                  if (stats.hasAttempts) ...[
+                                    _buildStatItem(
+                                      Icons.star,
+                                      '${stats.bestScorePercent?.toStringAsFixed(0) ?? 0}%',
+                                      Colors.amber,
+                                    ),
+                                    Icon(
+                                      stats.hasPassed ? Icons.check_circle : Icons.cancel,
+                                      color: stats.hasPassed ? Colors.green : Colors.red,
+                                      size: 20,
+                                    ),
+                                  ] else
+                                    _buildStatItem(
+                                      Icons.pending,
+                                      'Не пройдено',
+                                      Colors.grey,
+                                    ),
+                                ],
+                              ),
                             ),
-                            _buildStatItem(
-                              Icons.quiz,
-                              '${stats.totalQuestions} вопр.',
-                              Colors.orange,
-                            ),
-                            if (stats.hasAttempts) ...[
-                              _buildStatItem(
-                                Icons.star,
-                                '${stats.bestScorePercent?.toStringAsFixed(0) ?? 0}%',
-                                Colors.amber,
-                              ),
-                              Icon(
-                                stats.hasPassed ? Icons.check_circle : Icons.cancel,
-                                color: stats.hasPassed ? Colors.green : Colors.red,
-                                size: 20,
-                              ),
-                            ] else
-                              _buildStatItem(
-                                Icons.pending,
-                                'Не пройдено',
-                                Colors.grey,
-                              ),
+                            // Download button for series
+                            _buildSeriesDownloadButton(series.id),
                           ],
                         ),
                       ),
@@ -239,6 +333,103 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
           style: Theme.of(context).textTheme.bodySmall,
         ),
       ],
+    );
+  }
+
+  /// Build download button for series
+  Widget _buildSeriesDownloadButton(int seriesId) {
+    return Consumer(
+      builder: (context, ref, child) {
+        // Check if series is being downloaded
+        final isDownloading = _downloadingSeriesMap[seriesId] ?? false;
+
+        if (isDownloading) {
+          // Show loading indicator
+          return const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+
+        // We need to load lessons first to check download status
+        // For now, show download button by default
+        return FutureBuilder<void>(
+          future: ref.read(lessonsProvider.notifier).loadLessons(seriesId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox(width: 24, height: 24);
+            }
+
+            final lessonsState = ref.watch(lessonsProvider);
+            if (lessonsState.lessons.isEmpty) {
+              return const SizedBox.shrink();
+            }
+
+            // Get download stats for this series
+            final stats = ref.read(downloadProvider.notifier).getSeriesDownloadStats(lessonsState.lessons);
+            final downloaded = stats['downloaded'] ?? 0;
+            final total = stats['total'] ?? 0;
+
+            if (downloaded == total && total > 0) {
+              // All lessons downloaded - show checkmark with delete option
+              return IconButton(
+                icon: const Icon(Icons.download_done, color: Colors.green, size: 20),
+                onPressed: () {
+                  // Show delete confirmation dialog
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Удалить загрузки?'),
+                      content: Text('Будут удалены все скачанные уроки серии ($total файлов)'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Отмена'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            _deleteSeriesDownloads(seriesId);
+                          },
+                          style: TextButton.styleFrom(foregroundColor: Colors.red),
+                          child: const Text('Удалить'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            } else if (downloaded > 0) {
+              // Partially downloaded - show count
+              return InkWell(
+                onTap: () => _downloadSeries(seriesId),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    '$downloaded/$total',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              );
+            } else {
+              // Nothing downloaded - show download button
+              return IconButton(
+                icon: Icon(
+                  Icons.download,
+                  color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
+                  size: 20,
+                ),
+                onPressed: () => _downloadSeries(seriesId),
+              );
+            }
+          },
+        );
+      },
     );
   }
 }

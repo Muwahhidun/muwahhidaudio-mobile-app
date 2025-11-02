@@ -120,6 +120,67 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
     }
   }
 
+  /// Download entire series (all lessons in playlist)
+  Future<void> downloadSeries(List<Lesson> lessons) async {
+    logger.i('Starting download for series with ${lessons.length} lessons');
+
+    for (var lesson in lessons) {
+      // Skip if already downloaded
+      if (isLessonDownloaded(lesson.id)) {
+        logger.i('Lesson ${lesson.id} already downloaded, skipping');
+        continue;
+      }
+
+      // Download lesson
+      await downloadLesson(lesson);
+    }
+
+    logger.i('Series download completed');
+  }
+
+  /// Cancel all downloads in a series
+  Future<void> cancelSeriesDownload(List<Lesson> lessons) async {
+    logger.i('Cancelling series download');
+
+    for (var lesson in lessons) {
+      if (isLessonDownloading(lesson.id)) {
+        await cancelDownload(lesson.id);
+      }
+    }
+  }
+
+  /// Delete all downloaded lessons in a series
+  Future<void> deleteSeriesDownload(List<Lesson> lessons) async {
+    logger.i('Deleting series downloads');
+
+    for (var lesson in lessons) {
+      if (isLessonDownloaded(lesson.id)) {
+        await deleteDownload(lesson.id);
+      }
+    }
+  }
+
+  /// Get series download statistics
+  Map<String, int> getSeriesDownloadStats(List<Lesson> lessons) {
+    int downloaded = 0;
+    int downloading = 0;
+    int total = lessons.length;
+
+    for (var lesson in lessons) {
+      if (isLessonDownloaded(lesson.id)) {
+        downloaded++;
+      } else if (isLessonDownloading(lesson.id)) {
+        downloading++;
+      }
+    }
+
+    return {
+      'downloaded': downloaded,
+      'downloading': downloading,
+      'total': total,
+    };
+  }
+
   /// Cancel download
   Future<void> cancelDownload(int lessonId) async {
     try {
@@ -214,4 +275,10 @@ final totalDownloadedSizeProvider = FutureProvider<int>((ref) async {
 final downloadedLessonsCountProvider = FutureProvider<int>((ref) async {
   final downloadManager = ref.watch(downloadManagerProvider);
   return await downloadManager.getDownloadedCount();
+});
+
+/// Provider for series download statistics
+final seriesDownloadStatsProvider = Provider.family<Map<String, int>, List<Lesson>>((ref, lessons) {
+  final downloadNotifier = ref.watch(downloadProvider.notifier);
+  return downloadNotifier.getSeriesDownloadStats(lessons);
 });

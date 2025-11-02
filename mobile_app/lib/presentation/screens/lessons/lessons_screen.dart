@@ -35,6 +35,7 @@ class LessonsScreen extends ConsumerStatefulWidget {
 class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
   // Map of lesson_id -> bookmark for quick lookup
   Map<int, Bookmark> _bookmarksMap = {};
+  bool _isDownloadingAll = false;
 
   @override
   void initState() {
@@ -131,6 +132,60 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
     }
   }
 
+  /// Download all lessons in series
+  Future<void> _downloadAllLessons() async {
+    final lessonsState = ref.read(lessonsProvider);
+    if (lessonsState.lessons.isEmpty) return;
+
+    try {
+      setState(() {
+        _isDownloadingAll = true;
+      });
+
+      await ref.read(downloadProvider.notifier).downloadSeries(lessonsState.lessons);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Серия скачана (${lessonsState.lessons.length} уроков)')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDownloadingAll = false;
+        });
+      }
+    }
+  }
+
+  /// Delete all lesson downloads in series
+  Future<void> _deleteAllDownloads() async {
+    final lessonsState = ref.read(lessonsProvider);
+    if (lessonsState.lessons.isEmpty) return;
+
+    try {
+      await ref.read(downloadProvider.notifier).deleteSeriesDownload(lessonsState.lessons);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Загрузки удалены')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final lessonsState = ref.watch(lessonsProvider);
@@ -142,6 +197,98 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
           title: const Text('Уроки'),
           backgroundColor: Colors.transparent,
           elevation: 0,
+          actions: [
+            // Download all button
+            Consumer(
+              builder: (context, ref, child) {
+                if (lessonsState.lessons.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                // Get download stats for all lessons
+                final stats = ref.read(downloadProvider.notifier).getSeriesDownloadStats(lessonsState.lessons);
+                final downloaded = stats['downloaded'] ?? 0;
+                final total = stats['total'] ?? 0;
+
+                if (_isDownloadingAll) {
+                  // Show loading indicator
+                  return const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                } else if (downloaded == total && total > 0) {
+                  // All downloaded - show delete option
+                  return IconButton(
+                    icon: const Icon(Icons.download_done, color: Colors.green),
+                    tooltip: 'Удалить все загрузки',
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Удалить загрузки?'),
+                          content: Text('Будут удалены все скачанные уроки ($total файлов)'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Отмена'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                                _deleteAllDownloads();
+                              },
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              child: const Text('Удалить'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  // Show download button with badge if partially downloaded
+                  return Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.download_for_offline),
+                        tooltip: 'Скачать всё ($total уроков)',
+                        onPressed: _downloadAllLessons,
+                      ),
+                      if (downloaded > 0)
+                        Positioned(
+                          right: 4,
+                          top: 4,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 16,
+                              minHeight: 16,
+                            ),
+                            child: Text(
+                              '$downloaded',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                }
+              },
+            ),
+          ],
         ),
         body: Column(
           children: [
