@@ -35,8 +35,25 @@ final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<v
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Note: AudioService initialization delayed to first audio playback
-  // to avoid timing issues with FlutterEngine initialization
+  // Initialize AudioService on mobile platforms immediately (like web singleton)
+  if (!kIsWeb) {
+    try {
+      audioHandler = await AudioService.init(
+        builder: () => LessonAudioHandler(),
+        config: const AudioServiceConfig(
+          androidNotificationChannelId: 'com.muwahhid.audio_app.channel.audio',
+          androidNotificationChannelName: 'Islamic Audio Lessons',
+          androidNotificationIcon: 'drawable/ic_stat_music_note',
+          androidStopForegroundOnPause: false,
+        ),
+      );
+      debugPrint('AudioService initialized in main()');
+    } catch (e, stackTrace) {
+      debugPrint('Failed to initialize AudioService in main(): $e');
+      debugPrint('StackTrace: $stackTrace');
+      // Continue anyway - will try lazy initialization if needed
+    }
+  }
 
   runApp(
     const ProviderScope(

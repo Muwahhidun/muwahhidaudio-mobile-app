@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/api/dio_provider.dart';
 import '../../../data/models/bookmark.dart';
 import '../../../data/models/lesson.dart';
+import '../../../config/api_config.dart';
+import '../../../core/audio/audio_service_web.dart';
+import '../../../core/audio/audio_handler_mobile.dart';
 import '../../providers/lessons_provider.dart';
 import '../../widgets/mini_player.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
 import '../player/player_screen.dart';
-import '../../../main.dart';
+import '../../../main.dart' as app;
 import '../../../core/logger.dart';
 
 /// Screen showing all lessons in a series with bookmark indicators
@@ -47,13 +51,13 @@ class _BookmarkedLessonsScreenState
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Subscribe to route observer
-    routeObserver.subscribe(this, ModalRoute.of(context)!);
+    app.routeObserver.subscribe(this, ModalRoute.of(context)!);
   }
 
   @override
   void dispose() {
     // Unsubscribe from route observer
-    routeObserver.unsubscribe(this);
+    app.routeObserver.unsubscribe(this);
     super.dispose();
   }
 
@@ -345,8 +349,70 @@ class _BookmarkedLessonsScreenState
                     ),
                     onPressed: () => _toggleBookmark(lesson),
                   ),
-                  // Play button
-                  const Icon(Icons.play_arrow, size: 32, color: Colors.green),
+                  // Play/Pause button
+                  if (kIsWeb)
+                    StreamBuilder<bool>(
+                      stream: AudioServiceWeb().player.playingStream,
+                      builder: (context, playingSnapshot) {
+                        final isPlaying = playingSnapshot.data ?? false;
+                        final audioService = AudioServiceWeb();
+                        final isCurrentLesson = audioService.currentLesson?.id == lesson.id;
+                        final showPause = isCurrentLesson && isPlaying;
+
+                        return IconButton(
+                          icon: Icon(
+                            showPause ? Icons.pause : Icons.play_arrow,
+                            size: 32,
+                            color: Colors.green,
+                          ),
+                          onPressed: () async {
+                            if (isCurrentLesson && isPlaying) {
+                              await audioService.player.pause();
+                            } else if (isCurrentLesson && !isPlaying) {
+                              await audioService.player.play();
+                            } else {
+                              await audioService.playLesson(
+                                lesson: lesson,
+                                playlist: state.lessons,
+                              );
+                            }
+                            setState(() {});
+                          },
+                        );
+                      },
+                    )
+                  else
+                    StreamBuilder<bool>(
+                      stream: (app.audioHandler as LessonAudioHandler).player.playingStream,
+                      builder: (context, playingSnapshot) {
+                        final isPlaying = playingSnapshot.data ?? false;
+                        final handler = app.audioHandler as LessonAudioHandler;
+                        final isCurrentLesson = handler.currentLesson?.id == lesson.id;
+                        final showPause = isCurrentLesson && isPlaying;
+
+                        return IconButton(
+                          icon: Icon(
+                            showPause ? Icons.pause : Icons.play_arrow,
+                            size: 32,
+                            color: Colors.green,
+                          ),
+                          onPressed: () async {
+                            if (isCurrentLesson && isPlaying) {
+                              await handler.pause();
+                            } else if (isCurrentLesson && !isPlaying) {
+                              await handler.play();
+                            } else {
+                              await handler.playLesson(
+                                lesson: lesson,
+                                playlist: state.lessons,
+                                baseUrl: ApiConfig.baseUrl,
+                              );
+                            }
+                            setState(() {}); // Refresh UI
+                          },
+                        );
+                      },
+                    ),
                 ],
               ),
             ),

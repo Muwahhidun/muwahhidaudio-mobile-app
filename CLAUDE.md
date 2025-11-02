@@ -8,9 +8,9 @@ Islamic Audio Lessons application - a monorepo containing a Flutter mobile app a
 
 ## Development Tools
 
-### Dart MCP Server
+### MCP Servers
 
-This project uses [Dart MCP Server](https://docs.flutter.dev/ai/mcp-server) for enhanced AI-assisted development:
+This project uses multiple MCP servers for enhanced AI-assisted development:
 
 **Configuration:** `.mcp.json` (in project root)
 ```json
@@ -19,16 +19,17 @@ This project uses [Dart MCP Server](https://docs.flutter.dev/ai/mcp-server) for 
     "dart": {
       "command": "dart",
       "args": ["mcp-server", "--force-roots-fallback"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp", "--api-key", "..."]
     }
   }
 }
 ```
 
-**Requirements:**
-- Dart SDK 3.9+ (project uses 3.9.2)
-- Flutter SDK installed
-
-**Available MCP Tools:**
+**Dart MCP Server** ([docs](https://docs.flutter.dev/ai/mcp-server)):
+- Requirements: Dart SDK 3.9.2+, Flutter 3.35.7+
 - Code analysis and error fixing
 - Symbol resolution and navigation
 - Application introspection
@@ -36,6 +37,10 @@ This project uses [Dart MCP Server](https://docs.flutter.dev/ai/mcp-server) for 
 - Dependency management
 - Test execution and analysis
 - Dart code formatting
+
+**Context7 MCP Server**:
+- Retrieves up-to-date documentation for any library
+- Use when working with unfamiliar packages or APIs
 
 **Note:** MCP configuration is committed for team-wide use. Local settings (`.claude/settings.local.json`) are gitignored.
 
@@ -182,12 +187,15 @@ python test_audio_streaming.py
 ## Mobile App (Flutter)
 
 ### Technology Stack
-- Flutter SDK 3.8.1+
-- Riverpod for state management
-- Retrofit + Dio for HTTP/API
-- just_audio + audio_service for audio playback
-- flutter_secure_storage for token storage
-- Hive for local caching
+- Flutter SDK 3.35.7+ (Dart SDK 3.9.2+)
+- Riverpod for state management (riverpod_generator for code generation)
+- Retrofit + Dio for HTTP/API (retrofit_generator for code generation)
+- just_audio + audio_service for background audio playback
+- flutter_secure_storage for JWT token storage
+- shared_preferences for user preferences
+- json_serializable for model serialization
+- logger for structured logging
+- file_picker + permission_handler for file operations
 
 ### Running Mobile App
 
@@ -216,9 +224,12 @@ flutter test
 ### Mobile App Architecture
 
 **Clean Architecture with Feature-based Organization:**
-- `lib/main.dart` - App entry point, ProviderScope wrapper, routing
+- `lib/main.dart` - App entry point, ProviderScope wrapper, routing, global audio handler
 - `lib/config/` - API configuration and app constants
-- `lib/core/theme/` - App theming
+- `lib/core/` - Core functionality
+  - `theme/` - App theming with light/dark modes
+  - `audio/` - Audio playback system (see Audio Architecture below)
+  - `constants/` - App-wide constants including `app_icons.dart`
 - `lib/data/` - Data layer
   - `api/` - Retrofit API client definitions
   - `models/` - JSON serializable data models
@@ -230,26 +241,70 @@ flutter test
     - `home/` - Home screen
     - `themes/` - Theme browsing
     - `admin/` - Admin panel for content management
-  - `widgets/` (not yet implemented)
+  - `widgets/` - Reusable UI components including `mini_player.dart`
 
 **Key Patterns:**
 - Riverpod providers manage API calls and state
 - Retrofit generates type-safe API clients
 - Models use json_serializable for JSON conversion
 - Authentication state is managed globally via `authProvider`
+- Theme switching via `themeProvider` (light/dark modes)
 - Conditional routing: authenticated users see HomeScreen, others see LoginScreen
 - **UI Icons Pattern**: All icons defined in `lib/core/constants/app_icons.dart`
   - Use `AppIcons.theme`, `AppIcons.book`, `AppIcons.teacher` (mic icon), etc.
   - Each model has associated icon + color constant
   - Ensures UI consistency across the app
 
+**Audio Architecture:**
+
+The app uses a cross-platform audio system with platform-specific implementations:
+
+- **Mobile (Android/iOS)**: `audio_service` + `just_audio`
+  - Background playback with system media controls
+  - Global `audioHandler` instance in `main.dart`
+  - Lazy initialization via `initializeAudioServiceIfNeeded()` on first playback
+  - `LessonAudioHandler` (extends `BaseAudioHandler`) in `lib/core/audio/audio_handler_mobile.dart`:
+    - Manages playlist and current lesson index
+    - Handles play/pause, seek, skip, rewind/forward (10s)
+    - Auto-plays next lesson on completion
+    - Broadcasts state to system media controls
+    - Custom notification with lesson metadata (book, teacher, lesson number)
+  - System controls: Previous, Rewind 10s, Play/Pause, Forward 10s, Next
+
+- **Web**: Custom implementation using browser MediaSession API
+  - `lib/core/audio/audio_service_web.dart` provides web-compatible audio service
+  - `lib/core/audio/media_session_web.dart` for browser media controls
+
+- **Common Pattern**:
+  - Call `playLesson(lesson: lesson, playlist: allLessons)` to start playback
+  - Audio streams from backend: `${ApiConfig.baseUrl}${lesson.audioUrl}`
+  - MiniPlayer widget (`lib/presentation/widgets/mini_player.dart`) shows on all screens when audio is playing
+  - MiniPlayer uses global `RouteObserver` to persist across navigation
+
+**Routing:**
+
+The app uses named routes defined in `lib/main.dart`:
+- `/admin` - Admin panel (requires admin role level >= 2)
+- `/admin/themes`, `/admin/books`, `/admin/authors` - Content management
+- `/admin/teachers`, `/admin/series`, `/admin/lessons` - Lesson management
+- `/admin/tests` - Test/quiz management
+- `/admin/users`, `/admin/feedbacks` - User management
+- `/admin/statistics` - Analytics dashboard
+- `/admin/system-settings`, `/admin/smtp-settings`, `/admin/sender-settings` - System configuration
+- `/admin/help` - Admin help screen
+- `/themes` - Theme browsing (public)
+- `/email-verified?token=xxx` - Dynamic route for email verification
+
 **Admin Features:**
-The app includes an admin panel (`/admin` route) for managing:
-- Themes
-- Books and Book Authors
-- Teachers
-- Lesson Series
-- Tests
+The app includes an admin panel for managing:
+- Themes (Islamic topics like Акыда, Сира, Фикх, Адаб)
+- Books and Book Authors (classical Islamic scholars)
+- Teachers (lesson instructors)
+- Lesson Series (course sequences)
+- Lessons (individual audio files)
+- Tests (quizzes for series)
+- Users and Feedbacks
+- System settings (SMTP, sender configuration)
 
 **Admin Management Screens Pattern:**
 Admin screens (`lib/presentation/screens/admin/*_management_screen.dart`) follow a consistent pattern:
@@ -286,15 +341,31 @@ The mobile app uses code generation for:
 - Riverpod providers (riverpod_generator)
 - JSON serialization (json_serializable)
 - Retrofit API clients (retrofit_generator)
-- Hive type adapters (hive_generator)
 
 Always run `flutter pub run build_runner build --delete-conflicting-outputs` after:
 - Adding/modifying Riverpod providers with annotations
 - Changing data models with @JsonSerializable
 - Updating Retrofit API interface
-- Creating new Hive type adapters
+
+**Important Notes:**
+- Generated files have `.g.dart` suffix and should not be manually edited
+- Use `--delete-conflicting-outputs` flag to resolve conflicts
+- For Hive: No longer using Hive type adapters (removed from dependencies)
 
 ## Development Workflow
+
+### Data Flow Pattern
+
+**Standard User Features** (uses Riverpod providers):
+1. UI Screen → Riverpod Provider → Retrofit API Client → Backend
+2. Backend returns data → Provider updates state → UI rebuilds automatically
+3. Example: `ThemesScreen` uses `themesProvider` which calls `apiClient.getThemes()`
+
+**Admin Features** (uses direct Dio calls):
+1. UI Screen → Direct Dio API call → Backend
+2. Backend returns data → setState() updates local state → UI rebuilds
+3. Example: Admin screens manage their own pagination state locally
+4. Rationale: Admin features are less frequently used and don't need global state
 
 ### Adding New API Endpoint
 
@@ -304,11 +375,16 @@ Always run `flutter pub run build_runner build --delete-conflicting-outputs` aft
    - Create route handler in `backend/app/api/`
    - Register router in `backend/app/main.py`
 
-2. Mobile:
+2. Mobile (for standard features):
    - Add endpoint to Retrofit client in `mobile_app/lib/data/api/api_client.dart`
    - Run code generation: `flutter pub run build_runner build --delete-conflicting-outputs`
    - Create/update provider in `mobile_app/lib/presentation/providers/`
    - Use provider in UI screens
+
+3. Mobile (for admin features):
+   - Use direct Dio calls via `DioProvider.getDio()`
+   - Manage state locally with StatefulWidget
+   - Follow admin screen pagination pattern (see Admin Management Screens Pattern)
 
 ### Database Schema Changes
 
@@ -400,3 +476,15 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - Verify user has admin role (level >= 2)
 - Check `include_inactive: true` is set in query parameters
 - Verify pagination parameters are correct: `skip = page * itemsPerPage`
+
+**Audio playback issues on Android:**
+- Ensure notification icons exist in `android/app/src/main/res/drawable/`
+- Required icons: `ic_stat_music_note.png`, `ic_play_arrow.png`, `ic_pause.png`, `ic_skip_next.png`, `ic_skip_previous.png`, `ic_fast_forward.png`, `ic_rewind.png`
+- Check audio service initialization happens lazily (not on app start)
+- Verify `android/gradle.properties` has correct SDK/minSdk settings
+- Check AndroidManifest.xml for FOREGROUND_SERVICE permission
+
+**Deprecated API warnings:**
+- Project uses latest Flutter SDK and has migrated deprecated APIs
+- Check recent commits for deprecation fixes (e.g., `MediaQuery.of(context).size` migrations)
+- Use `logger` package instead of `print()` for debugging

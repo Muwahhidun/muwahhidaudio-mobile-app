@@ -159,7 +159,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
             ),
           ],
         ),
-        bottomNavigationBar: MiniPlayer(key: ValueKey(app.audioHandler != null ? (app.audioHandler as LessonAudioHandler).currentLesson?.id : null)),
+        bottomNavigationBar: const MiniPlayer(),
       ),
     );
   }
@@ -406,7 +406,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                         );
                       },
                     )
-                  else if (app.audioHandler != null)
+                  else
                     StreamBuilder<bool>(
                       stream: (app.audioHandler as LessonAudioHandler).player.playingStream,
                       builder: (context, playingSnapshot) {
@@ -429,8 +429,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                               // Resume current lesson
                               await handler.play();
                             } else {
-                              // Start new lesson - ensure AudioService is initialized first
-                              await app.initializeAudioServiceIfNeeded();
+                              // Start new lesson
                               await handler.playLesson(
                                 lesson: lesson,
                                 playlist: state.lessons,
@@ -441,9 +440,7 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
                           },
                         );
                       },
-                    )
-                  else
-                    const Icon(Icons.play_arrow, size: 32, color: Colors.green),
+                    ),
                 ],
               ),
             ),
