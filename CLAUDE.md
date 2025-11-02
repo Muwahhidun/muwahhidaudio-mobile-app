@@ -6,6 +6,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Islamic Audio Lessons application - a monorepo containing a Flutter mobile app and FastAPI backend for streaming Islamic educational audio content.
 
+## Development Tools
+
+### Dart MCP Server
+
+This project uses [Dart MCP Server](https://docs.flutter.dev/ai/mcp-server) for enhanced AI-assisted development:
+
+**Configuration:** `.mcp.json` (in project root)
+```json
+{
+  "mcpServers": {
+    "dart": {
+      "command": "dart",
+      "args": ["mcp-server", "--force-roots-fallback"]
+    }
+  }
+}
+```
+
+**Requirements:**
+- Dart SDK 3.9+ (project uses 3.9.2)
+- Flutter SDK installed
+
+**Available MCP Tools:**
+- Code analysis and error fixing
+- Symbol resolution and navigation
+- Application introspection
+- Package search on pub.dev
+- Dependency management
+- Test execution and analysis
+- Dart code formatting
+
+**Note:** MCP configuration is committed for team-wide use. Local settings (`.claude/settings.local.json`) are gitignored.
+
 ## Repository Structure
 
 ```
