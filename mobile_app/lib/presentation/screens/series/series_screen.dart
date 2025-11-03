@@ -247,10 +247,17 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                     ],
                   ),
                   isThreeLine: true,
-                  trailing: Icon(
-                    Icons.arrow_forward_ios,
-                    size: 16,
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildSeriesDownloadButton(series.id),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_ios,
+                        size: 16,
+                        color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -268,44 +275,35 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            Expanded(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _buildStatItem(
-                                    Icons.access_time,
-                                    stats.formattedDuration,
-                                    Colors.blue,
-                                  ),
-                                  _buildStatItem(
-                                    Icons.quiz,
-                                    '${stats.totalQuestions} вопр.',
-                                    Colors.orange,
-                                  ),
-                                  if (stats.hasAttempts) ...[
-                                    _buildStatItem(
-                                      Icons.star,
-                                      '${stats.bestScorePercent?.toStringAsFixed(0) ?? 0}%',
-                                      Colors.amber,
-                                    ),
-                                    Icon(
-                                      stats.hasPassed ? Icons.check_circle : Icons.cancel,
-                                      color: stats.hasPassed ? Colors.green : Colors.red,
-                                      size: 20,
-                                    ),
-                                  ] else
-                                    _buildStatItem(
-                                      Icons.pending,
-                                      'Не пройдено',
-                                      Colors.grey,
-                                    ),
-                                ],
-                              ),
+                            _buildStatItem(
+                              Icons.access_time,
+                              stats.formattedDuration,
+                              Colors.blue,
                             ),
-                            // Download button for series
-                            _buildSeriesDownloadButton(series.id),
+                            _buildStatItem(
+                              Icons.quiz,
+                              '${stats.totalQuestions} вопр.',
+                              Colors.orange,
+                            ),
+                            if (stats.hasAttempts) ...{
+                              _buildStatItem(
+                                Icons.star,
+                                '${stats.bestScorePercent?.toStringAsFixed(0) ?? 0}%',
+                                Colors.amber,
+                              ),
+                              Icon(
+                                stats.hasPassed ? Icons.check_circle : Icons.cancel,
+                                color: stats.hasPassed ? Colors.green : Colors.red,
+                                size: 20,
+                              ),
+                            } else
+                              _buildStatItem(
+                                Icons.pending,
+                                'Не пройдено',
+                                Colors.grey,
+                              ),
                           ],
                         ),
                       ),
