@@ -352,82 +352,15 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
           );
         }
 
-        // We need to load lessons first to check download status
-        // For now, show download button by default
-        return FutureBuilder<void>(
-          future: ref.read(lessonsProvider.notifier).loadLessons(seriesId),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox(width: 24, height: 24);
-            }
-
-            final lessonsState = ref.watch(lessonsProvider);
-            if (lessonsState.lessons.isEmpty) {
-              return const SizedBox.shrink();
-            }
-
-            // Get download stats for this series
-            final stats = ref.read(downloadProvider.notifier).getSeriesDownloadStats(lessonsState.lessons);
-            final downloaded = stats['downloaded'] ?? 0;
-            final total = stats['total'] ?? 0;
-
-            if (downloaded == total && total > 0) {
-              // All lessons downloaded - show checkmark with delete option
-              return IconButton(
-                icon: const Icon(Icons.download_done, color: Colors.green, size: 20),
-                onPressed: () {
-                  // Show delete confirmation dialog
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Удалить загрузки?'),
-                      content: Text('Будут удалены все скачанные уроки серии ($total файлов)'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Отмена'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _deleteSeriesDownloads(seriesId);
-                          },
-                          style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          child: const Text('Удалить'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            } else if (downloaded > 0) {
-              // Partially downloaded - show count
-              return InkWell(
-                onTap: () => _downloadSeries(seriesId),
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    '$downloaded/$total',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              );
-            } else {
-              // Nothing downloaded - show download button
-              return IconButton(
-                icon: Icon(
-                  Icons.download,
-                  color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
-                  size: 20,
-                ),
-                onPressed: () => _downloadSeries(seriesId),
-              );
-            }
-          },
+        // Just show download button - don't pre-load lessons
+        // Statistics will be calculated when user actually downloads
+        return IconButton(
+          icon: Icon(
+            Icons.download,
+            color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
+            size: 20,
+          ),
+          onPressed: () => _downloadSeries(seriesId),
         );
       },
     );
