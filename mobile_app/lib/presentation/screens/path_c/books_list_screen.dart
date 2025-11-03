@@ -18,6 +18,15 @@ class _BooksListScreenState extends ConsumerState<BooksListScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Load all books without filters
+    Future.microtask(() {
+      ref.read(booksProvider.notifier).loadBooks();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();

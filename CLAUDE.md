@@ -198,6 +198,8 @@ python test_audio_streaming.py
 - json_serializable for model serialization
 - logger for structured logging
 - file_picker + permission_handler for file operations
+- flutter_local_notifications for download progress notifications
+- app_badge_plus for app badge counter (shows active downloads)
 
 ### Running Mobile App
 
@@ -219,9 +221,27 @@ flutter run -d chrome --web-port=3064
 # Build APK
 flutter build apk --release
 
+# Build App Bundle (for Play Store)
+flutter build appbundle --release
+
 # Run tests
 flutter test
+
+# Run static analysis
+flutter analyze
 ```
+
+### Android Build Configuration
+
+Key settings in `mobile_app/android/app/build.gradle.kts`:
+- `minSdk = 24` - Required for audio_service package
+- `compileSdk` and `targetSdk` - Inherited from Flutter settings
+- Java/Kotlin compatibility: `JavaVersion.VERSION_11`
+- Core library desugaring enabled for newer Java APIs on older Android versions
+- ProGuard/R8 disabled in release builds (`isMinifyEnabled = false`) to prevent notification icon stripping
+- NDK version: 27.0.12077973
+
+Important: The app uses Kotlin Gradle DSL (`.gradle.kts` files) instead of Groovy (`.gradle`).
 
 ### Mobile App Architecture
 
@@ -233,6 +253,7 @@ flutter test
   - `audio/` - Audio playback system (see Audio Architecture below)
   - `database/` - SQLite database helper (singleton pattern)
   - `download/` - Download manager for offline audio files
+  - `notifications/` - Notification service for download progress and app badges
   - `constants/` - App-wide constants including `app_icons.dart`
   - `logger.dart` - Structured logging using logger package
 - `lib/data/` - Data layer
@@ -321,6 +342,81 @@ The app supports full offline functionality with local audio file downloads and 
   - **Bulk download**: AppBar button in LessonsScreen with badge showing downloaded count
   - **Download states**: Download icon → CircularProgressIndicator with cancel button → Download_done icon (green)
   - **Critical performance fix**: Avoid eager loading in list builders (caused SeriesScreen freeze). Load lessons only when user taps download button.
+
+- **Metadata Caching** (`lib/core/database/database_helper.dart`):
+  - **Cached Tables**: `cached_themes`, `cached_book_authors`, `cached_books`, `cached_teachers`, `cached_series`, `cached_lessons`
+  - **Purpose**: Cache lightweight metadata (not audio files) for offline browsing
+  - **Cache Methods**: `cacheTheme()`, `cacheBook()`, `cacheTeacher()`, `cacheSeries()`, `cacheLessonsBatch()`
+  - **Query Methods**: `getCachedThemes()`, `getCachedBooks()`, `getCachedTeachers()`, `getCachedSeries()`, `getCachedLessonsForSeries()`
+  - **Cache Management**: `hasCachedData()`, `clearAllCache()`
+  - **Important**: Lesson API doesn't include `series_id` field - must be injected from context before caching
+
+- **Synchronization Service** (`lib/core/sync/sync_service.dart`):
+  - Singleton service for syncing metadata from API to local SQLite cache
+  - **syncAllData()**: Downloads all themes, books, authors, teachers, series, and lesson metadata
+  - **syncSeriesLessons(seriesId)**: Sync lessons for a specific series
+  - **API Note**: `/series/{id}/lessons` endpoint returns direct List `[...]`, not paginated `{"items": []}`
+  - **Auto-sync Triggers**: App start (if authenticated), connectivity restore (if cache empty)
+  - **Progress Callbacks**: Provides step-by-step progress updates (e.g., "Синхронизация тем...")
+
+- **Sync Provider** (`lib/presentation/providers/sync_provider.dart`):
+  - Manages synchronization state and lifecycle
+  - **performInitialSync()**: Blocking sync for first app launch (requires internet)
+  - **performBackgroundSync()**: Silent sync for subsequent launches (doesn't block UI)
+  - **Auto-sync on Start**: Automatically syncs metadata when app starts with internet
+  - **Auto-sync on Connectivity Restore**: Listens to connectivity changes and syncs when internet restored
+  - **needsInitialSync()**: Checks if cache is empty and initial sync required
+
+- **Connectivity Monitoring** (`lib/core/connectivity/connectivity_service.dart`, `lib/presentation/providers/connectivity_provider.dart`):
+  - Singleton service for checking internet connectivity
+  - **hasInternet()**: Checks connectivity via DNS lookup (google.com) or backend ping
+  - **onConnectivityChanged**: Stream that emits connectivity changes
+  - **ConnectivityProvider**: Riverpod provider exposing connectivity state to UI
+  - **5-second cache**: Connectivity checks are cached for 5 seconds to reduce overhead
+  - **Offline Indicator**: `OfflineIndicator` widget in AppBar shows "Offline" badge when no internet
+
+- **Cache Fallback Pattern** (in all data providers):
+  - Primary: Try API call
+  - Fallback: If API fails (network error), load from local cache
+  - Example pattern:
+    ```dart
+    try {
+      // Try API
+      final response = await apiClient.getThemes();
+      return response.items;
+    } catch (e) {
+      // Fallback to cache
+      logger.w('Network error, falling back to cache');
+      final cached = await db.getCachedThemes();
+      return cached.map((e) => Theme.fromJson(e)).toList();
+    }
+    ```
+  - All providers (`themes_provider.dart`, `books_provider.dart`, `teachers_provider.dart`, `series_provider.dart`, `lessons_provider.dart`) implement this pattern
+
+**Notification System:**
+
+The app includes a notification service for download progress tracking:
+
+- **NotificationService** (`lib/core/notifications/notification_service.dart`):
+  - Singleton pattern for managing download notifications
+  - Shows progress notifications with percentage and size (e.g., "5.2 MB из 12.0 MB (43%)")
+  - Silent notifications (low importance, no sound/vibration) for downloads
+  - Auto-dismissing completion notifications (3 second timeout)
+  - Error notifications with custom error messages
+  - Methods: `showDownloadProgress()`, `showDownloadCompleted()`, `showDownloadFailed()`, `cancelDownloadNotification()`
+
+- **App Badge Integration**:
+  - Displays count of active downloads on app icon (iOS/Android)
+  - Uses `app_badge_plus` package for cross-platform badge support
+  - Badge automatically updates as downloads start/complete/fail
+  - Badge cleared when no active downloads remain
+
+- **Android Notification Configuration**:
+  - Notification channel: "downloads" with low importance
+  - Ongoing notifications during download (cannot be dismissed)
+  - Auto-cancel notifications after completion
+  - Requires `POST_NOTIFICATIONS` permission (Android 13+)
+  - Icon: `@drawable/ic_stat_music_note`
 
 **Routing:**
 
@@ -523,8 +619,13 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - Ensure notification icons exist in `android/app/src/main/res/drawable/`
 - Required icons: `ic_stat_music_note.png`, `ic_play_arrow.png`, `ic_pause.png`, `ic_skip_next.png`, `ic_skip_previous.png`, `ic_fast_forward.png`, `ic_rewind.png`, `ic_action_cancel.png`
 - Audio service is eagerly initialized in `main()` before `runApp()`
-- Verify `android/gradle.properties` has correct SDK/minSdk settings
-- Check AndroidManifest.xml for FOREGROUND_SERVICE permission
+- Verify minSdk is set to 24 or higher in `android/app/build.gradle.kts`
+- Check AndroidManifest.xml for required permissions:
+  - `FOREGROUND_SERVICE` - Required for background audio
+  - `FOREGROUND_SERVICE_MEDIA_PLAYBACK` - Android 14+ requirement
+  - `FOREGROUND_SERVICE_DATA_SYNC` - Required for download service
+  - `POST_NOTIFICATIONS` - Android 13+ requirement
+- ProGuard/R8 settings: `isMinifyEnabled = false`, `isShrinkResources = false` to prevent icon stripping in release builds
 
 **Performance issues with list screens:**
 - **CRITICAL**: Never use FutureBuilder or async data loading in `itemBuilder` callbacks of ListView.builder
@@ -538,6 +639,9 @@ flutter pub run build_runner build --delete-conflicting-outputs
 - Verify download directory permissions: `getApplicationDocumentsDirectory()`
 - Download progress not updating: Ensure `DownloadProvider` is watching activeDownloads map
 - Downloaded lessons not persisting: Check SQLite table creation in `_createDatabase()`
+- Notifications not showing: Initialize `NotificationService` and check `POST_NOTIFICATIONS` permission
+- Badge not displaying: Verify `AppBadgePlus.isSupported()` returns true on device
+- Silent notification not working: Ensure notification channel uses `Importance.low` (no sound/vibration)
 
 **Deprecated API warnings:**
 - Project uses latest Flutter SDK and has migrated deprecated APIs

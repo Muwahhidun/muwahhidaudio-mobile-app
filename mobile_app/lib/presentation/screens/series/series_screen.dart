@@ -34,20 +34,49 @@ class SeriesScreen extends ConsumerStatefulWidget {
 class _SeriesScreenState extends ConsumerState<SeriesScreen> {
   // Track download state for each series
   final Map<int, bool> _downloadingSeriesMap = {};
+  // Track lesson IDs for each series to check download status
+  final Map<int, List<int>> _seriesLessonIds = {};
 
   @override
   void initState() {
     super.initState();
     // Load series with filters
-    Future.microtask(() {
-      ref
+    Future.microtask(() async {
+      await ref
           .read(seriesProvider.notifier)
           .setFilters(
             themeId: widget.themeId,
             bookId: widget.bookId,
             teacherId: widget.teacherId,
           );
+
+      // Load lesson IDs for all series to show correct download status
+      await _loadSeriesLessonIds();
     });
+  }
+
+  /// Load lesson IDs for all series to check download status
+  Future<void> _loadSeriesLessonIds() async {
+    final seriesState = ref.read(seriesProvider);
+
+    for (final series in seriesState.series) {
+      try {
+        // Load lessons for this series
+        await ref.read(lessonsProvider.notifier).loadLessons(series.id);
+        final lessonsState = ref.read(lessonsProvider);
+
+        if (lessonsState.lessons.isNotEmpty) {
+          _seriesLessonIds[series.id] = lessonsState.lessons.map((l) => l.id).toList();
+        }
+      } catch (e) {
+        logger.e('Failed to load lesson IDs for series ${series.id}', error: e);
+      }
+    }
+
+    // Trigger UI rebuild to show correct download status
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   /// Download entire series
@@ -58,6 +87,13 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
       });
 
       logger.i('Loading lessons for series $seriesId');
+
+      // Get series model from state
+      final seriesState = ref.read(seriesProvider);
+      final series = seriesState.series.firstWhere(
+        (s) => s.id == seriesId,
+        orElse: () => throw Exception('Series not found in state'),
+      );
 
       // First, load lessons for this series
       await ref.read(lessonsProvider.notifier).loadLessons(seriesId);
@@ -72,10 +108,13 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
         return;
       }
 
+      // Save lesson IDs for this series to track download status
+      _seriesLessonIds[seriesId] = lessonsState.lessons.map((l) => l.id).toList();
+
       logger.i('Starting download for ${lessonsState.lessons.length} lessons');
 
-      // Download all lessons
-      await ref.read(downloadProvider.notifier).downloadSeries(lessonsState.lessons);
+      // Download all lessons with series metadata
+      await ref.read(downloadProvider.notifier).downloadSeries(lessonsState.lessons, series);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -103,21 +142,37 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
     try {
       logger.i('Deleting downloads for series $seriesId');
 
-      // Load lessons for this series
-      await ref.read(lessonsProvider.notifier).loadLessons(seriesId);
-      final lessonsState = ref.read(lessonsProvider);
+      // Use saved lesson IDs if available, otherwise load lessons
+      List<int> lessonIds = _seriesLessonIds[seriesId] ?? [];
 
-      if (lessonsState.lessons.isEmpty) {
-        return;
+      if (lessonIds.isEmpty) {
+        // Load lessons for this series
+        await ref.read(lessonsProvider.notifier).loadLessons(seriesId);
+        final lessonsState = ref.read(lessonsProvider);
+
+        if (lessonsState.lessons.isEmpty) {
+          return;
+        }
+
+        lessonIds = lessonsState.lessons.map((l) => l.id).toList();
+        _seriesLessonIds[seriesId] = lessonIds;
       }
 
       // Delete all lesson downloads
-      await ref.read(downloadProvider.notifier).deleteSeriesDownload(lessonsState.lessons);
+      final downloadNotifier = ref.read(downloadProvider.notifier);
+      for (final lessonId in lessonIds) {
+        if (downloadNotifier.isLessonDownloaded(lessonId)) {
+          await downloadNotifier.deleteDownload(lessonId);
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Загрузки удалены')),
         );
+
+        // Refresh UI
+        setState(() {});
       }
     } catch (e) {
       logger.e('Failed to delete series downloads', error: e);
@@ -350,8 +405,67 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
           );
         }
 
-        // Just show download button - don't pre-load lessons
-        // Statistics will be calculated when user actually downloads
+        // Check download status if we have lesson IDs for this series
+        final lessonIds = _seriesLessonIds[seriesId];
+        if (lessonIds != null && lessonIds.isNotEmpty) {
+          final downloadState = ref.watch(downloadProvider);
+          final downloadedCount = lessonIds.where((id) =>
+            downloadState.downloadedLessons[id] == true
+          ).length;
+
+          if (downloadedCount == lessonIds.length) {
+            // All lessons downloaded - show done icon
+            return IconButton(
+              icon: const Icon(
+                Icons.download_done,
+                color: Colors.green,
+                size: 20,
+              ),
+              onPressed: () => _showDeleteSeriesDialog(seriesId),
+            );
+          } else if (downloadedCount > 0) {
+            // Partially downloaded - show badge with count
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.download,
+                    color: Theme.of(context).iconTheme.color?.withOpacity(0.7),
+                    size: 20,
+                  ),
+                  onPressed: () => _downloadSeries(seriesId),
+                ),
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$downloadedCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }
+        }
+
+        // Not downloaded - show download button
         return IconButton(
           icon: Icon(
             Icons.download,
@@ -362,5 +476,30 @@ class _SeriesScreenState extends ConsumerState<SeriesScreen> {
         );
       },
     );
+  }
+
+  /// Show dialog to confirm series deletion
+  Future<void> _showDeleteSeriesDialog(int seriesId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удалить загрузки'),
+        content: const Text('Удалить все скачанные уроки этой серии?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Удалить', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deleteSeriesDownloads(seriesId);
+    }
   }
 }

@@ -5,6 +5,8 @@ class DownloadedLesson {
   final int fileSize;
   final DateTime downloadDate;
   final DownloadStatus status;
+  final int? seriesId; // Links to cached_series for offline navigation
+  final String? lessonData; // JSON string of full lesson object for offline use
 
   DownloadedLesson({
     required this.lessonId,
@@ -12,6 +14,8 @@ class DownloadedLesson {
     required this.fileSize,
     required this.downloadDate,
     required this.status,
+    this.seriesId,
+    this.lessonData,
   });
 
   /// Convert to Map for database insertion
@@ -22,6 +26,8 @@ class DownloadedLesson {
       'file_size': fileSize,
       'download_date': downloadDate.toIso8601String(),
       'status': status.name,
+      'series_id': seriesId,
+      'lesson_data': lessonData,
     };
   }
 
@@ -36,6 +42,8 @@ class DownloadedLesson {
         (e) => e.name == map['status'],
         orElse: () => DownloadStatus.failed,
       ),
+      seriesId: map['series_id'] as int?,
+      lessonData: map['lesson_data'] as String?,
     );
   }
 
@@ -45,6 +53,8 @@ class DownloadedLesson {
     int? fileSize,
     DateTime? downloadDate,
     DownloadStatus? status,
+    int? seriesId,
+    String? lessonData,
   }) {
     return DownloadedLesson(
       lessonId: lessonId ?? this.lessonId,
@@ -52,6 +62,8 @@ class DownloadedLesson {
       fileSize: fileSize ?? this.fileSize,
       downloadDate: downloadDate ?? this.downloadDate,
       status: status ?? this.status,
+      seriesId: seriesId ?? this.seriesId,
+      lessonData: lessonData ?? this.lessonData,
     );
   }
 }

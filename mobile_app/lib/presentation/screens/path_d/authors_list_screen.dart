@@ -18,6 +18,15 @@ class _AuthorsListScreenState extends ConsumerState<AuthorsListScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    // Load authors
+    Future.microtask(() {
+      ref.read(bookAuthorsProvider.notifier).loadAuthors();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();

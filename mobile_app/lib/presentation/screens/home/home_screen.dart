@@ -6,6 +6,7 @@ import '../../providers/theme_provider.dart';
 import '../../widgets/mini_player.dart';
 import '../../widgets/gradient_background.dart';
 import '../../widgets/glass_card.dart';
+import '../../widgets/offline_indicator.dart';
 import '../library/library_screen.dart';
 import '../bookmarks/bookmarks_screen.dart';
 import '../tests/statistics_screen.dart';
@@ -26,6 +27,8 @@ class HomeScreen extends ConsumerWidget {
         appBar: AppBar(
           title: const Text('Islamic Audio Lessons'),
           actions: [
+            // Offline indicator
+            const OfflineIndicator(),
             // Theme toggle button
             IconButton(
               icon: Icon(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/lesson.dart';
 import '../../data/models/downloaded_lesson.dart';
+import '../../data/models/series.dart';
 import '../../core/download/download_manager.dart';
 import '../../core/logger.dart';
 
@@ -121,8 +122,18 @@ class DownloadNotifier extends StateNotifier<DownloadState> {
   }
 
   /// Download entire series (all lessons in playlist)
-  Future<void> downloadSeries(List<Lesson> lessons) async {
-    logger.i('Starting download for series with ${lessons.length} lessons');
+  Future<void> downloadSeries(List<Lesson> lessons, SeriesModel series) async {
+    logger.i('Starting download for series ${series.id} with ${lessons.length} lessons');
+
+    // Log series object details for debugging
+    logger.i('Series details - ID: ${series.id}, Name: ${series.name}');
+    logger.i('Series teacher: ${series.teacher?.name ?? "NULL"}');
+    logger.i('Series book: ${series.book?.name ?? "NULL"}');
+    logger.i('Series theme: ${series.theme?.name ?? "NULL"}');
+    logger.i('Series book.author: ${series.book?.author?.name ?? "NULL"}');
+
+    // Cache series metadata once for the entire series
+    await _downloadManager.cacheSeriesMetadata(series);
 
     for (var lesson in lessons) {
       // Skip if already downloaded

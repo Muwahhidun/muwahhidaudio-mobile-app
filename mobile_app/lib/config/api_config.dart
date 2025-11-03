@@ -13,7 +13,9 @@ class ApiConfig {
       return 'http://localhost:8000';
     }
 
-    // For Android device, use local network IP
+    // For Android device and emulator, use local network IP
+    // 10.0.2.2 works only for local apps, not Docker containers
+    // Docker requires real host IP address
     if (Platform.isAndroid) {
       return 'http://192.168.3.216:8000';
     }

@@ -8,6 +8,7 @@ import '../../../core/audio/audio_handler_mobile.dart';
 import '../../../config/api_config.dart';
 import '../../providers/lessons_provider.dart';
 import '../../providers/download_provider.dart';
+import '../../providers/series_provider.dart';
 import '../../widgets/breadcrumbs.dart';
 import '../../widgets/mini_player.dart';
 import '../../widgets/gradient_background.dart';
@@ -142,7 +143,14 @@ class _LessonsScreenState extends ConsumerState<LessonsScreen> with RouteAware {
         _isDownloadingAll = true;
       });
 
-      await ref.read(downloadProvider.notifier).downloadSeries(lessonsState.lessons);
+      // Get series model from seriesProvider
+      final seriesState = ref.read(seriesProvider);
+      final series = seriesState.series.firstWhere(
+        (s) => s.id == widget.seriesId,
+        orElse: () => throw Exception('Series not found in state'),
+      );
+
+      await ref.read(downloadProvider.notifier).downloadSeries(lessonsState.lessons, series);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

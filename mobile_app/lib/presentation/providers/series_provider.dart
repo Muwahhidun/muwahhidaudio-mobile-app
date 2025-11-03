@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
 import '../../data/models/series.dart';
 import '../../data/api/api_client.dart';
 import '../../data/api/dio_provider.dart';
+import '../../core/database/database_helper.dart';
+import '../../core/logger.dart';
 
 /// Series state with filters
 class SeriesState {
@@ -12,6 +15,7 @@ class SeriesState {
   final int? themeId;
   final int? bookId;
   final int? teacherId;
+  final bool isOfflineMode; // True if showing cached data due to network error
 
   SeriesState({
     this.series = const [],
@@ -21,6 +25,7 @@ class SeriesState {
     this.themeId,
     this.bookId,
     this.teacherId,
+    this.isOfflineMode = false,
   });
 
   SeriesState copyWith({
@@ -31,6 +36,7 @@ class SeriesState {
     int? themeId,
     int? bookId,
     int? teacherId,
+    bool? isOfflineMode,
   }) {
     return SeriesState(
       series: series ?? this.series,
@@ -40,6 +46,7 @@ class SeriesState {
       themeId: themeId ?? this.themeId,
       bookId: bookId ?? this.bookId,
       teacherId: teacherId ?? this.teacherId,
+      isOfflineMode: isOfflineMode ?? this.isOfflineMode,
     );
   }
 }
@@ -47,10 +54,12 @@ class SeriesState {
 /// Series notifier with filter support
 class SeriesNotifier extends StateNotifier<SeriesState> {
   final ApiClient _apiClient;
+  final DatabaseHelper _db;
 
-  SeriesNotifier(this._apiClient) : super(SeriesState());
+  SeriesNotifier(this._apiClient, this._db) : super(SeriesState());
 
   /// Load series with optional filters
+  /// Implements offline-first: tries API first, falls back to cache on network error
   Future<void> loadSeries({
     String? search,
     int? themeId,
@@ -67,6 +76,7 @@ class SeriesNotifier extends StateNotifier<SeriesState> {
         teacherId: teacherId,
       );
 
+      // Try to fetch from API
       final response = await _apiClient.getSeries(
         search: search,
         themeId: themeId,
@@ -79,12 +89,92 @@ class SeriesNotifier extends StateNotifier<SeriesState> {
       state = state.copyWith(
         series: response.items,
         isLoading: false,
+        isOfflineMode: false,
+      );
+    } on DioException catch (e) {
+      // Network error - try to load from cache
+      logger.w('Network error loading series, falling back to cache: ${e.message}');
+      await _loadFromCache(
+        themeId: themeId,
+        bookId: bookId,
+        teacherId: teacherId,
       );
     } catch (e) {
+      logger.e('Error loading series', error: e);
+
+      // Try cache fallback for any error
+      final cached = await _loadFromCache(
+        themeId: themeId,
+        bookId: bookId,
+        teacherId: teacherId,
+      );
+      if (!cached) {
+        state = state.copyWith(
+          isLoading: false,
+          error: e.toString(),
+        );
+      }
+    }
+  }
+
+  /// Load series from cache (all cached series)
+  Future<bool> _loadFromCache({
+    int? themeId,
+    int? bookId,
+    int? teacherId,
+  }) async {
+    try {
+      final cachedData = await _db.getAllCachedSeries(
+        themeId: themeId,
+        bookId: bookId,
+        teacherId: teacherId,
+      );
+
+      if (cachedData.isEmpty) {
+        logger.i('No cached series found');
+        state = state.copyWith(
+          isLoading: false,
+          error: 'Нет подключения к интернету и нет сохраненных данных',
+          isOfflineMode: true,
+        );
+        return false;
+      }
+
+      // Convert cached data to SeriesModel objects
+      final series = cachedData.map((data) {
+        return SeriesModel(
+          id: data['id'] as int,
+          name: data['name'] as String,
+          year: data['year'] as int,
+          description: data['description'] as String?,
+          teacherId: data['teacher_id'] as int,
+          bookId: data['book_id'] as int?,
+          themeId: data['theme_id'] as int?,
+          isCompleted: (data['is_completed'] as int?) == 1,
+          order: data['order'] as int? ?? 0,
+          isActive: (data['is_active'] as int?) == 1,
+          createdAt: data['created_at'] as String? ?? DateTime.now().toIso8601String(),
+          updatedAt: data['updated_at'] as String? ?? DateTime.now().toIso8601String(),
+          displayName: data['display_name'] as String?,
+        );
+      }).toList();
+
+      logger.i('Loaded ${series.length} series from cache (offline mode)');
+      state = state.copyWith(
+        series: series,
+        isLoading: false,
+        isOfflineMode: true,
+        error: null, // Clear error on successful cache load
+      );
+
+      return true;
+    } catch (e) {
+      logger.e('Failed to load series from cache', error: e);
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: 'Ошибка загрузки кэша: ${e.toString()}',
       );
+      return false;
     }
   }
 
@@ -134,5 +224,6 @@ class SeriesNotifier extends StateNotifier<SeriesState> {
 /// Series provider
 final seriesProvider = StateNotifierProvider<SeriesNotifier, SeriesState>((ref) {
   final apiClient = ApiClient(DioProvider.getDio());
-  return SeriesNotifier(apiClient);
+  final db = DatabaseHelper();
+  return SeriesNotifier(apiClient, db);
 });
