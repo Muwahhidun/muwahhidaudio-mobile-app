@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:dio/dio.dart';
@@ -70,18 +71,73 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final token = await _storage.read(key: AppConstants.accessTokenKey);
       if (token != null) {
-        final user = await _apiClient.getCurrentUser();
-        state = state.copyWith(
-          user: user,
-          isAuthenticated: true,
-          isLoading: false,
-        );
+        // Try to load cached user data first (offline support)
+        final cachedUserJson = await _storage.read(key: AppConstants.userDataKey);
+
+        if (cachedUserJson != null) {
+          // Parse cached user data
+          try {
+            final userData = User.fromJson(
+              jsonDecode(cachedUserJson) as Map<String, dynamic>,
+            );
+
+            // Set authenticated state with cached data
+            state = state.copyWith(
+              user: userData,
+              isAuthenticated: true,
+              isLoading: false,
+            );
+          } catch (parseError) {
+            // Failed to parse cached data, continue to fetch from API
+          }
+        }
+
+        // Try to refresh user data from server (online mode)
+        try {
+          final user = await _apiClient.getCurrentUser();
+
+          // Update cached data
+          await _storage.write(
+            key: AppConstants.userDataKey,
+            value: jsonEncode(user.toJson()),
+          );
+
+          state = state.copyWith(
+            user: user,
+            isAuthenticated: true,
+            isLoading: false,
+          );
+        } catch (apiError) {
+          // Check if this is a network error or auth error
+          if (apiError is DioException) {
+            if (apiError.response?.statusCode == 401) {
+              // Token expired, logout
+              await logout();
+            } else if (apiError.type == DioExceptionType.connectionTimeout ||
+                       apiError.type == DioExceptionType.sendTimeout ||
+                       apiError.type == DioExceptionType.receiveTimeout ||
+                       apiError.type == DioExceptionType.connectionError) {
+              // Network error - use cached data if available
+              if (state.user != null) {
+                // Already loaded from cache, continue in offline mode
+                return;
+              }
+              // No cached data and no internet
+              await logout();
+            } else {
+              // Other error - logout
+              await logout();
+            }
+          } else {
+            await logout();
+          }
+        }
       } else {
         // No token found, not authenticated
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
-      // Token might be expired, clear it
+      // Unexpected error
       await logout();
     }
   }
@@ -103,6 +159,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await _storage.write(
         key: AppConstants.refreshTokenKey,
         value: response.refreshToken,
+      );
+
+      // Save user data for offline access
+      await _storage.write(
+        key: AppConstants.userDataKey,
+        value: jsonEncode(response.user.toJson()),
       );
 
       state = state.copyWith(
@@ -187,6 +249,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     await _storage.delete(key: AppConstants.accessTokenKey);
     await _storage.delete(key: AppConstants.refreshTokenKey);
+    await _storage.delete(key: AppConstants.userDataKey);
     DioProvider.reset();
     state = AuthState();
   }

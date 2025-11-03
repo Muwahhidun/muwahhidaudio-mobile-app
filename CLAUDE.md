@@ -191,6 +191,8 @@ python test_audio_streaming.py
 - Riverpod for state management (riverpod_generator for code generation)
 - Retrofit + Dio for HTTP/API (retrofit_generator for code generation)
 - just_audio + audio_service for background audio playback
+- sqflite for local SQLite database (offline mode)
+- path_provider for file system access
 - flutter_secure_storage for JWT token storage
 - shared_preferences for user preferences
 - json_serializable for model serialization
@@ -229,10 +231,13 @@ flutter test
 - `lib/core/` - Core functionality
   - `theme/` - App theming with light/dark modes
   - `audio/` - Audio playback system (see Audio Architecture below)
+  - `database/` - SQLite database helper (singleton pattern)
+  - `download/` - Download manager for offline audio files
   - `constants/` - App-wide constants including `app_icons.dart`
+  - `logger.dart` - Structured logging using logger package
 - `lib/data/` - Data layer
   - `api/` - Retrofit API client definitions
-  - `models/` - JSON serializable data models
+  - `models/` - JSON serializable data models including `downloaded_lesson.dart`
   - `repositories/` (not yet implemented)
 - `lib/presentation/` - Presentation layer
   - `providers/` - Riverpod providers for state management
@@ -241,6 +246,8 @@ flutter test
     - `home/` - Home screen
     - `themes/` - Theme browsing
     - `admin/` - Admin panel for content management
+    - `lessons/` - Lessons list with download functionality
+    - `series/` - Series list with bulk download
   - `widgets/` - Reusable UI components including `mini_player.dart`
 
 **Key Patterns:**
@@ -262,14 +269,16 @@ The app uses a cross-platform audio system with platform-specific implementation
 - **Mobile (Android/iOS)**: `audio_service` + `just_audio`
   - Background playback with system media controls
   - Global `audioHandler` instance in `main.dart`
-  - Eager initialization in `main()` with fallback lazy initialization via `initializeAudioServiceIfNeeded()`
+  - **Eager initialization**: `AudioService.init()` called in `main()` before `runApp()` to ensure notification infrastructure is ready
+  - Initial playback state set with Play button to enable Android 12+ notification display
   - `LessonAudioHandler` (extends `BaseAudioHandler`) in `lib/core/audio/audio_handler_mobile.dart`:
     - Manages playlist and current lesson index
     - Handles play/pause, seek, skip, rewind/forward (10s)
     - Auto-plays next lesson on completion
     - Broadcasts state to system media controls
     - Custom notification with lesson metadata (book, teacher, lesson number)
-  - System controls: Previous, Rewind 10s, Play/Pause, Forward 10s, Next
+    - Requests notification permission for Android 13+
+  - System controls: Previous, Rewind 10s, Play/Pause, Forward 10s, Next, Close (stop)
 
 - **Web**: Custom implementation using browser MediaSession API
   - `lib/core/audio/audio_service_web.dart` provides web-compatible audio service
@@ -278,8 +287,40 @@ The app uses a cross-platform audio system with platform-specific implementation
 - **Common Pattern**:
   - Call `playLesson(lesson: lesson, playlist: allLessons)` to start playback
   - Audio streams from backend: `${ApiConfig.baseUrl}${lesson.audioUrl}`
+  - **Offline playback priority**: Audio handler checks for local files first via `DownloadManager.getLocalFilePath()`, falls back to streaming if not downloaded
   - MiniPlayer widget (`lib/presentation/widgets/mini_player.dart`) shows on all screens when audio is playing
   - MiniPlayer uses global `RouteObserver` to persist across navigation
+
+**Offline Mode Architecture:**
+
+The app supports full offline functionality with local audio file downloads and SQLite storage:
+
+- **SQLite Database** (`lib/core/database/database_helper.dart`):
+  - Singleton pattern with `muwahhid_audio.db` in app documents directory
+  - Table: `downloaded_lessons` (lesson_id, file_path, file_size, download_date, status)
+  - Tracks download metadata and completion status
+  - Methods: `insertDownloadedLesson()`, `getDownloadedLesson()`, `getAllDownloadedLessons()`, `isLessonDownloaded()`, `deleteDownloadedLesson()`
+
+- **Download Manager** (`lib/core/download/download_manager.dart`):
+  - Handles file downloads using Dio with progress callbacks
+  - Stores audio files in `ApplicationDocumentsDirectory/downloaded_lessons/lesson_{id}.mp3`
+  - Returns `Stream<DownloadProgress>` for real-time progress updates
+  - Supports cancellation via `CancelToken`
+  - Methods: `downloadLesson()`, `cancelDownload()`, `deleteDownload()`, `getLocalFilePath()`, `isLessonDownloaded()`
+
+- **Download Provider** (`lib/presentation/providers/download_provider.dart`):
+  - Riverpod state management for downloads
+  - Tracks active downloads with progress: `Map<int, DownloadProgress> activeDownloads`
+  - Tracks completed downloads: `Map<int, bool> downloadedLessons`
+  - Series operations: `downloadSeries()`, `cancelSeriesDownload()`, `deleteSeriesDownload()`, `getSeriesDownloadStats()`
+  - Helper providers: `isLessonDownloadedProvider`, `isLessonDownloadingProvider`, `downloadProgressProvider`
+
+- **Download UI Pattern**:
+  - **Individual lessons**: Download button on each lesson card with progress indicator
+  - **Series download**: Download button on series cards (downloads all lessons in series)
+  - **Bulk download**: AppBar button in LessonsScreen with badge showing downloaded count
+  - **Download states**: Download icon → CircularProgressIndicator with cancel button → Download_done icon (green)
+  - **Critical performance fix**: Avoid eager loading in list builders (caused SeriesScreen freeze). Load lessons only when user taps download button.
 
 **Routing:**
 
@@ -480,10 +521,23 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 **Audio playback issues on Android:**
 - Ensure notification icons exist in `android/app/src/main/res/drawable/`
-- Required icons: `ic_stat_music_note.png`, `ic_play_arrow.png`, `ic_pause.png`, `ic_skip_next.png`, `ic_skip_previous.png`, `ic_fast_forward.png`, `ic_rewind.png`
-- Check audio service initialization happens lazily (not on app start)
+- Required icons: `ic_stat_music_note.png`, `ic_play_arrow.png`, `ic_pause.png`, `ic_skip_next.png`, `ic_skip_previous.png`, `ic_fast_forward.png`, `ic_rewind.png`, `ic_action_cancel.png`
+- Audio service is eagerly initialized in `main()` before `runApp()`
 - Verify `android/gradle.properties` has correct SDK/minSdk settings
 - Check AndroidManifest.xml for FOREGROUND_SERVICE permission
+
+**Performance issues with list screens:**
+- **CRITICAL**: Never use FutureBuilder or async data loading in `itemBuilder` callbacks of ListView.builder
+- This causes multiple simultaneous API calls for each item in the list
+- Example: SeriesScreen was frozen because it loaded lessons for every series card
+- **Solution**: Show simple UI by default, load data only when user interacts (e.g., taps download button)
+- Use provider watchers outside of list builders, not inside
+
+**Download functionality issues:**
+- Check SQLite database is initialized: `DatabaseHelper().database`
+- Verify download directory permissions: `getApplicationDocumentsDirectory()`
+- Download progress not updating: Ensure `DownloadProvider` is watching activeDownloads map
+- Downloaded lessons not persisting: Check SQLite table creation in `_createDatabase()`
 
 **Deprecated API warnings:**
 - Project uses latest Flutter SDK and has migrated deprecated APIs
